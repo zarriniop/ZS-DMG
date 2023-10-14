@@ -1,0 +1,158 @@
+#!/bin/sh
+
+SYSCFG_UBIFS_MNT=/tmp/syscfg
+SLOT="$(find_system_slot)"
+echo "Active system$SLOT"
+
+get_current_rootfs_label() {
+	rootfs_label="rootfs"
+	echo "$rootfs_label"
+}
+
+mount_no_ubifs_syscfg_mtd() {
+	mtd unlock $(get_current_rootfs_label)
+	mount -o remount,rw /dev/root /
+}
+
+# return 1 on failed 0 for success
+ubifs_volume_support() {
+	mtdpart_idx="$(find_mtd_index rootfs_data)"
+	[ -z "$mtdpart_idx" ] && return 1
+	mtdpart_idx_oem="$(find_mtd_index oem_data$SLOT)"
+	if [ -z "$mtdpart_idx_oem" ]
+	then
+		# oem_data may has only one partition
+		mtdpart_idx_oem="$(find_mtd_index oem_data)"
+		[ -z "$mtdpart_idx_oem" ] && return 1
+	fi
+	grep -qs ubifs /proc/filesystems ||  return 1
+	echo "found rootfs_data partition and ubifs support"
+	return 0
+}
+
+__try_ubifs_syscfg_mount() {
+	#juson.zhang-2019/11/20:after system, erase rootfs_data partition#
+	#baron.qian-2020/03/10: add active_slot and temp_active_slot judge when earse rootfs_data#
+	update_flag=`hexdump -n 8 -s 168 /dev/mtdblock18 | awk '{print$2}'`
+	active_slot=`hexdump -n 8 -s 160 /dev/mtdblock18 | awk '{print$2}'`
+	temp_active_slot=`hexdump -n 8 -s 164 /dev/mtdblock18 | awk '{print$2}'`
+	# echo "[zhyy]flag==$update_flag" > /dev/kmsg
+	if [ $update_flag -eq 1 ] && [ $active_slot != $temp_active_slot ]
+	then
+		echo "[QUECTEL]update_flag: $update_flag" > /dev/kmsg
+		echo "[QUECTEL]active_slot: $active_slot" > /dev/kmsg
+		echo "[QUECTEL]temp_active_slot: $temp_active_slot" > /dev/kmsg
+		mtd erase rootfs_data
+	fi
+	##################################################################
+
+	overlay_mountpoint=$1
+	if [ -z $overlay_mountpoint ]
+	then
+		overlay_mountpoint=/overlay
+	fi
+	recover_ubifs=0
+	[ ! -e /dev/ubi0 ] && ubiattach /dev/ubi_ctrl -m $mtdpart_idx -d 0 || recover_ubifs=1
+	if [ $recover_ubifs -eq 0 ]
+	then
+		ubi0_nod_id=`cat /sys/class/ubi/ubi0/dev | tr -s ":" " "`
+		[ ! -e /dev/ubi0 ] && mknod /dev/ubi0 c ${ubi0_nod_id}
+		if [ ! -e /sys/class/ubi/ubi0_0/dev ]
+		then
+			# no volume
+			recover_ubifs=1
+		else
+			# check for "syscfg" volume
+			ubi0_0_nod_id=`cat /sys/class/ubi/ubi0_0/dev | tr -s ":" " "`
+			[ ! -e /dev/ubi0_0 ] && mknod /dev/ubi0_0 c ${ubi0_0_nod_id}
+			{ ubinfo /dev/ubi0_0 | grep Name  | grep -qs "syscfg" ; } || \
+			recover_ubifs=1
+		fi
+	fi
+	if [ $recover_ubifs -eq 1 ]
+	then
+		echo "ubifs syscfg partition is damaged"
+		echo "try to recover by formatting $mtdpart..."
+		[ -e /dev/ubi0 ] && ubidetach -m $mtdpart_idx
+		ubiformat -y -q /dev/mtd$mtdpart_idx
+		ubiattach -m $mtdpart_idx /dev/ubi_ctrl
+		ubi0_nod_id=`cat /sys/class/ubi/ubi0/dev | tr -s ":" " "`
+		[ ! -e /dev/ubi0 ] && mknod /dev/ubi0 c ${ubi0_nod_id}
+		ubimkvol /dev/ubi0 -n 0 -N syscfg -t dynamic --maxavsize
+	fi
+
+	# finally mount the ubifs
+	mount -t ubifs -o noatime ubi0_0 $overlay_mountpoint || return 1
+	return 0
+}
+
+try_ubifs_syscfg_mount() {
+	__try_ubifs_syscfg_mount || {
+		echo "roofs_data mount fail, try to recover by erase..."
+		mtd erase rootfs_data
+		__try_ubifs_syscfg_mount
+	}
+
+	recover_ubifs=0
+	[ ! -e /dev/ubi1 ] && ubiattach /dev/ubi_ctrl -m $mtdpart_idx_oem -d 1 || recover_ubifs=1
+	if [ $recover_ubifs -eq 0 ]
+	then
+		ubi1_nod_id=`cat /sys/class/ubi/ubi1/dev | tr -s ":" " "`
+		[ ! -e /dev/ubi1 ] && mknod /dev/ubi1 c ${ubi1_nod_id}
+		if [ ! -e /sys/class/ubi/ubi1_0/dev ]
+		then
+			# no volume
+			recover_ubifs=1
+		else
+			# check for "oem_data" volume
+			ubi1_0_nod_id=`cat /sys/class/ubi/ubi1_0/dev | tr -s ":" " "`
+			[ ! -e /dev/ubi1_0 ] && mknod /dev/ubi1_0 c ${ubi1_0_nod_id}
+			{ ubinfo /dev/ubi1_0 | grep Name  | grep -qs "oem_data" ; } || \
+			recover_ubifs=1
+		fi
+	fi
+	if [ $recover_ubifs -eq 1 ]
+	then
+		echo "ubifs oem_data partition is damaged"
+		echo "try to recover by formatting $mtdpart..."
+		[ -e /dev/ubi1 ] && ubidetach -m $mtdpart_idx_oem
+		ubiformat -y -q /dev/mtd$mtdpart_idx_oem
+		ubiattach -m $mtdpart_idx_oem /dev/ubi_ctrl
+		ubi1_nod_id=`cat /sys/class/ubi/ubi1/dev | tr -s ":" " "`
+		[ ! -e /dev/ubi1 ] && mknod /dev/ubi1 c ${ubi1_nod_id}
+		ubimkvol /dev/ubi1 -n 0 -N oem_data -t dynamic --maxavsize
+	fi
+
+	mkdir -p /NVM/oem_data
+	mount -t ubifs -o rw,noatime,bulk_read ubi1:oem_data /NVM/oem_data
+	return 0
+}
+
+create_overlay() { # <lowerdir> <upper_dir> <target>
+#	mkdir -p $2/root $2/work
+#	/bin/mount -o noatime,lowerdir=$1,upperdir=$2/root,workdir=$2/work -t overlay "overlayfs:$2" $3
+
+
+	mkdir -p /overlay/root /overlay/work
+	fopivot /overlay/root /overlay/work /rom 1
+	mount -o remount,ro /rom
+}
+
+ubifs_syscfg_rootfs_pivot() {
+	echo "switching to ubifs sysfs overlay"
+
+	# PIPE mode need to recover this file in /etc/init.d/network
+	cp -rf /etc/config/network /tmp/network_pipe
+
+	# Dir /etc and /NVM can be written after creating overlay
+#	create_overlay /etc $overlay_mountpoint/etc /etc
+	create_overlay
+}
+
+do_mount_ubifs_overlay() {
+	{ ubifs_volume_support && \
+	try_ubifs_syscfg_mount && \
+	ubifs_syscfg_rootfs_pivot ; } || mount_no_ubifs_syscfg_mtd
+}
+
+boot_hook_add preinit_main do_mount_ubifs_overlay
