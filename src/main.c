@@ -1798,12 +1798,18 @@ int startServers(int port, int trace)
     }
 
     //Start server
-    if ((ret = svr_start_Serial(&lniec, "/dev/ttyUSB0")) != 0)
+    // if ((ret = svr_start_Serial(&lniec, "/dev/ttyUSB0")) != 0)
+    // {
+    //     return ret;
+    // }
+
+
+    if((ret = rs485_start_Serial(&rs485,"/dev/ttyUSB0")) != 0 )
     {
         return ret;
     }
 
-    lnWrapper.trace =lniec.trace =  trace;
+    lnWrapper.trace =lniec.trace = rs485.trace = trace;
 
     uint32_t lastMonitor = 0;
     while (1)
@@ -1816,10 +1822,14 @@ int startServers(int port, int trace)
             {
                 printf("lnWrapper monitor failed.\r\n");
             }
+            if ((ret = svr_monitorAll(&lniec.settings)) != 0)
+            {
+                printf("lniec monitor failed.\r\n");
+            }
         }
-
     }
     con_close(&lnWrapper);
+    con_close(&lniec);
     return 0;
 }
 

@@ -1753,7 +1753,7 @@ int addHdlcElectricalRS4785Port(dlmsServerSettings *settings)
     unsigned char ln[6] = {0, 2, 22, 0, 0, 255};
     if ((ret = INIT_OBJECT(hdlcelectricalrs485port, DLMS_OBJECT_TYPE_IEC_HDLC_SETUP, ln)) == 0)
     {
-        hdlcelectricalrs485port.communicationSpeed = DLMS_BAUD_RATE_9600;
+        hdlcelectricalrs485port.communicationSpeed = DLMS_BAUD_RATE_115200;
         hdlcelectricalrs485port.windowSizeReceive = hdlcelectricalrs485port.windowSizeTransmit = 1;
         // hdlcelectricalrs485port.maximumInfoLengthTransmit = hdlcelectricalrs485port.maximumInfoLengthReceive = 128;
         // hdlcelectricalrs485port.inactivityTimeout = 180;
@@ -2499,6 +2499,34 @@ int svr_start_Serial(
 
     return DLMS_ERROR_CODE_OK;
 }
+
+
+
+
+
+
+
+
+/**
+ * Start server on serial port.
+ */
+int rs485_start_Serial(
+    connection *con,
+    char *file)
+{
+    int ret;
+
+    con->buffer.RX_Count = 0 ;
+    con->buffer.TX_Count = 0 ;
+    con->settings.hdlc = &hdlcelectricalrs485port;
+    if ((ret = rs485_listen_serial(con, file)) != 0)
+    {
+        return ret;
+    }
+}
+
+
+
 
 
 

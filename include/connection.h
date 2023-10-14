@@ -30,6 +30,17 @@ static const unsigned int RECEIVE_BUFFER_SIZE = 200;
 extern "C" {
 #endif
 
+static uint32_t Boudrate[]={ 300 , 600 , 1200 , 2400 , 4800 , 9600 , 19200 , 38400 , 57600 , 115200 };
+
+
+typedef struct
+{
+    unsigned char TX[2048];
+    unsigned char RX[2048];
+    uint32_t TX_Count;
+    uint32_t RX_Count;
+} Buffer;
+
 typedef struct
 {
     //Is trace used.
@@ -47,6 +58,7 @@ typedef struct
     //If receiver thread is closing.
     unsigned char closing;
     dlmsServerSettings settings;
+    Buffer buffer;
 } connection;
 
 void con_initializeBuffers(
@@ -58,7 +70,7 @@ int svr_listen(
     unsigned short port);
 
 
-uint16_t GetLinuxBaudRate(uint16_t baudRate);
+uint16_t GetLinuxBaudRate(uint32_t baudRate);
 
 
 
@@ -66,7 +78,7 @@ uint16_t GetLinuxBaudRate(uint16_t baudRate);
 
 int com_updateSerialportSettings(connection* con,
     unsigned char iec,
-    uint16_t baudRate);
+    uint32_t baudRate);
 
 
 
@@ -85,11 +97,19 @@ void* UnixListenerThread(void* pVoid);
 void* UnixSerialPortThread(void* pVoid);
 
 
+void* Unixrs485RecSerialThread(void* pVoid);
+
+void* Unixrs485SendSerialThread(void* pVoid);
+
 
 int svr_listen_serial(
     connection* con,
      char *file);
 
+
+int rs485_listen_serial(
+    connection* con,
+     char *file);
 
 
 int svr_listen_TCP(
@@ -106,7 +126,7 @@ int con_close(
 
 
 
-void report(char *format, ... );
+// void report(char *format, ... );
 
 
 

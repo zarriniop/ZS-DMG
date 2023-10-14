@@ -35,6 +35,10 @@ int svr_start_TCP(
 int svr_start_Serial(
     connection *con,
     char *file);
+
+int rs485_start_Serial(
+connection *con,
+char *file);
     
 
 int svr_InitObjects(

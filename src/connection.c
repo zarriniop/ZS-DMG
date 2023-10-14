@@ -13,8 +13,8 @@
 // Copyright (c) Gurux Ltd
 //
 //---------------------------------------------------------------------------
-#include "connection.h"
-#include "server.h"
+#include "../include/connection.h"
+#include "../../development/include/server.h"
 
 #include <stdlib.h> // malloc and free needs this or error is generated.
 #include <stdio.h>
@@ -81,9 +81,10 @@ void appendLog(unsigned char send, gxByteBuffer* reply)
         fclose(f);
     }
 }
-uint16_t GetLinuxBaudRate(uint16_t baudRate)
+uint16_t GetLinuxBaudRate(uint32_t baudRate)
 {
     uint16_t br;
+    printf("baudRate in GetLinuxBaudRate = %d\n",baudRate);
     switch (baudRate) {
     case 110:
         br = B110;
@@ -115,6 +116,10 @@ uint16_t GetLinuxBaudRate(uint16_t baudRate)
     case 57600:
         br = B57600;
         break;
+    case 115200:
+        br = B115200;
+        printf("B115200\n");
+        break;
     default:
         return B9600;
     }
@@ -123,7 +128,7 @@ uint16_t GetLinuxBaudRate(uint16_t baudRate)
 
 int com_updateSerialportSettings(connection* con,
     unsigned char iec,
-    uint16_t baudRate)
+    uint32_t baudRate)
 {
     int ret;
     struct termios options;
@@ -152,6 +157,9 @@ int com_updateSerialportSettings(connection* con,
         options.c_cflag |= CS8;
         */
         //Set Baud Rates
+        ret = GetLinuxBaudRate(baudRate) ;
+
+        printf("ret = %d\n",ret);
         cfsetospeed(&options, GetLinuxBaudRate(baudRate));
         cfsetispeed(&options, GetLinuxBaudRate(baudRate));
     }
@@ -162,6 +170,7 @@ int com_updateSerialportSettings(connection* con,
 
     //hardware flow control is used as default.
     //options.c_cflag |= CRTSCTS;
+
     if (tcsetattr(con->comPort, TCSAFLUSH, &options) != 0)
     {
         ret = errno;
@@ -190,7 +199,10 @@ int com_initializeSerialPort(connection* con,
         printf("Failed to Open port %s. This is not a serial port.\n", serialPort);
         return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     }
-    return com_updateSerialportSettings(con,iec, 9600);
+    uint32_t baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
+    printf("baudRate = %d\n",baudRate);
+
+    return com_updateSerialportSettings(con,iec, baudRate);
 }
 
 
@@ -199,7 +211,6 @@ int com_initializeSerialPort(connection* con,
 
 void ListenerThread(void* pVoid)
 {
-    printf("in ListenerThread\r\n");
     int socket;
     connection* con = (connection*)pVoid;
     struct sockaddr_in add;
@@ -374,7 +385,6 @@ int svr_listen(
     }
 
     ret = pthread_create(&con->receiverThread, NULL, UnixListenerThread, (void*)con);
-    printf("after pthread_create");
     return ret;
 }
 
@@ -389,7 +399,6 @@ void* UnixSerialPortThread(void* pVoid)
     gxServerReply sr;
     gxByteBuffer reply;
     connection* con = (connection*)pVoid;
-
     sr_initialize(&sr, &data, 1, &reply);
 
     while (1)
@@ -413,7 +422,6 @@ void* UnixSerialPortThread(void* pVoid)
                     first = 0;
                 }
                 printf("%.2X ", data);
-                printf("\ncon->settings.base.connected = %d\n", con->settings.base.connected);
             }
 
 
@@ -452,7 +460,7 @@ void* UnixSerialPortThread(void* pVoid)
                         //Without this delay, disconnect message might be cleared before send.
 
                         usleep(100000);
-                        int baudRate = 300 << (int)con->settings.localPortSetup->defaultBaudrate;
+                        uint16_t baudRate = 300 << (int)con->settings.localPortSetup->defaultBaudrate;
                         printf("%s %d", "Disconnected with optical probe. The new baudrate is:", baudRate);
                         com_updateSerialportSettings(con,1, 300);
                     }
@@ -463,6 +471,85 @@ void* UnixSerialPortThread(void* pVoid)
     }
     return NULL;
 }
+
+
+void* Unixrs485RecSerialThread(void* pVoid)
+{
+    int ret;
+    unsigned char data;
+    unsigned char first = 1;
+    int bytesRead;
+    connection* con = (connection*)pVoid;
+
+
+    while (1)
+    {
+        bytesRead = read(con->comPort, &data, 1);
+        if (bytesRead < 1)
+        {
+            //If there is no data on the read buffer.
+            if (errno != EAGAIN)
+            {
+                break;
+            }
+        }
+        else
+        {
+            printf("data = %.2X\n",data);
+            printf("con->buffer.RX_Count  = %d\n",con->buffer.RX_Count);
+            con->buffer.RX[con->buffer.RX_Count] = data ;
+            con->buffer.RX_Count++ ;
+            printf("con->rs485.RX = ");
+            for(int i = 0 ; i < con->buffer.RX_Count ; i++)
+            {
+                printf("%.2X ",con->buffer.RX[i]);
+            }
+            printf("\n");
+            // if (con->trace > GX_TRACE_LEVEL_WARNING)
+            // {
+            //     if (first)
+            //     {
+            //         printf("\nRX:\t");
+            //         first = 0;
+            //     }
+            //     printf("%.2X ", data);
+
+            // }
+        }
+    }
+    return NULL;
+}
+
+
+
+
+
+void* Unixrs485SendSerialThread(void* pVoid)
+{
+    int ret;
+    connection* con = (connection*)pVoid;
+    while (1)
+    {
+        if(con->buffer.TX_Count>0)
+        {
+            ret = write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
+            con->buffer.TX_Count = 0 ;
+        }
+        usleep(10000);
+    }
+    return NULL;
+}
+
+
+
+
+
+
+
+
+
+
+
 //Initialize connection settings.
 int svr_listen_serial(
     connection* con,
@@ -477,15 +564,8 @@ int svr_listen_serial(
 
     DLMS_INTERFACE_TYPE interfaceType;
 
-    printf("con->settings.localPortSetup->defaultMode = %d\n",con->settings.localPortSetup->defaultMode);
     if(con->settings.localPortSetup->defaultMode==0) interfaceType=DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E;
     else interfaceType=DLMS_INTERFACE_TYPE_HDLC;
-
-
-    printf("Serial port server started in port: %s\n", file);
-
-    printf("interfaceType = %d\n",interfaceType);
-
     if ((ret = com_initializeSerialPort(
         con,
         file,
@@ -493,12 +573,33 @@ int svr_listen_serial(
     {
         return ret;
     }
-    
     ret = pthread_create(&con->receiverThread, NULL, UnixSerialPortThread, (void*)con);
-
-    printf("after pthread_create");
     return ret;
 }
+
+
+
+
+//Initialize connection settings.
+int rs485_listen_serial(
+    connection* con,
+     char *file)
+{
+    int ret;
+    if ((ret = com_initializeSerialPort(
+        con,
+        file,
+        0)) != 0)
+    {
+        return ret;
+    }
+    
+    ret = pthread_create(&con->receiverThread, NULL, Unixrs485RecSerialThread, (void*)con);
+    ret = pthread_create(&con->receiverThread, NULL, Unixrs485SendSerialThread, (void*)con);
+    return ret;
+}
+
+
 
 
 
@@ -545,7 +646,6 @@ int svr_listen_TCP(
     }
 
     ret = pthread_create(&con->receiverThread, NULL, UnixListenerThread, (void*)con);
-    printf("after pthread_create");
     return ret;
 }
 
@@ -586,58 +686,58 @@ int con_close(
     return 0;
 }
 
-//void report(char *format, ... )
-//{
-//	va_list args;
-//	int i=0,count=0;
-//	char ss[100],str[400];
-//	va_start( args, format );
-//
-//	int		d;
-//	float   f;
-//	char   *s;
-//
-//	memset(str,0,sizeof(str));
-//
-//	for( i = 0; format[i] != '\0'; ++i )
-//	{
-//		switch( format[i] )
-//		{
-//	         case 'd':
-//	        	d=va_arg(args, int );
-//	            sprintf(ss,"%d\0",d);
-//	         break;
-//
-//	         case 'f':
-//	        	 f=va_arg(args, double );
-//	             sprintf(ss,"%f\0",f);
-//	         break;
-//
-//
-//	         case 's':
-//	        	 s=va_arg(args, char *);
-//	             sprintf(ss,"%s\0",s);
-//	         break;
-//
-//	         default:
-//	         break;
-//	      }
-//
-//			memcpy(str+count,ss,strlen(ss));
-//			count=strlen(str);
-//
-//	}
-//
-//
-//	va_end( args );
-//
-//
-//#if DEBUG_MODE
-//	printf("((%s)) %s\n",get_time(),str);
-//#else
-//	char str1[500];
-//	memset(str1,0,sizeof(str1));
-//	sprintf(str1,"logger -t \"=======(  ZS-LRM200  )=======\" \"%s\" ",str);
-//	std::system(str1);
-//#endif
-//}
+// void report(char *format, ... )
+// {
+// 	va_list args;
+// 	int i=0,count=0;
+// 	char ss[100],str[400];
+// 	va_start( args, format );
+
+// 	int		d;
+// 	float   f;
+// 	char   *s;
+
+// 	memset(str,0,sizeof(str));
+
+// 	for( i = 0; format[i] != '\0'; ++i )
+// 	{
+// 		switch( format[i] )
+// 		{
+// 	         case 'd':
+// 	        	d=va_arg(args, int );
+// 	            sprintf(ss,"%d\0",d);
+// 	         break;
+
+// 	         case 'f':
+// 	        	 f=va_arg(args, double );
+// 	             sprintf(ss,"%f\0",f);
+// 	         break;
+
+
+// 	         case 's':
+// 	        	 s=va_arg(args, char *);
+// 	             sprintf(ss,"%s\0",s);
+// 	         break;
+
+// 	         default:
+// 	         break;
+// 	      }
+
+// 			memcpy(str+count,ss,strlen(ss));
+// 			count=strlen(str);
+
+// 	}
+
+
+// 	va_end( args );
+
+
+// #if DEBUG_MODE
+// 	printf("((%s)) %s\n",get_time(),str);
+// #else
+// 	char str1[500];
+// 	memset(str1,0,sizeof(str1));
+// 	sprintf(str1,"logger -t \"=======(  ZS-LRM200  )=======\" \"%s\" ",str);
+// 	std::system(str1);
+// #endif
+// }
