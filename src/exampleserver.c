@@ -3002,7 +3002,7 @@ void svr_preRead(
         {
             return;
         }
-        GXTRACE_LN(("svr_preRead123: "), e->target->objectType, e->target->logicalName);
+//        GXTRACE_LN(("svr_preRead123: "), e->target->objectType, e->target->logicalName);
         // Let framework handle Logical Name read.
         if (e->index == 1)
         {
@@ -3422,7 +3422,7 @@ void svr_postRead(
         {
             return;
         }
-        GXTRACE_LN(("svr_postRead321: "), e->target->objectType, e->target->logicalName);
+//        GXTRACE_LN(("svr_postRead321: "), e->target->objectType, e->target->logicalName);
     }
 }
 /////////////////////////////////////////////////////////////////////////////

@@ -23,6 +23,8 @@
 
 
 #include <pthread.h>
+#include "DSI_ConnectManager.h"
+#include "ql_nw.h"
 
 static const unsigned int RECEIVE_BUFFER_SIZE = 200;
 
@@ -32,6 +34,20 @@ extern "C" {
 
 static uint32_t Boudrate[]={ 300 , 600 , 1200 , 2400 , 4800 , 9600 , 19200 , 38400 , 57600 , 115200 };
 
+typedef enum
+{
+	STOP_A_DATA_CALL 				= 0,
+	START_A_DATA_CALL 				= 1,
+	START_AND_REDIAL 				= 2,
+	START_AND_REDIAL_OR_POWER_ON 	= 3
+}START_STOP_DATACALL;
+
+typedef enum
+{
+	IPV4V6	= 0,
+	IPV4	= 1,
+	IPV6	= 2
+}IP_TYPE;
 
 typedef struct
 {
@@ -60,6 +76,25 @@ typedef struct
     dlmsServerSettings settings;
     Buffer buffer;
 } connection;
+
+
+typedef struct
+{
+	int 	op			;
+	char 	ip_addr[32]	;
+
+}WAN_PARAM_STRUCT_TYPEDEF;
+
+typedef struct
+{
+	int				op			;
+	int				profile_idx	;
+	int 			ip_type		;
+	unsigned long 	pin_code	;
+	char* 			apn			;
+	char 			userName[20];
+	char 			password[20];
+}APN_PARAM_STRUCT_TYPEDEF;
 
 void con_initializeBuffers(
     connection* connection,
@@ -127,6 +162,14 @@ int con_close(
 
 
 // void report(char *format, ... );
+
+void LTE_Manager_Start (void);
+
+
+void WAN_Init (void);
+
+
+void WAN_Connection (void);
 
 
 

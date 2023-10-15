@@ -36,6 +36,12 @@
 #include <fcntl.h> // File control definitions
 #include <errno.h> // Error number definitions
 
+
+pthread_t Wan_Connection_pthread_var;
+
+extern gxGPRSSetup gprsSetup;
+
+
 //Initialize connection buffers.
 void con_initializeBuffers(connection * connection, int size)
 {
@@ -741,3 +747,122 @@ int con_close(
 // 	std::system(str1);
 // #endif
 // }
+
+
+void LTE_Manager_Start (void)
+{
+	int thread_ret = pthread_create(&Wan_Connection_pthread_var	, NULL, WAN_Connection	, NULL);
+}
+
+/************************************/
+/**** WAN Initializing Function *****/
+/************************************/
+void WAN_Init (void)
+{
+	int ret = ql_wan_release()	;
+	if(ret!=0) printf("!Error! ql_wan_release - ret:%d\n", ret);
+
+	ret = ql_wan_init()		;
+	if(ret!=0) printf("!Error! ql_wan_init - ret:%d\n", ret);
+
+	printf("<= WAN Initialization: DONE! =>\n");
+}
+
+/************************************/
+/***** WAN Connection Function ******/
+/************************************/
+void WAN_Connection (void)
+{
+	QL_DSI_AUTH_PREF_T 			auth			;
+	ql_data_call_info 			payload			;
+	APN_PARAM_STRUCT_TYPEDEF	APN_Param_Struct;
+	nw_status_cb 				nw_cb			;
+
+	APN_Param_Struct.op = START_A_DATA_CALL							;
+	APN_Param_Struct.apn = &gprsSetup.apn.data						;
+//	sprintf(APN_Param_Struct.apn, "mtnirancell")					;
+	printf("<= WAN Connection - APN:%s =>\n", APN_Param_Struct.apn)	;
+
+	APN_Param_Struct.profile_idx 	= 1		;
+	APN_Param_Struct.ip_type		= IPV4V6;
+
+	WAN_Init ();
+
+	int ret = ql_wan_setapn(APN_Param_Struct.profile_idx, APN_Param_Struct.ip_type, APN_Param_Struct.apn, &APN_Param_Struct.userName, &APN_Param_Struct.password, auth);
+	if(ret!=0) printf("ql_wan_setapn - ret:%d", ret);
+
+	int 	ip_type_get 	= 0	;
+    char 	apn_get[128]	={0};
+    char 	userName_get[64]={0};
+    char 	password_get[64]={0};
+
+    ret = ql_wan_getapn(APN_Param_Struct.profile_idx, &ip_type_get, apn_get, sizeof(apn_get), userName_get, sizeof(userName_get), password_get, sizeof(password_get));
+	if(ret!=0) printf("ql_wan_getapn - ret:%d", ret);
+	else
+	{
+		printf("<= APN SET:%s =>\n", apn_get);
+	}
+
+
+	ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
+	if(ret!=0) printf("ql_wan_start-ret:%d", ret);
+
+	while(1)
+	{
+		ret = ql_get_data_call_info(APN_Param_Struct.profile_idx, &payload);
+
+		if (ret == 0)
+		{
+			if (payload.v4.state == 1)			//Data call status is Activation
+			{
+//				if(Flags_Struct.WAN_Struct.WAN_IPv4_Started == DOWN)
+//				{
+//					Flags_Struct.WAN_Struct.WAN_IPv4_Started 	= UP;
+//					Flags_Struct.TCP_Struct.TCP_Ready_To_Start 	= UP;
+//				}
+
+//				QL_NW_ERROR_CODE Ret_Signal = ql_nw_get_signal_strength (QL_NW_SIGNAL_STRENGTH_INFO_T *Sig_Strg_Info);
+				printf("<= IP:%s =>\n", payload.v4.addr.ip);
+
+//				printf("<= data_call_info v4: {\n    profile_idx:%d,\n    ip_type:%d,\n    state:%d,\n    ip:%s,\n    name:%s,\n    gateway:%s,\n    pri_dns:%s,\n    sec_dns:%s\n} =>\n",
+//					payload.profile_idx, payload.ip_type, payload.v4.state, payload.v4.addr.ip, payload.v4.addr.name, payload.v4.addr.gateway,
+//					payload.v4.addr.pri_dns, payload.v4.addr.sec_dns);
+
+//				#define QUEC_AT_PORT        "/dev/smd1"
+//				int smd_fd = 0;
+//				smd_fd = open(QUEC_AT_PORT, O_RDWR | O_NONBLOCK | O_NOCTTY);
+//				printf("<= open(\"%s\")=%d =>\n", QUEC_AT_PORT, smd_fd);
+			}
+			else
+			{
+//				Flags_Struct.WAN_Struct.WAN_IPv4_Started 	= DOWN;
+//				Flags_Struct.TCP_Struct.TCP_Ready_To_Start 	= DOWN;
+
+//				ret = ql_wan_release()	;
+//				if(ret!=0)
+//					printf("ql_wan_release - ret:%d", ret);
+//				else
+//					printf("<= WAN RELEASED! =>\n");
+//
+//				ret = ql_wan_init()		;
+//				if(ret!=0)
+//					printf("ql_wan_init - ret:%d", ret);
+//				else
+//					printf("<= WAN INITIALIZED! =>\n");
+
+				WAN_Init();
+
+				ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
+				if(ret!=0)
+					printf("ql_wan_start - ret:%d", ret);
+				else
+					printf("<= WAN STARTED! nw_cb=%d =>\n", nw_cb);
+			}
+		}
+		else
+		{
+			printf("ql_get_data_call_info - ret:%d", ret);
+		}
+		sleep(2);
+	}
+}

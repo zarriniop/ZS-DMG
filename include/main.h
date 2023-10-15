@@ -58,6 +58,8 @@
 #define PDU_BUFFER_SIZE 		1024
 #define WRAPPER_BUFFER_SIZE 	8 + PDU_BUFFER_SIZE
 
+#define RS485_SERIAL_FD 		"/dev/ttyS1"
+#define OPTIC_SERIAL_FD 		"/dev/ttyS2"
 
 /*************************
  * TYPEDEFS & STRUCTURES *
