@@ -20,6 +20,7 @@ src/connection.o: ../src/connection.c ../src/../include/connection.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/../../development/include/ciphering.h \
  /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/DSI_ConnectManager.h \
  /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_nw.h \
+ /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_dev.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/../../development/include/server.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/../../development/include/serverevents.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/../../development/include/dlmssettings.h \
@@ -73,6 +74,8 @@ src/connection.o: ../src/connection.c ../src/../include/connection.h \
 /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/DSI_ConnectManager.h:
 
 /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_nw.h:
+
+/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_dev.h:
 
 /home/mhn/DMGProject/ZS-DMG/development/include/../../development/include/server.h:
 

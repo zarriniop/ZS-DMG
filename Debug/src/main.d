@@ -4,8 +4,6 @@ src/main.o: ../src/main.c /home/mhn/DMGProject/ZS-DMG/include/main.h \
  /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_sms.h \
  /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_sim.h \
  /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_gpio.h \
- /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/uci-2021-04-14-4b3db117/uci.h \
- /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/uci-2021-04-14-4b3db117/uci_config.h \
  /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_uart.h \
  /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_i2c.h \
  /home/mhn/DMGProject/ZS-DMG/include/exampleserver.h \
@@ -38,6 +36,7 @@ src/main.o: ../src/main.c /home/mhn/DMGProject/ZS-DMG/include/main.h \
  /home/mhn/DMGProject/ZS-DMG/include/connection.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/../../development/include/bytebuffer.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/../../development/include/dlmssettings.h \
+ /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_dev.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/cosem.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/gxobjects.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/dlmssettings.h \
@@ -55,10 +54,6 @@ src/main.o: ../src/main.c /home/mhn/DMGProject/ZS-DMG/include/main.h \
 /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_sim.h:
 
 /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_gpio.h:
-
-/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/uci-2021-04-14-4b3db117/uci.h:
-
-/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/uci-2021-04-14-4b3db117/uci_config.h:
 
 /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_uart.h:
 
@@ -123,6 +118,8 @@ src/main.o: ../src/main.c /home/mhn/DMGProject/ZS-DMG/include/main.h \
 /home/mhn/DMGProject/ZS-DMG/development/include/../../development/include/bytebuffer.h:
 
 /home/mhn/DMGProject/ZS-DMG/development/include/../../development/include/dlmssettings.h:
+
+/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_dev.h:
 
 /home/mhn/DMGProject/ZS-DMG/development/include/cosem.h:
 

@@ -125,7 +125,7 @@ static gxData eventobjectfrauddetectionlog;
 static gxData eventobjectcommunicationlog;
 static gxData gprskeepalivetimeinterval;
 static gxData localauthenticationprotection;
-static gxData imei;
+gxData imei;
 
 static gxAssociationLogicalName associationNone;
 static gxAssociationLogicalName associationLow;

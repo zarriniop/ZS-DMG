@@ -36,10 +36,10 @@
 #include <fcntl.h> // File control definitions
 #include <errno.h> // Error number definitions
 
-
 pthread_t Wan_Connection_pthread_var;
 
-extern gxGPRSSetup gprsSetup;
+extern gxGPRSSetup 	gprsSetup	;
+extern gxData 		imei		;
 
 
 //Initialize connection buffers.
@@ -754,6 +754,19 @@ void LTE_Manager_Start (void)
 	int thread_ret = pthread_create(&Wan_Connection_pthread_var	, NULL, WAN_Connection	, NULL);
 }
 
+
+/************************************/
+/*** Network Initialize Function ****/
+/************************************/
+void NW_Init (void)
+{
+	int ret = ql_nw_release();
+	if(ret!=0) printf("ql_nw_release - ret:%d", ret);
+
+	ret = ql_nw_init();
+	if(ret!=0) printf("ql_nw_init - ret:%d", ret);
+}
+
 /************************************/
 /**** WAN Initializing Function *****/
 /************************************/
@@ -773,19 +786,28 @@ void WAN_Init (void)
 /************************************/
 void WAN_Connection (void)
 {
-	QL_DSI_AUTH_PREF_T 			auth			;
-	ql_data_call_info 			payload			;
-	APN_PARAM_STRUCT_TYPEDEF	APN_Param_Struct;
-	nw_status_cb 				nw_cb			;
+	QL_DSI_AUTH_PREF_T 				auth			;
+	ql_data_call_info 				payload			;
+	APN_PARAM_STRUCT_TYPEDEF		APN_Param_Struct;
+	nw_status_cb 					nw_cb			;
+	QL_NW_ERROR_CODE 				Ret_Signal		;
+	QL_NW_SIGNAL_STRENGTH_INFO_T 	Sig_Strg_Info	;
+	QL_NW_ERROR_CODE 				Ret_Cell_Info	;
+	QL_NW_CELL_INFO_T				NW_Cell_Info	;
+	QL_DEV_ERROR_CODE				Ret_Dev			;
+	char 							buf[17]			;
+
+	memset(&Sig_Strg_Info,0,sizeof(QL_NW_SIGNAL_STRENGTH_INFO_T));
 
 	APN_Param_Struct.op = START_A_DATA_CALL							;
 	APN_Param_Struct.apn = &gprsSetup.apn.data						;
-//	sprintf(APN_Param_Struct.apn, "mtnirancell")					;
+	sprintf(APN_Param_Struct.apn, "mtnirancell")					;
 	printf("<= WAN Connection - APN:%s =>\n", APN_Param_Struct.apn)	;
 
 	APN_Param_Struct.profile_idx 	= 1		;
 	APN_Param_Struct.ip_type		= IPV4V6;
 
+	NW_Init ();
 	WAN_Init ();
 
 	int ret = ql_wan_setapn(APN_Param_Struct.profile_idx, APN_Param_Struct.ip_type, APN_Param_Struct.apn, &APN_Param_Struct.userName, &APN_Param_Struct.password, auth);
@@ -807,6 +829,10 @@ void WAN_Connection (void)
 	ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
 	if(ret!=0) printf("ql_wan_start-ret:%d", ret);
 
+	Ret_Dev = ql_dev_get_imei(&buf)		;
+    var_setString(&imei.value, buf, 17)	;
+    printf("Ret_Dev:%d - IMEI:%s\n", Ret_Dev, buf);
+
 	while(1)
 	{
 		ret = ql_get_data_call_info(APN_Param_Struct.profile_idx, &payload);
@@ -821,8 +847,10 @@ void WAN_Connection (void)
 //					Flags_Struct.TCP_Struct.TCP_Ready_To_Start 	= UP;
 //				}
 
-//				QL_NW_ERROR_CODE Ret_Signal = ql_nw_get_signal_strength (QL_NW_SIGNAL_STRENGTH_INFO_T *Sig_Strg_Info);
-				printf("<= IP:%s =>\n", payload.v4.addr.ip);
+				Ret_Signal 		= ql_nw_get_signal_strength (&Sig_Strg_Info);
+				Ret_Cell_Info 	= ql_nw_get_cell_info		(&NW_Cell_Info)	;
+
+				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
 
 //				printf("<= data_call_info v4: {\n    profile_idx:%d,\n    ip_type:%d,\n    state:%d,\n    ip:%s,\n    name:%s,\n    gateway:%s,\n    pri_dns:%s,\n    sec_dns:%s\n} =>\n",
 //					payload.profile_idx, payload.ip_type, payload.v4.state, payload.v4.addr.ip, payload.v4.addr.name, payload.v4.addr.gateway,

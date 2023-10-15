@@ -21,6 +21,7 @@ src/exampleserver.o: ../src/exampleserver.c \
  /home/mhn/DMGProject/ZS-DMG/development/include/../../development/include/ciphering.h \
  /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/DSI_ConnectManager.h \
  /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_nw.h \
+ /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_dev.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/../../development/include/converters.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/../../development/include/helpers.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/../../development/include/date.h \
@@ -91,6 +92,8 @@ src/exampleserver.o: ../src/exampleserver.c \
 /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/DSI_ConnectManager.h:
 
 /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_nw.h:
+
+/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_dev.h:
 
 /home/mhn/DMGProject/ZS-DMG/development/include/../../development/include/converters.h:
 

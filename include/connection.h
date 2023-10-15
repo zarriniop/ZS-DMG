@@ -25,6 +25,7 @@
 #include <pthread.h>
 #include "DSI_ConnectManager.h"
 #include "ql_nw.h"
+#include "ql_dev.h"
 
 static const unsigned int RECEIVE_BUFFER_SIZE = 200;
 

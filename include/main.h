@@ -29,7 +29,6 @@
 #include "ql_sim.h"
 #include <string.h>
 #include <ql_gpio.h>
-#include <uci.h>
 #include <pthread.h>
 #include <bits/alltypes.h>
 #include <arpa/inet.h>
