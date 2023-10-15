@@ -126,6 +126,8 @@ int main(int argc, char* argv[])
 
     startServers(port, GX_TRACE_LEVEL_INFO);
     return 0;
+    //bye bye
+    //:)
 }
 
 
