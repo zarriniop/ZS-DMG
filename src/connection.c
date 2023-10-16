@@ -406,9 +406,9 @@ void TCP_Connection_Client (void)
 	while(1)
 	{
 		con->socket = socket(AF_INET, SOCK_STREAM, 0);
-		if (TCP_Param_Struct.tcp_client_sockfd < 0)
+		if (con->socket < 0)
 		{
-			printf("Error - tcp_client_sockfd - ret = %d \n", TCP_Param_Struct.tcp_client_sockfd);
+			printf("Error - tcp_client_sockfd - ret = %d \n", con->socket);
 		}
 		else
 		{
