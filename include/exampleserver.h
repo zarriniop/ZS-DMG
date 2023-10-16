@@ -18,7 +18,8 @@
 
 
 #include "../../development/include/server.h"
-
+#include <unistd.h>
+#include <fcntl.h>
 #include "connection.h"
 char DATAFILE[FILENAME_MAX];
 char IMAGEFILE[FILENAME_MAX];
