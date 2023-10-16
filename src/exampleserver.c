@@ -2460,7 +2460,7 @@ int svr_InitObjects(
         return ret;
     }
     updateState(&settings->base, GURUX_EVENT_CODES_POWER_UP);
-    GXTRACE(("Meter started."), NULL);
+//    GXTRACE(("Meter started."), NULL);
     return 0;
 }
 
@@ -2577,18 +2577,8 @@ int svr_start(
     {
         return ret;
     }
-    if (con->settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
-    {
-        con->settings.hdlc = &hdlc;
-    }
-    else if (con->settings.base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
-    {
-        con->settings.wrapper = &udpSetup;
-    }
-    else
-    {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
+
+	con->settings.wrapper = &udpSetup;
 
     ///////////////////////////////////////////////////////////////////////
     // Server must initialize after all objects are added.
