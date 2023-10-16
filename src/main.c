@@ -26,10 +26,12 @@ unsigned char ln47frameBuff	[WRAPPER_BUFFER_SIZE]					;
 unsigned char ln47pduBuff	[PDU_BUFFER_SIZE]						;
 
 
+extern gxData 		imei		;
+
+
 /********************
  *	pthread Param	*
  ********************/
-
 
 /********************************************|
 |*				  Functions					*|

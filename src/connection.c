@@ -755,6 +755,17 @@ void LTE_Manager_Start (void)
 }
 
 
+void IMEI_Get (void)
+{
+	QL_DEV_ERROR_CODE				Ret_Dev					;
+	char 							imei_buf[17]={0}		;
+	int ret_dev_init = ql_dev_init()						;
+	Ret_Dev = ql_dev_get_imei(&imei_buf)					;
+	var_setString(&imei.value, imei_buf, 17)				;
+	printf("Ret - Init:%d - get imei:%d - strlen:%d - IMEI:%s\n", ret_dev_init, Ret_Dev, strlen(imei_buf), imei_buf);
+}
+
+
 /************************************/
 /*** Network Initialize Function ****/
 /************************************/
@@ -794,8 +805,6 @@ void WAN_Connection (void)
 	QL_NW_SIGNAL_STRENGTH_INFO_T 	Sig_Strg_Info	;
 	QL_NW_ERROR_CODE 				Ret_Cell_Info	;
 	QL_NW_CELL_INFO_T				NW_Cell_Info	;
-	QL_DEV_ERROR_CODE				Ret_Dev			;
-	char 							buf[17]			;
 
 	memset(&Sig_Strg_Info,0,sizeof(QL_NW_SIGNAL_STRENGTH_INFO_T));
 
@@ -829,9 +838,7 @@ void WAN_Connection (void)
 	ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
 	if(ret!=0) printf("ql_wan_start-ret:%d", ret);
 
-	Ret_Dev = ql_dev_get_imei(&buf)		;
-    var_setString(&imei.value, buf, 17)	;
-    printf("Ret_Dev:%d - IMEI:%s\n", Ret_Dev, buf);
+	IMEI_Get();
 
 	while(1)
 	{
