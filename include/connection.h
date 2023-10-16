@@ -164,7 +164,25 @@ int con_close(
 
 // void report(char *format, ... );
 
+void Initialize (void);
+
+
 void LTE_Manager_Start (void);
+
+
+void IMEI_Get (void);
+
+
+void Sim_Init (void);
+
+
+void ICCID_Get (void);
+
+
+void Device_Init (void);
+
+
+void NW_Init (void);
 
 
 void WAN_Init (void);

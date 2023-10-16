@@ -40,6 +40,7 @@ pthread_t Wan_Connection_pthread_var;
 
 extern gxGPRSSetup 	gprsSetup	;
 extern gxData 		imei		;
+extern gxData 		deviceid6	;
 
 
 //Initialize connection buffers.
@@ -749,28 +750,91 @@ int con_close(
 // }
 
 
+void Initialize (void)
+{
+	printf("Initialize\n");
+	Device_Init	()	;
+	Sim_Init	()	;
+	NW_Init		()	;
+	WAN_Init	()	;
+}
+
+
 void LTE_Manager_Start (void)
 {
+	printf("LTE_Manager_Start\n");
+	Initialize();
 	int thread_ret = pthread_create(&Wan_Connection_pthread_var	, NULL, WAN_Connection	, NULL);
+	IMEI_Get();
+	ICCID_Get();
 }
 
 
 void IMEI_Get (void)
 {
+	printf("IMEI_Get\n");
 	QL_DEV_ERROR_CODE				Ret_Dev					;
-	char 							imei_buf[17]={0}		;
-	int ret_dev_init = ql_dev_init()						;
+	char 							imei_buf[20]={0}		;
 	Ret_Dev = ql_dev_get_imei(&imei_buf)					;
-	var_setString(&imei.value, imei_buf, 17)				;
-	printf("Ret - Init:%d - get imei:%d - strlen:%d - IMEI:%s\n", ret_dev_init, Ret_Dev, strlen(imei_buf), imei_buf);
+	var_setString(&imei.value, imei_buf, 20)				;
+	printf("Ret - get imei:%d - strlen:%d - IMEI:%s\n", Ret_Dev, strlen(imei_buf), imei_buf);
 }
 
+
+void Sim_Init (void)
+{
+	printf("Sim_Init\n");
+
+	int ret = 0;
+
+	ret = ql_sim_release()	;
+	ret = ql_sim_init()		;
+
+	if (ret)
+	{
+		printf("!ERROR! - SIMCARD INITIALIZING - RET:%d\n", ret);
+	}
+	else
+	{
+		printf("SIMCARD INITIALIZE DONE\n");
+	}
+}
+
+
+void ICCID_Get (void)
+{
+	printf("ICCID_Get\n");
+	char* ICCID_pointer;
+    char iccid[32]={0};
+    int ret = ql_sim_get_iccid(iccid,32);
+//    ICCID_pointer = & deviceid6.value.bVal;
+//    sprintf(ICCID_pointer, iccid, strlen(iccid));
+    var_setString(&deviceid6.value, iccid, 32);
+    printf("ICCID - RET:%d , iccid:%s\n", ret, iccid);
+}
+
+
+void Device_Init (void)
+{
+	printf("Device_Init\n");
+	int ret = ql_dev_init();
+
+	if(ret)
+	{
+		printf("!ERROR! INITIALIZE DEVICE - RET:%d\n", ret);
+	}
+	else
+	{
+		printf("DEVICE INITIALIZE DONE\n");
+	}
+}
 
 /************************************/
 /*** Network Initialize Function ****/
 /************************************/
 void NW_Init (void)
 {
+	printf("NW_Init\n");
 	int ret = ql_nw_release();
 	if(ret!=0) printf("ql_nw_release - ret:%d", ret);
 
@@ -783,6 +847,7 @@ void NW_Init (void)
 /************************************/
 void WAN_Init (void)
 {
+	printf("WAN_Init\n");
 	int ret = ql_wan_release()	;
 	if(ret!=0) printf("!Error! ql_wan_release - ret:%d\n", ret);
 
@@ -797,6 +862,7 @@ void WAN_Init (void)
 /************************************/
 void WAN_Connection (void)
 {
+	printf("WAN_Connection\n");
 	QL_DSI_AUTH_PREF_T 				auth			;
 	ql_data_call_info 				payload			;
 	APN_PARAM_STRUCT_TYPEDEF		APN_Param_Struct;
@@ -816,8 +882,6 @@ void WAN_Connection (void)
 	APN_Param_Struct.profile_idx 	= 1		;
 	APN_Param_Struct.ip_type		= IPV4V6;
 
-	NW_Init ();
-	WAN_Init ();
 
 	int ret = ql_wan_setapn(APN_Param_Struct.profile_idx, APN_Param_Struct.ip_type, APN_Param_Struct.apn, &APN_Param_Struct.userName, &APN_Param_Struct.password, auth);
 	if(ret!=0) printf("ql_wan_setapn - ret:%d", ret);
@@ -838,7 +902,6 @@ void WAN_Connection (void)
 	ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
 	if(ret!=0) printf("ql_wan_start-ret:%d", ret);
 
-	IMEI_Get();
 
 	while(1)
 	{

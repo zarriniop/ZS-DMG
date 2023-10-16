@@ -70,7 +70,7 @@
  ***********************/
 int startServers(int port, int trace);
 
-
+void Svr_Monitor (void);
 
 
 

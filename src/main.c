@@ -25,9 +25,7 @@ unsigned char lnpduBuff		[PDU_BUFFER_SIZE]						;
 unsigned char ln47frameBuff	[WRAPPER_BUFFER_SIZE]					;
 unsigned char ln47pduBuff	[PDU_BUFFER_SIZE]						;
 
-
-extern gxData 		imei		;
-
+connection lnWrapper , lniec , rs485;
 
 /********************
  *	pthread Param	*
@@ -43,8 +41,6 @@ extern gxData 		imei		;
 int startServers(int port, int trace)
 {
     int ret;
-
-    connection lnWrapper , lniec , rs485;
 
    //Initialize DLMS settings.
     svr_init(&lnWrapper.settings, 1, DLMS_INTERFACE_TYPE_WRAPPER, WRAPPER_BUFFER_SIZE, PDU_BUFFER_SIZE, ln47frameBuff, WRAPPER_BUFFER_SIZE, ln47pduBuff, PDU_BUFFER_SIZE);
@@ -83,6 +79,13 @@ int startServers(int port, int trace)
 
     lnWrapper.trace =lniec.trace = rs485.trace = trace;
 
+    return 0;
+}
+
+
+void Svr_Monitor (void)
+{
+	int ret;
     uint32_t lastMonitor = 0;
     while (1)
     {
@@ -102,7 +105,6 @@ int startServers(int port, int trace)
     }
     con_close(&lnWrapper);
     con_close(&lniec);
-    return 0;
 }
 
 /************************************/
@@ -124,9 +126,12 @@ int main(int argc, char* argv[])
     FILE* f = fopen(TRACEFILE, "w");
     fclose(f);
 
+    startServers(port, GX_TRACE_LEVEL_INFO);
+
     LTE_Manager_Start();
 
-    startServers(port, GX_TRACE_LEVEL_INFO);
+    Svr_Monitor();
+
     return 0;
 }
 
