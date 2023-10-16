@@ -113,7 +113,9 @@ static gxData unixTime;
 static gxData invocationCounter;
 static gxData activefirmwareid2;
 static gxData activefirmwaresignature2;
-static gxData deviceid1, deviceid2, deviceid3, deviceid4, deviceid5, deviceid6, deviceid7;
+//static gxData deviceid1, deviceid2, deviceid3, deviceid4, deviceid5, deviceid6, deviceid7;
+static gxData deviceid1, deviceid2, deviceid3, deviceid4, deviceid5, deviceid7;
+gxData deviceid6;
 static gxData errorregister;
 static gxData unreadlogfilesstatusregister;
 static gxData alarmregister1;
@@ -125,7 +127,7 @@ static gxData eventobjectfrauddetectionlog;
 static gxData eventobjectcommunicationlog;
 static gxData gprskeepalivetimeinterval;
 static gxData localauthenticationprotection;
-static gxData imei;
+gxData imei;
 
 static gxAssociationLogicalName associationNone;
 static gxAssociationLogicalName associationLow;
@@ -2458,7 +2460,7 @@ int svr_InitObjects(
         return ret;
     }
     updateState(&settings->base, GURUX_EVENT_CODES_POWER_UP);
-    GXTRACE(("Meter started."), NULL);
+//    GXTRACE(("Meter started."), NULL);
     return 0;
 }
 
@@ -2575,18 +2577,8 @@ int svr_start(
     {
         return ret;
     }
-    if (con->settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
-    {
-        con->settings.hdlc = &hdlc;
-    }
-    else if (con->settings.base.interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
-    {
-        con->settings.wrapper = &udpSetup;
-    }
-    else
-    {
-        return DLMS_ERROR_CODE_INVALID_PARAMETER;
-    }
+
+	con->settings.wrapper = &udpSetup;
 
     ///////////////////////////////////////////////////////////////////////
     // Server must initialize after all objects are added.
@@ -3002,7 +2994,7 @@ void svr_preRead(
         {
             return;
         }
-        GXTRACE_LN(("svr_preRead123: "), e->target->objectType, e->target->logicalName);
+//        GXTRACE_LN(("svr_preRead123: "), e->target->objectType, e->target->logicalName);
         // Let framework handle Logical Name read.
         if (e->index == 1)
         {
@@ -3422,7 +3414,7 @@ void svr_postRead(
         {
             return;
         }
-        GXTRACE_LN(("svr_postRead321: "), e->target->objectType, e->target->logicalName);
+//        GXTRACE_LN(("svr_postRead321: "), e->target->objectType, e->target->logicalName);
     }
 }
 /////////////////////////////////////////////////////////////////////////////

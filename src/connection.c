@@ -36,6 +36,13 @@
 #include <fcntl.h> // File control definitions
 #include <errno.h> // Error number definitions
 
+pthread_t Wan_Connection_pthread_var;
+
+extern gxGPRSSetup 	gprsSetup	;
+extern gxData 		imei		;
+extern gxData 		deviceid6	;
+
+
 //Initialize connection buffers.
 void con_initializeBuffers(connection * connection, int size)
 {
@@ -84,7 +91,7 @@ void appendLog(unsigned char send, gxByteBuffer* reply)
 uint16_t GetLinuxBaudRate(uint32_t baudRate)
 {
     uint16_t br;
-    printf("baudRate in GetLinuxBaudRate = %d\n",baudRate);
+//    printf("baudRate in GetLinuxBaudRate = %d\n",baudRate);
     switch (baudRate) {
     case 110:
         br = B110;
@@ -200,7 +207,7 @@ int com_initializeSerialPort(connection* con,
         return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     }
     uint32_t baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
-    printf("baudRate = %d\n",baudRate);
+//    printf("baudRate = %d\n",baudRate);
 
     return com_updateSerialportSettings(con,iec, baudRate);
 }
@@ -359,35 +366,85 @@ int svr_listen(
     bb_init(&con->data);
     bb_capacity(&con->data, 50);
 
-    con->socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (!isConnected(con))
-    {
-        //socket creation.
-        return -1;
-    }
-    if (setsockopt(con->socket, SOL_SOCKET, SO_REUSEADDR, (char*)& fFlag, sizeof(fFlag)) == -1)
-    {
-        //setsockopt.
-        return -1;
-    }
-    add.sin_port = htons(port);
-    add.sin_addr.s_addr = htonl(INADDR_ANY);
-    add.sin_family = AF_INET;
-    if ((ret = bind(con->socket, (struct sockaddr*) & add, sizeof(add))) == -1)
-    {
-        //bind;
-        return -1;
-    }
-    if ((ret = listen(con->socket, 1)) == -1)
-    {
-        //socket listen failed.
-        return -1;
-    }
+//    con->socket = socket(AF_INET, SOCK_STREAM, 0);
+//    if (!isConnected(con))
+//    {
+//        //socket creation.
+//        return -1;
+//    }
+//    if (setsockopt(con->socket, SOL_SOCKET, SO_REUSEADDR, (char*)& fFlag, sizeof(fFlag)) == -1)
+//    {
+//        //setsockopt.
+//        return -1;
+//    }
+//    add.sin_port = htons(port);
+//    add.sin_addr.s_addr = htonl(INADDR_ANY);
+//    add.sin_family = AF_INET;
+//    if ((ret = bind(con->socket, (struct sockaddr*) & add, sizeof(add))) == -1)
+//    {
+//        //bind;
+//        return -1;
+//    }
+//    if ((ret = listen(con->socket, 1)) == -1)
+//    {
+//        //socket listen failed.
+//        return -1;
+//    }
+
+
 
     ret = pthread_create(&con->receiverThread, NULL, UnixListenerThread, (void*)con);
     return ret;
 }
 
+
+void TCP_Connection_Client (void)
+{
+	connection* con;
+
+	int TCP_Connection_Ret;
+	while(1)
+	{
+		con->socket = socket(AF_INET, SOCK_STREAM, 0);
+		if (TCP_Param_Struct.tcp_client_sockfd < 0)
+		{
+			printf("Error - tcp_client_sockfd - ret = %d \n", TCP_Param_Struct.tcp_client_sockfd);
+		}
+		else
+		{
+			do
+			{
+				TCP_Param_Struct.Server_Port = 4061;
+				strcpy(TCP_Param_Struct.Server_IP, "127.0.0.1");
+
+				uint8_t ret = inet_aton(TCP_Param_Struct.Server_IP, &TCP_Param_Struct.Dest.sin_addr.s_addr);
+
+				TCP_Param_Struct.Dest.sin_family 	= AF_INET;
+				TCP_Param_Struct.Dest.sin_port		= htons(TCP_Param_Struct.Server_Port);
+
+				TCP_Connection_Ret = connect(TCP_Param_Struct.tcp_client_sockfd, &TCP_Param_Struct.Dest, sizeof(TCP_Param_Struct.Dest));
+				if (!TCP_Connection_Ret)
+				{
+					TCP_Struct_Connected = 1;
+					TCP_Param_Struct.RX_Size = 0;
+					printf("<=\n\tTCP Connected\n\t\tRet:%d\n\t\tS-IP:%s\n\t\tS-Port:%d\n=>\n", TCP_Connection_Ret, TCP_Param_Struct.Server_IP, TCP_Param_Struct.Server_Port);
+				}
+				else
+				{
+					TCP_Struct_Connected = 0;
+					printf("Error - TCP_Connection_Ret - ret = %d \n", TCP_Connection_Ret);
+				}
+
+				sleep(1);
+			}
+			while(TCP_Connection_Ret);
+		}
+
+//			Flags_Struct.TCP_Struct.TCP_Ready_To_Start = DOWN;
+		break;
+		sleep(1);
+	}
+}
 
 void* UnixSerialPortThread(void* pVoid)
 {
@@ -741,3 +798,207 @@ int con_close(
 // 	std::system(str1);
 // #endif
 // }
+
+
+void Initialize (void)
+{
+	Device_Init	()	;
+	Sim_Init	()	;
+	NW_Init		()	;
+	WAN_Init	()	;
+}
+
+
+void LTE_Manager_Start (void)
+{
+	Initialize();
+	int thread_ret = pthread_create(&Wan_Connection_pthread_var	, NULL, WAN_Connection	, NULL);
+	IMEI_Get();
+	ICCID_Get();
+}
+
+
+void IMEI_Get (void)
+{
+	QL_DEV_ERROR_CODE				Ret_Dev					;
+	char 							imei_buf[20]={0}		;
+	Ret_Dev = ql_dev_get_imei(&imei_buf)					;
+	var_setString(&imei.value, imei_buf, 20)				;
+//	printf("Ret - get imei:%d - strlen:%d - IMEI:%s\n", Ret_Dev, strlen(imei_buf), imei_buf);
+}
+
+
+void Sim_Init (void)
+{
+	int ret = 0;
+
+	ret = ql_sim_release()	;
+	ret = ql_sim_init()		;
+
+	if (ret)
+	{
+		printf("!ERROR! - SIMCARD INITIALIZING - RET:%d\n", ret);
+	}
+//	else
+//	{
+//		printf("SIMCARD INITIALIZE DONE\n");
+//	}
+}
+
+
+void ICCID_Get (void)
+{
+	char* ICCID_pointer;
+    char iccid[32]={0};
+    int ret = ql_sim_get_iccid(iccid,32);
+    var_setString(&deviceid6.value, iccid, 32);
+//    printf("ICCID - RET:%d , iccid:%s\n", ret, iccid);
+}
+
+
+void Device_Init (void)
+{
+	int ret = ql_dev_init();
+
+	if(ret)
+	{
+		printf("!ERROR! INITIALIZE DEVICE - RET:%d\n", ret);
+	}
+//	else
+//	{
+//		printf("DEVICE INITIALIZE DONE\n");
+//	}
+}
+
+/************************************/
+/*** Network Initialize Function ****/
+/************************************/
+void NW_Init (void)
+{
+	int ret = ql_nw_release();
+	if(ret!=0) printf("!ERROR! ql_nw_release - ret:%d", ret);
+
+	ret = ql_nw_init();
+	if(ret!=0) printf("!ERROR! ql_nw_init - ret:%d", ret);
+}
+
+/************************************/
+/**** WAN Initializing Function *****/
+/************************************/
+void WAN_Init (void)
+{
+	int ret = ql_wan_release()	;
+	if(ret!=0) printf("!Error! ql_wan_release - ret:%d\n", ret);
+
+	ret = ql_wan_init()		;
+	if(ret!=0) printf("!Error! ql_wan_init - ret:%d\n", ret);
+
+//	printf("<= WAN Initialization: DONE! =>\n");
+}
+
+/************************************/
+/***** WAN Connection Function ******/
+/************************************/
+void WAN_Connection (void)
+{
+	QL_DSI_AUTH_PREF_T 				auth			;
+	ql_data_call_info 				payload			;
+	APN_PARAM_STRUCT_TYPEDEF		APN_Param_Struct;
+	nw_status_cb 					nw_cb			;
+	QL_NW_ERROR_CODE 				Ret_Signal		;
+	QL_NW_SIGNAL_STRENGTH_INFO_T 	Sig_Strg_Info	;
+	QL_NW_ERROR_CODE 				Ret_Cell_Info	;
+	QL_NW_CELL_INFO_T				NW_Cell_Info	;
+
+	memset(&Sig_Strg_Info,0,sizeof(QL_NW_SIGNAL_STRENGTH_INFO_T));
+
+	APN_Param_Struct.op = START_A_DATA_CALL							;
+	APN_Param_Struct.apn = &gprsSetup.apn.data						;
+	sprintf(APN_Param_Struct.apn, "mtnirancell")					;
+//	printf("<= WAN Connection - APN:%s =>\n", APN_Param_Struct.apn)	;
+
+	APN_Param_Struct.profile_idx 	= 1		;
+	APN_Param_Struct.ip_type		= IPV4V6;
+
+
+	int ret = ql_wan_setapn(APN_Param_Struct.profile_idx, APN_Param_Struct.ip_type, APN_Param_Struct.apn, &APN_Param_Struct.userName, &APN_Param_Struct.password, auth);
+//	if(ret!=0) printf("ql_wan_setapn - ret:%d", ret);
+
+	int 	ip_type_get 	= 0	;
+    char 	apn_get[128]	={0};
+    char 	userName_get[64]={0};
+    char 	password_get[64]={0};
+
+    ret = ql_wan_getapn(APN_Param_Struct.profile_idx, &ip_type_get, apn_get, sizeof(apn_get), userName_get, sizeof(userName_get), password_get, sizeof(password_get));
+	if(ret!=0) printf("!ERROR! ql_wan_getapn - ret:%d", ret);
+//	else
+//	{
+//		printf("<= APN SET:%s =>\n", apn_get);
+//	}
+
+
+	ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
+//	if(ret!=0) printf("ql_wan_start-ret:%d", ret);
+
+
+	while(1)
+	{
+		ret = ql_get_data_call_info(APN_Param_Struct.profile_idx, &payload);
+
+		if (ret == 0)
+		{
+			if (payload.v4.state == 1)			//Data call status is Activation
+			{
+//				if(Flags_Struct.WAN_Struct.WAN_IPv4_Started == DOWN)
+//				{
+//					Flags_Struct.WAN_Struct.WAN_IPv4_Started 	= UP;
+//					Flags_Struct.TCP_Struct.TCP_Ready_To_Start 	= UP;
+//				}
+
+				Ret_Signal 		= ql_nw_get_signal_strength (&Sig_Strg_Info);
+				Ret_Cell_Info 	= ql_nw_get_cell_info		(&NW_Cell_Info)	;
+
+//				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
+
+//				printf("<= data_call_info v4: {\n    profile_idx:%d,\n    ip_type:%d,\n    state:%d,\n    ip:%s,\n    name:%s,\n    gateway:%s,\n    pri_dns:%s,\n    sec_dns:%s\n} =>\n",
+//					payload.profile_idx, payload.ip_type, payload.v4.state, payload.v4.addr.ip, payload.v4.addr.name, payload.v4.addr.gateway,
+//					payload.v4.addr.pri_dns, payload.v4.addr.sec_dns);
+
+//				#define QUEC_AT_PORT        "/dev/smd1"
+//				int smd_fd = 0;
+//				smd_fd = open(QUEC_AT_PORT, O_RDWR | O_NONBLOCK | O_NOCTTY);
+//				printf("<= open(\"%s\")=%d =>\n", QUEC_AT_PORT, smd_fd);
+			}
+			else
+			{
+//				Flags_Struct.WAN_Struct.WAN_IPv4_Started 	= DOWN;
+//				Flags_Struct.TCP_Struct.TCP_Ready_To_Start 	= DOWN;
+
+//				ret = ql_wan_release()	;
+//				if(ret!=0)
+//					printf("ql_wan_release - ret:%d", ret);
+//				else
+//					printf("<= WAN RELEASED! =>\n");
+//
+//				ret = ql_wan_init()		;
+//				if(ret!=0)
+//					printf("ql_wan_init - ret:%d", ret);
+//				else
+//					printf("<= WAN INITIALIZED! =>\n");
+
+				WAN_Init();
+
+				ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
+				if(ret!=0)
+					printf("!ERROR! ql_wan_start - ret:%d", ret);
+//				else
+//					printf("<= WAN STARTED! nw_cb=%d =>\n", nw_cb);
+			}
+		}
+		else
+		{
+			printf("!ERROR! ql_get_data_call_info - ret:%d", ret);
+		}
+		sleep(2);
+	}
+}
