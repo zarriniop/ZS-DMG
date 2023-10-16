@@ -2196,13 +2196,35 @@ int svr_InitObjects(
 
     // Device ID 1
 
-    {
-        const unsigned char ln[6] = {0, 0, 96, 1, 0, 255};
-        INIT_OBJECT(deviceid1, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[8];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid1.value, buf, 8);
-    }
+        {
+            const unsigned char ln[6] = {0, 0, 96, 1, 0, 255};
+            INIT_OBJECT(deviceid1, DLMS_OBJECT_TYPE_DATA, ln);
+            const char *filename2 = "/serial.txt";
+            char buffer[100];
+
+            // Open the file for reading
+            int fd = open(filename2, O_RDONLY);
+
+            if (fd == -1) {
+                perror("Error opening file");
+                return 1;
+            }
+
+            // Read data from the file
+            ssize_t bytes_read = read(fd, buffer, sizeof(buffer));
+            printf("salam");
+            printf("buffer = %s\n",buffer);
+
+
+    //        system("cd /");
+    //        system("read serial.txt");
+
+
+            // char buf[8];
+            // sprintf(buf, "0\n");
+            // var_setString(&deviceid1.value, buf, 8);
+        }
+
 
     // Device ID 2
     {
