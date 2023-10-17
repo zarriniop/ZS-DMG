@@ -41,7 +41,8 @@ src/main.o: ../src/main.c /home/mhn/DMGProject/ZS-DMG/include/main.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/gxobjects.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/dlmssettings.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/gxaes.h \
- /home/mhn/DMGProject/ZS-DMG/development/include/gxignore.h
+ /home/mhn/DMGProject/ZS-DMG/development/include/gxignore.h \
+ /home/mhn/DMGProject/ZS-DMG/include/DLMS_Gateway.h
 
 /home/mhn/DMGProject/ZS-DMG/include/main.h:
 
@@ -130,3 +131,5 @@ src/main.o: ../src/main.c /home/mhn/DMGProject/ZS-DMG/include/main.h \
 /home/mhn/DMGProject/ZS-DMG/development/include/gxaes.h:
 
 /home/mhn/DMGProject/ZS-DMG/development/include/gxignore.h:
+
+/home/mhn/DMGProject/ZS-DMG/include/DLMS_Gateway.h:

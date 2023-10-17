@@ -4,16 +4,19 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../src/DLMS_Gateway.c \
 ../src/connection.c \
 ../src/exampleserver.c \
 ../src/main.c 
 
 OBJS += \
+./src/DLMS_Gateway.o \
 ./src/connection.o \
 ./src/exampleserver.o \
 ./src/main.o 
 
 C_DEPS += \
+./src/DLMS_Gateway.d \
 ./src/connection.d \
 ./src/exampleserver.d \
 ./src/main.d 

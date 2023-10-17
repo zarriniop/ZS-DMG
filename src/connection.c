@@ -232,7 +232,7 @@ void Socket_Receive_Thread(void* pVoid)
         if (con->socket.Status.Connected == true)
         {
 			//If client is left wait for next client.
-			if ((ret = recv(con->socket.Socket_fd, con->buffer.RX + con->buffer.RX_Count, 2048, 0)) <= 0)
+//			if ((ret = recv(con->socket.Socket_fd, con->buffer.RX + con->buffer.RX_Count, 2048, 0)) <= 0)
 			{
 				//Notify error.
 				printf(".............RECEIVE - RET:%d\n", ret);
@@ -241,7 +241,9 @@ void Socket_Receive_Thread(void* pVoid)
 			}
 
 //			memcpy((char*) bb.data + bb.size, con->buffer.RX + con->buffer.RX_Count, ret);
-			bb_attach(&bb, con->buffer.RX, ret, 2048);
+//			bb_attach(&bb, con->buffer.RX, ret, 2048);
+//			bb_attachString2(&bb, &con->buffer.RX, ret, 2048);
+			bb_insert(con->buffer.RX, ret, &bb, 0);
 			con->buffer.RX_Count += ret;
 //			bb.size = bb.size + ret;
 			printf("receive from server = %s\n",&bb.data);
@@ -333,7 +335,7 @@ int Socket_Connection_Start(connection* con)
     con->socket.Status.Connected 	= false;
     con->socket.Status.Opened 		= true;
 
-    con->socket.Parameters.PORT = 30142;
+    con->socket.Parameters.PORT = 30146;
     sprintf(con->socket.Parameters.IP, "109.125.142.200");
     ret = pthread_create(&con->receiverThread, 	NULL, Socket_Receive_Thread	, (void*)con);
     ret = pthread_create(&con->sendThread, 		NULL, Socket_Send_Thread	, (void*)con);

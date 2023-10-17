@@ -46,6 +46,7 @@
 #include "cosem.h"
 #include "gxaes.h"
 
+#include "DLMS_Gateway.h"
 
 /***********
  * DEFINES *
