@@ -68,9 +68,9 @@
 /***********************
  * FUNCTION PROTOTYPES *
  ***********************/
-int startServers(int port, int trace);
+int Servers_Start(int trace);
 
-void Svr_Monitor (void);
+void Servers_Monitor (void);
 
 
 

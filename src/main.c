@@ -36,9 +36,9 @@ connection lnWrapper , lniec , rs485;
 |********************************************/
 
 /***********************************************/
-/********** HAJIAN - startServers ***********/
+/********** HAJIAN - Servers_Start ***********/
 /***********************************************/
-int startServers(int port, int trace)
+int Servers_Start(int trace)
 {
     int ret;
 
@@ -60,7 +60,7 @@ int startServers(int port, int trace)
     svr_InitObjects(&lniec.settings);
 
     //Start server
-    if ((ret = svr_start(&lnWrapper, port)) != 0)
+    if ((ret = svr_start(&lnWrapper)) != 0)
     {
         return ret;
     }
@@ -83,7 +83,7 @@ int startServers(int port, int trace)
 }
 
 
-void Svr_Monitor (void)
+void Servers_Monitor (void)
 {
 	int ret;
     uint32_t lastMonitor = 0;
@@ -112,7 +112,6 @@ void Svr_Monitor (void)
 /************************************/
 int main(int argc, char* argv[])
 {
-    int  port = 4060;
     strcpy(DATAFILE, argv[0]);
 
     char* p = strrchr(DATAFILE, '/');
@@ -126,11 +125,11 @@ int main(int argc, char* argv[])
     FILE* f = fopen(TRACEFILE, "w");
     fclose(f);
 
-    startServers(port, GX_TRACE_LEVEL_INFO);
+    Servers_Start(GX_TRACE_LEVEL_INFO);
 
     LTE_Manager_Start();
 
-    Svr_Monitor();
+    Servers_Monitor();
 
 //    while(1)
 //    {

@@ -25,12 +25,7 @@ char IMAGEFILE[FILENAME_MAX];
 char TRACEFILE[FILENAME_MAX];
 void println(char* desc, gxByteBuffer* data);
 
-int svr_start(
-    connection *con,
-    unsigned short port);
-
-int svr_start_TCP(
-    connection *con);
+int svr_start(connection *con);
 
 int svr_start_Serial(
     connection *con,

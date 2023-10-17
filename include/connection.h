@@ -33,6 +33,11 @@ static const unsigned int RECEIVE_BUFFER_SIZE = 200;
 extern "C" {
 #endif
 
+
+#define true 	1
+#define false 	0
+
+
 static uint32_t Boudrate[]={ 300 , 600 , 1200 , 2400 , 4800 , 9600 , 19200 , 38400 , 57600 , 115200 };
 
 typedef enum
@@ -50,6 +55,11 @@ typedef enum
 	IPV6	= 2
 }IP_TYPE;
 
+typedef enum {
+	TCP		=2,
+	UDP		=1
+}SocketType;
+
 typedef struct
 {
     unsigned char TX[2048];
@@ -58,17 +68,43 @@ typedef struct
     uint32_t RX_Count;
 } Buffer;
 
+typedef struct {
+	char		Connected;
+	char		Opened;
+	char		Valid;
+}SocktStatus;
+
+typedef struct {
+	unsigned char	IP[16];
+	uint16_t		PORT;
+	SocketType		Type;
+}SocktParameters;
+
+typedef struct{
+	SocktParameters		Parameters;
+	SocktStatus			Status;
+	int					Socket_fd;
+	char 				ReceiveFlag;
+//	struct timeval		Flag_Time;
+	struct sockaddr_in 	Serv_addr;
+	int 				Error;
+	socklen_t 			ErrorLen;
+	uint16_t			keepalive;
+} CLIENTSOCKET;
+
 typedef struct
 {
     //Is trace used.
     unsigned char trace;
 
     //Socked handle.
-    int socket;
+    CLIENTSOCKET socket;
     //Serial port handle.
     int comPort;
     //Receiver thread handle.
     pthread_t receiverThread;
+    pthread_t sendThread;
+    pthread_t managerThread;
     unsigned long   waitTime;
     //Received data.
     gxByteBuffer data;
@@ -101,10 +137,6 @@ void con_initializeBuffers(
     connection* connection,
     int size);
 
-int svr_listen(
-    connection* con,
-    unsigned short port);
-
 
 uint16_t GetLinuxBaudRate(uint32_t baudRate);
 
@@ -125,8 +157,20 @@ int com_initializeSerialPort(connection* con,
     unsigned char iec);
 
 
-void ListenerThread(void* pVoid);
+//void ListenerThread(void* pVoid);
+void Socket_Receive_Thread(void* pVoid);
 
+void Socket_Send_Thread(void* pVoid);
+
+int Socket_Connection_Start(connection* con);
+
+int Socket_Manage (connection* con);
+
+void Socket_get_open(connection* con);
+
+int	Socket_get_close(connection* con);
+
+int Socket_create(connection* con);
 
 void* UnixListenerThread(void* pVoid);
 

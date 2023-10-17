@@ -59,7 +59,7 @@ void con_initializeBuffers(connection * connection, int size)
 
 unsigned char isConnected(connection* con)
 {
-    return con->socket != -1;
+    return con->socket.Socket_fd != -1;
 }
 
 void appendLog(unsigned char send, gxByteBuffer* reply)
@@ -125,7 +125,6 @@ uint16_t GetLinuxBaudRate(uint32_t baudRate)
         break;
     case 115200:
         br = B115200;
-        printf("B115200\n");
         break;
     default:
         return B9600;
@@ -213,238 +212,253 @@ int com_initializeSerialPort(connection* con,
 }
 
 
-
-
-
-void ListenerThread(void* pVoid)
+void Socket_Receive_Thread(void* pVoid)
 {
-    int socket;
     connection* con = (connection*)pVoid;
     struct sockaddr_in add;
     int ret;
     char tmp[10];
-    socklen_t len;
-    socklen_t AddrLen = sizeof(add);
     int pos;
     char* info;
-    gxByteBuffer bb, reply, senderInfo;
+    gxByteBuffer bb, reply;
     struct sockaddr_in client;
     //Get buffer data
-    bb_init(&senderInfo);
     bb_init(&bb);
     bb_init(&reply);
     bb_capacity(&bb, 2048);
     memset(&client, 0, sizeof(client));
-    while (isConnected(con))
+    while (1)
     {
-        len = sizeof(client);
-        bb_clear(&senderInfo);
-        socket = accept(con->socket, (struct sockaddr*) & client, &len);
-
-        printf("socket of client = %d\n",socket);
-        // printf("client = %s\n",client.sin_addr);
-        // printf("len = %s\n",len);
-
-
-
-        if (isConnected(con))
+        if (con->socket.Status.Connected == true)
         {
-            if ((ret = getpeername(socket, (struct sockaddr*) & add, &AddrLen)) == -1)
-            {
-                close(socket);
-                socket = -1;
-                continue;
-                //Notify error.
-            }
-            // printf("client = %s\n",client.sin_addr);
-            // printf("len = %s\n",len);
-            info = inet_ntoa(add.sin_addr);
-            bb_set(&senderInfo, (unsigned char*)info, (unsigned short)strlen(info));
-            bb_setInt8(&senderInfo, ':');
-            hlp_intToString(tmp, 10, add.sin_port, 0, 0);
-            bb_set(&senderInfo, (unsigned char*)tmp, (unsigned short)strlen(tmp));
-            while (isConnected(con))
-            {
-                //If client is left wait for next client.
-                if ((ret = recv(socket, (char*)
-                    bb.data + bb.size,
-                    bb.capacity - bb.size, 0)) == -1)
-                {
-                    //Notify error.
-                    svr_reset(&con->settings);
-                    close(socket);
-                    socket = -1;
-                    break;
-                }
+			//If client is left wait for next client.
+			if ((ret = recv(con->socket.Socket_fd, con->buffer.RX + con->buffer.RX_Count, 2048, 0)) <= 0)
+			{
+				//Notify error.
+				printf(".............RECEIVE - RET:%d\n", ret);
+				svr_reset(&con->settings);
+				con->socket.Status.Connected = false;
+			}
+
+//			memcpy((char*) bb.data + bb.size, con->buffer.RX + con->buffer.RX_Count, ret);
+			bb_attach(&bb, con->buffer.RX, ret, 2048);
+			con->buffer.RX_Count += ret;
+//			bb.size = bb.size + ret;
+			printf("receive from server = %s\n",&bb.data);
 
 
-                printf("receive from server = %s\n",&bb.data);
+			if (con->trace > GX_TRACE_LEVEL_WARNING)
+			{
+				printf("\r\nRX %d:\t", ret);
+				for (pos = 0; pos != ret; ++pos)
+				{
+					printf("%.2X ", bb.data[bb.size + pos]);
+//					printf("%.2X ", con->buffer.RX[con->buffer.RX_Count+pos]);
+				}
+				printf("\r\n");
+			}
+//			appendLog(0, &bb);
 
-                
-                //If client is closed the connection.
-                if (ret == 0)
-                {
-                    svr_reset(&con->settings);
-                    close(socket);
-                    socket = -1;
-                    break;
-                }
-                if (con->trace > GX_TRACE_LEVEL_WARNING)
-                {
-                    printf("\r\nRX %d:\t", ret);
-                    for (pos = 0; pos != ret; ++pos)
-                    {
-                        printf("%.2X ", bb.data[bb.size + pos]);
-                    }
-                    printf("\r\n");
-                }
-                bb.size = bb.size + ret;
-                appendLog(0, &bb);
+			if (svr_handleRequest(&con->settings, &bb, &reply) != 0)
+			{
 
+			}
 
-                // printf("client = %s\n",client.sin_addr);
-                // printf("len = %s\n",len);                
-                if (svr_handleRequest(&con->settings, &bb, &reply) != 0)
-                {
-                    close(socket);
-                    socket = -1;
-                }
-                bb.size = 0;
-                if (reply.size != 0)
-                {
-                    if (con->trace > GX_TRACE_LEVEL_WARNING)
-                    {
-                        printf("\r\nTX %u:\t", (unsigned int)reply.size);
-                        for (pos = 0; pos != reply.size; ++pos)
-                        {
-                            printf("%.2X ", reply.data[pos]);
-                        }
-                        printf("\r\n");
-                    }
-                    appendLog(1, &reply);
-                    if (send(socket, (const char*)reply.data, reply.size - reply.position, 0) == -1)
-                    {
-                        //If error has occured
-                        svr_reset(&con->settings);
+			bb.size = 0;
+			con->buffer.RX_Count = 0;
 
-                        close(socket);
-                        socket = -1;
-                    }
-                    printf("send from server = %s\n",&reply.data);
+			if (reply.size != 0)
+			{
+				if (con->trace > GX_TRACE_LEVEL_WARNING)
+				{
+					printf("\r\nTX %u:\t", (unsigned int)reply.size);
+					for (pos = 0; pos != reply.size; ++pos)
+					{
+						printf("%.2X ", reply.data[pos]);
+					}
+					printf("\r\n");
+				}
+//				appendLog(1, &reply);
 
-                    bb_clear(&reply);
-                }
-            }
-            svr_reset(&con->settings);
+				memcpy(con->buffer.TX, (const char*)reply.data, reply.size - reply.position);
+				con->buffer.TX_Count = reply.size - reply.position;
+
+				bb_clear(&reply);
+			}
+//            svr_reset(&con->settings);
         }
+        sleep(1);
     }
-    bb_clear(&bb);
-    bb_clear(&reply);
-    bb_clear(&senderInfo);
 }
 
-void* UnixListenerThread(void* pVoid)
+
+
+void Socket_Send_Thread(void* pVoid)
 {
-    ListenerThread(pVoid);
-    return NULL;
+    connection* con = (connection*)pVoid;
+    while (1)
+    {
+
+        if (con->socket.Status.Connected == 1 && con->buffer.TX_Count>0)
+        {
+			if (send(con->socket.Socket_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
+			{
+				//If error has occured
+				svr_reset(&con->settings);
+				con->socket.Status.Connected = 0;
+			}
+			printf("send to server %d = %s\n",con->buffer.TX_Count, &con->buffer.TX);
+        }
+        usleep(100000);
+    }
 }
 
 //Initialize connection settings.
-int svr_listen(
-    connection* con,
-    unsigned short port)
+int Socket_Connection_Start(connection* con)
 {
     struct sockaddr_in add = { 0 };
-    int fFlag = 1;
     int ret;
     //Reply wait time is 5 seconds.
     con->waitTime = 5000;
     con->comPort = -1;
     con->receiverThread = -1;
-    con->socket = -1;
+    con->socket.Socket_fd = -1;
     con->closing = 0;
     bb_init(&con->data);
     bb_capacity(&con->data, 50);
 
-//    con->socket = socket(AF_INET, SOCK_STREAM, 0);
-//    if (!isConnected(con))
-//    {
-//        //socket creation.
-//        return -1;
-//    }
-//    if (setsockopt(con->socket, SOL_SOCKET, SO_REUSEADDR, (char*)& fFlag, sizeof(fFlag)) == -1)
-//    {
-//        //setsockopt.
-//        return -1;
-//    }
-//    add.sin_port = htons(port);
-//    add.sin_addr.s_addr = htonl(INADDR_ANY);
-//    add.sin_family = AF_INET;
-//    if ((ret = bind(con->socket, (struct sockaddr*) & add, sizeof(add))) == -1)
-//    {
-//        //bind;
-//        return -1;
-//    }
-//    if ((ret = listen(con->socket, 1)) == -1)
-//    {
-//        //socket listen failed.
-//        return -1;
-//    }
+    con->buffer.TX_Count = 0;
+    con->buffer.RX_Count = 0;
 
+    con->socket.Status.Connected 	= false;
+    con->socket.Status.Opened 		= true;
 
-
-    ret = pthread_create(&con->receiverThread, NULL, UnixListenerThread, (void*)con);
+    con->socket.Parameters.PORT = 30142;
+    sprintf(con->socket.Parameters.IP, "109.125.142.200");
+    ret = pthread_create(&con->receiverThread, 	NULL, Socket_Receive_Thread	, (void*)con);
+    ret = pthread_create(&con->sendThread, 		NULL, Socket_Send_Thread	, (void*)con);
+    ret = pthread_create(&con->managerThread, 	NULL, Socket_Manage			, (void*)con);
     return ret;
 }
 
 
-void TCP_Connection_Client (void)
+void Socket_get_open(connection* con)
 {
-	connection* con;
+	if(con->socket.Status.Opened == true)							//===============( Close Connection )======================
+	{
+		Socket_get_close(con);
+		con->socket.Status.Opened=false;
 
-	int TCP_Connection_Ret;
+//		report("sds","RS232 --> TCP-Client:Socket",n,"--> CONNECTION_CLOSE!!");
+		printf("TCP-Client:Socket--> CONNECTION_CLOSE!!\n");
+																	//===============( Create Socket )=========================
+//		if(ClientSocket.Socket_create(n)==OK)
+		if(Socket_create(con) == 1)
+		{
+//			report("sds","RS232 --> TCP-Client:Socket",n,"--> CREATE_OK!");
+			printf("TCP-Client:Socket--> CREATE_OK!\n");
+//			report("sds","RS232 --> TCP-Client:Socket",n,"--> Connecting .....!");
+			printf("TCP-Client:Socket--> Connecting .....\n");
+
+		}
+
+	}
+																	//===============( Connect to Server )=========================
+
+//	printf("----------server add:%s\n", con->socket.Serv_addr.sin_addr);
+	if(connect(con->socket.Socket_fd, (struct sockaddr *)&con->socket.Serv_addr, sizeof(con->socket.Serv_addr)) == 0)
+	{
+		con->socket.Status.Connected=true;
+		con->socket.Status.Opened=true;
+
+//		report("sds","RS232 --> TCP-Client:Socket",n,"--> Connected !");
+		printf("TCP-Client:Socket--> Connected\n");
+
+	}
+	else
+	{
+		con->socket.Status.Connected=false;
+
+	}
+
+}
+
+
+int Socket_Manage (connection* con)
+{
+	uint8_t i=0;
+	uint8_t r1=0,r2=0;
+
+//	report("s","RS232 --> TCP_CLIENT_CONNECTION_CHECK_Thread Started !");
+
 	while(1)
 	{
-		con->socket = socket(AF_INET, SOCK_STREAM, 0);
-		if (con->socket < 0)
+		if(con->socket.Status.Connected == false)
 		{
-			printf("Error - tcp_client_sockfd - ret = %d \n", con->socket);
-		}
-		else
-		{
-			do
-			{
-				TCP_Param_Struct.Server_Port = 4061;
-				strcpy(TCP_Param_Struct.Server_IP, "127.0.0.1");
-
-				uint8_t ret = inet_aton(TCP_Param_Struct.Server_IP, &TCP_Param_Struct.Dest.sin_addr.s_addr);
-
-				TCP_Param_Struct.Dest.sin_family 	= AF_INET;
-				TCP_Param_Struct.Dest.sin_port		= htons(TCP_Param_Struct.Server_Port);
-
-				TCP_Connection_Ret = connect(TCP_Param_Struct.tcp_client_sockfd, &TCP_Param_Struct.Dest, sizeof(TCP_Param_Struct.Dest));
-				if (!TCP_Connection_Ret)
-				{
-					TCP_Struct_Connected = 1;
-					TCP_Param_Struct.RX_Size = 0;
-					printf("<=\n\tTCP Connected\n\t\tRet:%d\n\t\tS-IP:%s\n\t\tS-Port:%d\n=>\n", TCP_Connection_Ret, TCP_Param_Struct.Server_IP, TCP_Param_Struct.Server_Port);
-				}
-				else
-				{
-					TCP_Struct_Connected = 0;
-					printf("Error - TCP_Connection_Ret - ret = %d \n", TCP_Connection_Ret);
-				}
-
-				sleep(1);
-			}
-			while(TCP_Connection_Ret);
+			printf("Socket_get_open\n");
+			Socket_get_open(con);
 		}
 
-//			Flags_Struct.TCP_Struct.TCP_Ready_To_Start = DOWN;
-		break;
+//		con->socket.Error=0;
+//		con->socket.ErrorLen=sizeof(con->socket.Error);
+//		getsockopt (con->socket.Socket_fd, SOL_SOCKET, SO_ERROR, &con->socket.Error, &con->socket.ErrorLen);
+
+//		if(con->socket.Error!=0) report("sdsd","RS232 --> TCP-Client:Socket",i,"--> Connection Error =",con->socket.Error);
+
 		sleep(1);
+
 	}
 }
+
+
+int	Socket_get_close(connection* con)
+{
+	printf("before close\n");
+	int sh=shutdown(con->socket.Socket_fd, SHUT_RDWR);
+	int cl=close(con->socket.Socket_fd);
+
+	//printf("s:%d  shut:%d  close:%d  \n",n,sh,cl);
+	con->socket.Socket_fd=0;
+	con->socket.Status.Connected=false;
+	con->socket.Status.Opened=false;
+	return 1;
+}
+
+int Socket_create(connection* con)								//===============( Create client )======================
+{
+	int fFlag = 1;
+
+	if ((con->socket.Socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	{
+//		report("sds","SOCKET --> Client Socket",n," --> Create error !");
+		return -1;
+	}
+
+	con->socket.Serv_addr.sin_family = AF_INET;
+	con->socket.Serv_addr.sin_port = htons(con->socket.Parameters.PORT);
+	if(inet_pton(AF_INET, con->socket.Parameters.IP, &con->socket.Serv_addr.sin_addr)<=0)
+	{
+
+//		report("sds","SOCKET --> Client Socket",n," --> Invalid address !");
+		printf("SOCKET --> Client Socket--> Invalid address !\n");
+
+		con->socket.Status.Valid = 0;		//0 means false
+		return -1;
+	}
+	else con->socket.Status.Valid = 1;		//1 means true
+
+	if (setsockopt(con->socket.Socket_fd, SOL_SOCKET, SO_REUSEADDR, (char*)& fFlag, sizeof(fFlag)) == -1)
+	{
+		//setsockopt.
+		return -1;
+	}
+
+	con->socket.Status.Connected = 0;
+
+	return 1;
+}
+
+
 
 void* UnixSerialPortThread(void* pVoid)
 {
@@ -598,15 +612,6 @@ void* Unixrs485SendSerialThread(void* pVoid)
 }
 
 
-
-
-
-
-
-
-
-
-
 //Initialize connection settings.
 int svr_listen_serial(
     connection* con,
@@ -652,62 +657,9 @@ int rs485_listen_serial(
     }
     
     ret = pthread_create(&con->receiverThread, NULL, Unixrs485RecSerialThread, (void*)con);
-    ret = pthread_create(&con->receiverThread, NULL, Unixrs485SendSerialThread, (void*)con);
+    ret = pthread_create(&con->sendThread, NULL, Unixrs485SendSerialThread, (void*)con);
     return ret;
 }
-
-
-
-
-
-//Initialize connection settings.
-int svr_listen_TCP(
-    connection* con,
-    unsigned short port)
-{
-    struct sockaddr_in add = { 0 };
-    int fFlag = 1;
-    int ret;
-    //Reply wait time is 5 seconds.
-    con->waitTime = 5000;
-    con->comPort = -1;
-    con->receiverThread = -1;
-    con->socket = -1;
-    con->closing = 0;
-    bb_init(&con->data);
-    bb_capacity(&con->data, 50);
-
-    con->socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (!isConnected(con))
-    {
-        //socket creation.
-        return -1;
-    }
-    if (setsockopt(con->socket, SOL_SOCKET, SO_REUSEADDR, (char*)& fFlag, sizeof(fFlag)) == -1)
-    {
-        //setsockopt.
-        return -1;
-    }
-    add.sin_port = htons(port);
-    add.sin_addr.s_addr = htonl(INADDR_ANY);
-    add.sin_family = AF_INET;
-    if ((ret = bind(con->socket, (struct sockaddr*) & add, sizeof(add))) == -1)
-    {
-        //bind;
-        return -1;
-    }
-    if ((ret = listen(con->socket, 1)) == -1)
-    {
-        //socket listen failed.
-        return -1;
-    }
-
-    ret = pthread_create(&con->receiverThread, NULL, UnixListenerThread, (void*)con);
-    return ret;
-}
-
-
-
 
 
 //Close connection.
@@ -717,8 +669,8 @@ int con_close(
     if (isConnected(con))
     {
 
-        close(con->socket);
-        con->socket = -1;
+        close(con->socket.Socket_fd);
+        con->socket.Socket_fd = -1;
         void* res;
         pthread_join(con->receiverThread, (void**)& res);
         free(res);
@@ -733,7 +685,7 @@ int con_close(
             }
             con->comPort = -1;
         }
-        con->socket = -1;
+        con->socket.Socket_fd = -1;
         bb_clear(&con->data);
         con->closing = 0;
         con_initializeBuffers(con, 0);
@@ -958,7 +910,7 @@ void WAN_Connection (void)
 				Ret_Signal 		= ql_nw_get_signal_strength (&Sig_Strg_Info);
 				Ret_Cell_Info 	= ql_nw_get_cell_info		(&NW_Cell_Info)	;
 
-//				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
+				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
 
 //				printf("<= data_call_info v4: {\n    profile_idx:%d,\n    ip_type:%d,\n    state:%d,\n    ip:%s,\n    name:%s,\n    gateway:%s,\n    pri_dns:%s,\n    sec_dns:%s\n} =>\n",
 //					payload.profile_idx, payload.ip_type, payload.v4.state, payload.v4.addr.ip, payload.v4.addr.name, payload.v4.addr.gateway,

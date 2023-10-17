@@ -2530,50 +2530,14 @@ int rs485_start_Serial(
 
 
 
-
-
-
-/**
- * Start server on TCP Connection.
- */
-int svr_start_TCP(
-    connection *con)
-{
-    int ret;
-    con->settings.pushClientAddress = 64;
-    if ((ret = svr_listen(con, 4060)) != 0)
-    {
-        return ret;
-    }
-
-    con->settings.wrapper = &udpSetup;
-
-
-
-    ///////////////////////////////////////////////////////////////////////
-    // Server must initialize after all objects are added.
-    ret = svr_initialize(&con->settings);
-    if (ret != DLMS_ERROR_CODE_OK)
-    {
-        return ret;
-    }
-    bb_addString(&con->settings.base.kek, "1111111111111111");
-    return DLMS_ERROR_CODE_OK;
-}
-
-
-
-
 /**
  * Start server.
  */
-int svr_start(
-    connection *con,
-    unsigned short port)
+int svr_start(connection *con)
 {
     int ret;
     con->settings.pushClientAddress = 64;
-    if ((ret = svr_listen(con, port)) != 0)
+    if ((ret = Socket_Connection_Start(con)) != 0)
     {
         return ret;
     }
