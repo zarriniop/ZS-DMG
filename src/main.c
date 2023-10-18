@@ -12,7 +12,9 @@
  * INCLUDES *
  ************/
 #include <main.h>
-
+#include "exampleserver.h"
+#include "connection.h"
+#include "DLMS_Gateway.h"
 /********************************************|
 |*			Variables & Definitions			*|
 |********************************************/
@@ -90,18 +92,17 @@ void Servers_Monitor (void)
     while (1)
     {
         //Monitor values only once/second.
-        if (time_current() - lastMonitor > 1)
-        {
-            lastMonitor = time_current();
-            if ((ret = svr_monitorAll(&lnWrapper.settings)) != 0)
-            {
-                printf("lnWrapper monitor failed.\r\n");
-            }
-            if ((ret = svr_monitorAll(&lniec.settings)) != 0)
-            {
-                printf("lniec monitor failed.\r\n");
-            }
-        }
+		lastMonitor = time_current();
+		if ((ret = svr_monitorAll(&lnWrapper.settings)) != 0)
+		{
+			printf("lnWrapper monitor failed.\r\n");
+		}
+		if ((ret = svr_monitorAll(&lniec.settings)) != 0)
+		{
+			printf("lniec monitor failed.\r\n");
+		}
+
+		sleep(1);
     }
     con_close(&lnWrapper);
     con_close(&lniec);

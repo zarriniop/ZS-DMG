@@ -17,6 +17,8 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
+#include "main.h"
+
 #include "../../development/include/bytebuffer.h"
 #include "../../development/include/dlmssettings.h"
 #include <stdio.h>
@@ -60,13 +62,14 @@ typedef enum {
 	UDP		=1
 }SocketType;
 
-typedef struct
-{
-    unsigned char TX[2048];
-    unsigned char RX[2048];
-    uint32_t TX_Count;
-    uint32_t RX_Count;
-} Buffer;
+//typedef struct
+//{
+//    unsigned char TX[2048];
+//    unsigned char RX[2048];
+//    uint32_t TX_Count;
+//    uint32_t RX_Count;
+//    uint32_t	Timeout_ms;
+//} Buffer;
 
 typedef struct {
 	char		Connected;
@@ -181,6 +184,7 @@ void* Unixrs485RecSerialThread(void* pVoid);
 
 void* Unixrs485SendSerialThread(void* pVoid);
 
+void GW_Start (void* pVoid);
 
 int svr_listen_serial(
     connection* con,

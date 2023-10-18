@@ -41,6 +41,7 @@ pthread_t Wan_Connection_pthread_var;
 extern gxGPRSSetup 	gprsSetup	;
 extern gxData 		imei		;
 extern gxData 		deviceid6	;
+extern connection 	lnWrapper , lniec , rs485;
 
 
 //Initialize connection buffers.
@@ -217,22 +218,23 @@ void Socket_Receive_Thread(void* pVoid)
     connection* con = (connection*)pVoid;
     struct sockaddr_in add;
     int ret;
-    char tmp[10];
+    char tmp[2048];
     int pos;
     char* info;
-    gxByteBuffer bb, reply;
+    gxByteBuffer reply;
     struct sockaddr_in client;
     //Get buffer data
-    bb_init(&bb);
     bb_init(&reply);
-    bb_capacity(&bb, 2048);
     memset(&client, 0, sizeof(client));
+
     while (1)
     {
         if (con->socket.Status.Connected == true)
         {
 			//If client is left wait for next client.
-//			if ((ret = recv(con->socket.Socket_fd, con->buffer.RX + con->buffer.RX_Count, 2048, 0)) <= 0)
+
+//        	 if ((ret = recv(con->socket.Socket_fd, (char*) bb.data + bb.size, bb.capacity - bb.size, 0)) == -1)
+			if ((ret = recv(con->socket.Socket_fd, tmp, 2048, 0)) <= 0)
 			{
 				//Notify error.
 				printf(".............RECEIVE - RET:%d\n", ret);
@@ -240,33 +242,42 @@ void Socket_Receive_Thread(void* pVoid)
 				con->socket.Status.Connected = false;
 			}
 
-//			memcpy((char*) bb.data + bb.size, con->buffer.RX + con->buffer.RX_Count, ret);
-//			bb_attach(&bb, con->buffer.RX, ret, 2048);
-//			bb_attachString2(&bb, &con->buffer.RX, ret, 2048);
-			bb_insert(con->buffer.RX, ret, &bb, 0);
-			con->buffer.RX_Count += ret;
-//			bb.size = bb.size + ret;
-			printf("receive from server = %s\n",&bb.data);
-
 
 			if (con->trace > GX_TRACE_LEVEL_WARNING)
 			{
 				printf("\r\nRX %d:\t", ret);
 				for (pos = 0; pos != ret; ++pos)
 				{
-					printf("%.2X ", bb.data[bb.size + pos]);
-//					printf("%.2X ", con->buffer.RX[con->buffer.RX_Count+pos]);
+					printf("%.2X ", tmp[pos]);
 				}
 				printf("\r\n");
 			}
+
 //			appendLog(0, &bb);
 
-			if (svr_handleRequest(&con->settings, &bb, &reply) != 0)
+			if(tmp[8] == 0xE6)
 			{
+
+				memcpy(con->buffer.RX, tmp, ret);
+				con->buffer.RX_Count = ret;
+			}
+			else
+			{
+//				struct timeval  tv,strt;
+//				long diff=0;
+
+				if (svr_handleRequest2(&con->settings, &tmp, ret, &reply) != 0)
+				{
+
+				}
+
+//				 gettimeofday (&tv, NULL);
+//				 diff=tv.tv_usec - strt.tv_usec;
+//				 if(diff < 0) diff+=1000000;
+//				 printf("######### Delay in svr_handleRequest2=  %d\r\n",diff);
 
 			}
 
-			bb.size = 0;
 			con->buffer.RX_Count = 0;
 
 			if (reply.size != 0)
@@ -289,7 +300,7 @@ void Socket_Receive_Thread(void* pVoid)
 			}
 //            svr_reset(&con->settings);
         }
-        sleep(1);
+        usleep(10000);
     }
 }
 
@@ -310,8 +321,9 @@ void Socket_Send_Thread(void* pVoid)
 				con->socket.Status.Connected = 0;
 			}
 			printf("send to server %d = %s\n",con->buffer.TX_Count, &con->buffer.TX);
+			con->buffer.TX_Count = 0;
         }
-        usleep(100000);
+        usleep(1000);
     }
 }
 
@@ -589,6 +601,7 @@ void* Unixrs485RecSerialThread(void* pVoid)
 
             // }
         }
+        usleep(1000);
     }
     return NULL;
 }
@@ -658,11 +671,21 @@ int rs485_listen_serial(
         return ret;
     }
     
+    con->buffer.RX_Count = 0 ;
+    con->buffer.TX_Count = 0 ;
+    con->buffer.Timeout_ms = 1000;
     ret = pthread_create(&con->receiverThread, NULL, Unixrs485RecSerialThread, (void*)con);
     ret = pthread_create(&con->sendThread, NULL, Unixrs485SendSerialThread, (void*)con);
+    ret = pthread_create(&con->managerThread, NULL, GW_Start, (void*)con);
     return ret;
 }
 
+
+void GW_Start (void* pVoid)
+{
+	connection* con = (connection*)pVoid;
+	GW_Run(&lnWrapper.buffer , con->buffer);
+}
 
 //Close connection.
 int con_close(
@@ -868,7 +891,7 @@ void WAN_Connection (void)
 
 	APN_Param_Struct.op = START_A_DATA_CALL							;
 	APN_Param_Struct.apn = &gprsSetup.apn.data						;
-	sprintf(APN_Param_Struct.apn, "mtnirancell")					;
+	sprintf(APN_Param_Struct.apn, "khzedcapn")					;
 //	printf("<= WAN Connection - APN:%s =>\n", APN_Param_Struct.apn)	;
 
 	APN_Param_Struct.profile_idx 	= 1		;
@@ -876,7 +899,7 @@ void WAN_Connection (void)
 
 
 	int ret = ql_wan_setapn(APN_Param_Struct.profile_idx, APN_Param_Struct.ip_type, APN_Param_Struct.apn, &APN_Param_Struct.userName, &APN_Param_Struct.password, auth);
-//	if(ret!=0) printf("ql_wan_setapn - ret:%d", ret);
+	if(ret!=0) printf("!ERROR! ql_wan_setapn - ret:%d", ret);
 
 	int 	ip_type_get 	= 0	;
     char 	apn_get[128]	={0};
@@ -912,7 +935,7 @@ void WAN_Connection (void)
 				Ret_Signal 		= ql_nw_get_signal_strength (&Sig_Strg_Info);
 				Ret_Cell_Info 	= ql_nw_get_cell_info		(&NW_Cell_Info)	;
 
-				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
+//				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
 
 //				printf("<= data_call_info v4: {\n    profile_idx:%d,\n    ip_type:%d,\n    state:%d,\n    ip:%s,\n    name:%s,\n    gateway:%s,\n    pri_dns:%s,\n    sec_dns:%s\n} =>\n",
 //					payload.profile_idx, payload.ip_type, payload.v4.state, payload.v4.addr.ip, payload.v4.addr.name, payload.v4.addr.gateway,

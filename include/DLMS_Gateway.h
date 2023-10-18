@@ -11,48 +11,49 @@
 /****************
  *	Includes	*
  ****************/
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-
-#include <termios.h>
-#include <fcntl.h>
-#include <unistd.h>
-
-#include <sys/types.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <netinet/udp.h>
-#include <string.h>
-#include <netdb.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <string.h>
-#include <sys/time.h>
-#include <arpa/inet.h>  /* for sockaddr_in */
-#include <termios.h>
-#include <errno.h>
-#include <pthread.h>
-#include <poll.h>
-#include <stdarg.h>
-#include <sys/mman.h>
-#include <termios.h>
-#include <fcntl.h>
-#include <errno.h>
-
-
-#include <arpa/inet.h> // inet_addr()
-#include <netdb.h>
-#include <strings.h> // bzero()
-#include <sys/socket.h>
-#include <unistd.h> // read(), write(), close()
-#include <pthread.h>
-
-#include <stdbool.h>
+#include "main.h"
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <string.h>
+//#include <math.h>
+//
+//#include <termios.h>
+//#include <fcntl.h>
+//#include <unistd.h>
+//
+//#include <sys/types.h>
+//#include <stdlib.h>
+//#include <unistd.h>
+//#include <sys/socket.h>
+//#include <netinet/in.h>
+//#include <netinet/tcp.h>
+//#include <netinet/udp.h>
+//#include <string.h>
+//#include <netdb.h>
+//#include <stdio.h>
+//#include <fcntl.h>
+//#include <string.h>
+//#include <sys/time.h>
+//#include <arpa/inet.h>  /* for sockaddr_in */
+//#include <termios.h>
+//#include <errno.h>
+//#include <pthread.h>
+//#include <poll.h>
+//#include <stdarg.h>
+//#include <sys/mman.h>
+//#include <termios.h>
+//#include <fcntl.h>
+//#include <errno.h>
+//
+//
+//#include <arpa/inet.h> // inet_addr()
+//#include <netdb.h>
+//#include <strings.h> // bzero()
+//#include <sys/socket.h>
+//#include <unistd.h> // read(), write(), close()
+//#include <pthread.h>
+//
+//#include <stdbool.h>
 
 
 
@@ -126,6 +127,16 @@
 //	bool		Opened;
 //	bool		Valid;
 //}SOCKET_STS_TYPEDEF;
+
+//typedef struct
+//{
+//    unsigned char TX[2048];
+//    unsigned char RX[2048];
+//    uint32_t TX_Count;
+//    uint32_t RX_Count;
+//    uint32_t Timeout_ms;
+//} Buffer;
+
 
 typedef enum
 {
@@ -250,26 +261,6 @@ struct
 }Control_Byte_Struct;
 
 
-typedef struct
-{
-	uint8_t		RX_Buffer[MAX_BUFFER_LEN]	;
-	uint16_t	RX_Count					;
-	uint8_t		TX_Buffer[MAX_BUFFER_LEN]	;
-	uint16_t	TX_Count					;
-	uint32_t	Timeout_ms						;
-}GW_STRUCT_TYPEDEF;
-
-
-typedef struct
-{
-	uint8_t		RX_Buffer[MAX_BUFFER_LEN]	;
-	uint16_t	RX_Count					;
-	uint8_t		TX_Buffer[MAX_BUFFER_LEN]	;
-	uint16_t	TX_Count					;
-	uint32_t	Timeout_ms						;
-}HDLC_STRUCT_TYPEDEF;
-
-
 typedef enum {
 	READY_TO_GENERATE_SNRM		=	0,
 	WAITING_FOR_SNRM_RESPONSE	=	1,
@@ -305,18 +296,18 @@ typedef enum {
 /****************
  *	Prototypes	*
  ****************/
-void			GW_Run							(GW_STRUCT_TYPEDEF* GW_STRUCT, HDLC_STRUCT_TYPEDEF* HDLC_STRUCT)						;
-void 			GW_Run_Init						(GW_STRUCT_TYPEDEF* GW_STRUCT, HDLC_STRUCT_TYPEDEF* HDLC_STRUCT)						;
-int8_t 			Handle_GW_Frame 				(GW_STRUCT_TYPEDEF* GW_STRUCT, HDLC_STRUCT_TYPEDEF* HDLC_STRUCT)						;
-uint8_t 		GW2HDLC_SNRM_Generator 			(GW_STRUCT_TYPEDEF* GW_STRUCT, HDLC_STRUCT_TYPEDEF* HDLC_STRUCT)						;
-uint16_t 		HDLC_Send_SNRM					(GW_STRUCT_TYPEDEF* GW_STRUCT, HDLC_STRUCT_TYPEDEF* HDLC_STRUCT)						;
-int8_t 			GW2HDLC_DISC_Generator 			(GW_STRUCT_TYPEDEF* GW_STRUCT, HDLC_STRUCT_TYPEDEF* HDLC_STRUCT)						;
-uint8_t 		HDLC_Send_DISC 					(GW_STRUCT_TYPEDEF* GW_STRUCT, HDLC_STRUCT_TYPEDEF* HDLC_STRUCT)						;
-int8_t 			Check_GW_Frame_Valid 			(GW_STRUCT_TYPEDEF* GW_STRUCT)															;
-uint8_t 		Check_GW_Frame_Type 			(GW_STRUCT_TYPEDEF* GW_STRUCT)															;
-int16_t 		GW2HDLC_Frame_Convertor 		(GW_STRUCT_TYPEDEF* GW_STRUCT, HDLC_STRUCT_TYPEDEF* HDLC_STRUCT, uint8_t Control_Byte)	;
-uint8_t 		GW2HDLC_Poll_For_Remained_Data 	(GW_STRUCT_TYPEDEF* GW_STRUCT, HDLC_STRUCT_TYPEDEF* HDLC_STRUCT, uint8_t Control_Byte)	;
-int64_t 		Meter2GW_Frame_Convertor		(HDLC_STRUCT_TYPEDEF* HDLC_STRUCT, GW_STRUCT_TYPEDEF* GW_STRUCT)						;
+void			GW_Run							(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)						;
+void 			GW_Run_Init						(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)						;
+int8_t 			Handle_GW_Frame 				(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)						;
+uint8_t 		GW2HDLC_SNRM_Generator 			(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)						;
+uint16_t 		HDLC_Send_SNRM					(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)						;
+int8_t 			GW2HDLC_DISC_Generator 			(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)						;
+uint8_t 		HDLC_Send_DISC 					(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)						;
+int8_t 			Check_GW_Frame_Valid 			(Buffer* GW_STRUCT)															;
+uint8_t 		Check_GW_Frame_Type 			(Buffer* GW_STRUCT)															;
+int16_t 		GW2HDLC_Frame_Convertor 		(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, uint8_t Control_Byte)	;
+uint8_t 		GW2HDLC_Poll_For_Remained_Data 	(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, uint8_t Control_Byte)	;
+int64_t 		Meter2GW_Frame_Convertor		(Buffer* HDLC_STRUCT, Buffer* GW_STRUCT)						;
 uint8_t 		Control_Byte 					(uint8_t RRR, uint8_t SSS, FRAME_TYPE frame_type)										;
 static uint16_t countCRC						(char* Buff, uint32_t index, uint32_t count)											;
 

@@ -2518,8 +2518,6 @@ int rs485_start_Serial(
 {
     int ret;
 
-    con->buffer.RX_Count = 0 ;
-    con->buffer.TX_Count = 0 ;
     con->settings.hdlc = &hdlcelectricalrs485port;
     if ((ret = rs485_listen_serial(con, file)) != 0)
     {

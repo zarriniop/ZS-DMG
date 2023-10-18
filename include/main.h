@@ -41,12 +41,8 @@
 #include <unistd.h>
 #include <termios.h>
 
-#include "exampleserver.h"
-#include "connection.h"
 #include "cosem.h"
 #include "gxaes.h"
-
-#include "DLMS_Gateway.h"
 
 /***********
  * DEFINES *
@@ -64,7 +60,14 @@
 /*************************
  * TYPEDEFS & STRUCTURES *
  *************************/
-
+typedef struct
+{
+    unsigned char TX[2048];
+    unsigned char RX[2048];
+    uint32_t TX_Count;
+    uint32_t RX_Count;
+    uint32_t	Timeout_ms;
+} Buffer;
 
 /***********************
  * FUNCTION PROTOTYPES *
