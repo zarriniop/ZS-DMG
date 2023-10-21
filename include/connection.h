@@ -159,6 +159,7 @@ int com_initializeSerialPort(connection* con,
     char* serialPort,
     unsigned char iec);
 
+void Socket_Listen_Thread(void* pVoid);
 
 //void ListenerThread(void* pVoid);
 void Socket_Receive_Thread(void* pVoid);
@@ -167,7 +168,7 @@ void Socket_Send_Thread(void* pVoid);
 
 int Socket_Connection_Start(connection* con);
 
-int Socket_Manage (connection* con);
+int Socket_Manage_Thread (connection* con);
 
 void Socket_get_open(connection* con);
 

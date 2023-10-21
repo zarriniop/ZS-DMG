@@ -351,7 +351,7 @@ int Socket_Connection_Start(connection* con)
     sprintf(con->socket.Parameters.IP, "109.125.142.200");
     ret = pthread_create(&con->receiverThread, 	NULL, Socket_Receive_Thread	, (void*)con);
     ret = pthread_create(&con->sendThread, 		NULL, Socket_Send_Thread	, (void*)con);
-    ret = pthread_create(&con->managerThread, 	NULL, Socket_Manage			, (void*)con);
+    ret = pthread_create(&con->managerThread, 	NULL, Socket_Manage_Thread			, (void*)con);
     return ret;
 }
 
@@ -398,7 +398,7 @@ void Socket_get_open(connection* con)
 }
 
 
-int Socket_Manage (connection* con)
+int Socket_Manage_Thread (connection* con)
 {
 	uint8_t i=0;
 	uint8_t r1=0,r2=0;
@@ -422,6 +422,134 @@ int Socket_Manage (connection* con)
 		sleep(1);
 
 	}
+}
+
+
+void Socket_Listen_Thread(void* pVoid)
+{
+    int socket;
+    connection* con = (connection*)pVoid;
+    struct sockaddr_in add;
+    int ret;
+    char tmp[10];
+    socklen_t len;
+    socklen_t AddrLen = sizeof(add);
+    int pos;
+    char* info;
+    gxByteBuffer bb, reply, senderInfo;
+    struct sockaddr_in client;
+    //Get buffer data
+    bb_init(&senderInfo);
+    bb_init(&bb);
+    bb_init(&reply);
+    bb_capacity(&bb, 2048);
+    memset(&client, 0, sizeof(client));
+    while (isConnected(con))
+    {
+        len = sizeof(client);
+        bb_clear(&senderInfo);
+        socket = accept(con->socket, (struct sockaddr*) &client, &len);
+
+        printf("socket of client = %d\n",socket);
+        // printf("client = %s\n",client.sin_addr);
+        // printf("len = %s\n",len);
+
+
+
+        if (isConnected(con))
+        {
+            if ((ret = getpeername(socket, (struct sockaddr*) & add, &AddrLen)) == -1)
+            {
+                close(socket);
+                socket = -1;
+                continue;
+                //Notify error.
+            }
+            // printf("client = %s\n",client.sin_addr);
+            // printf("len = %s\n",len);
+            info = inet_ntoa(add.sin_addr);
+            bb_set(&senderInfo, (unsigned char*)info, (unsigned short)strlen(info));
+            bb_setInt8(&senderInfo, ':');
+            hlp_intToString(tmp, 10, add.sin_port, 0, 0);
+            bb_set(&senderInfo, (unsigned char*)tmp, (unsigned short)strlen(tmp));
+            while (isConnected(con))
+            {
+                //If client is left wait for next client.
+                if ((ret = recv(socket, (char*)
+                    bb.data + bb.size,
+                    bb.capacity - bb.size, 0)) == -1)
+                {
+                    //Notify error.
+                    svr_reset(&con->settings);
+                    close(socket);
+                    socket = -1;
+                    break;
+                }
+
+
+                printf("receive from server = %s\n",&bb.data);
+
+
+                //If client is closed the connection.
+                if (ret == 0)
+                {
+                    svr_reset(&con->settings);
+                    close(socket);
+                    socket = -1;
+                    break;
+                }
+                if (con->trace > GX_TRACE_LEVEL_WARNING)
+                {
+                    printf("\r\nRX %d:\t", ret);
+                    for (pos = 0; pos != ret; ++pos)
+                    {
+                        printf("%.2X ", bb.data[bb.size + pos]);
+                    }
+                    printf("\r\n");
+                }
+                bb.size = bb.size + ret;
+                appendLog(0, &bb);
+
+
+                // printf("client = %s\n",client.sin_addr);
+                // printf("len = %s\n",len);
+                if (svr_handleRequest(&con->settings, &bb, &reply) != 0)
+                {
+                    close(socket);
+                    socket = -1;
+                }
+                bb.size = 0;
+                if (reply.size != 0)
+                {
+                    if (con->trace > GX_TRACE_LEVEL_WARNING)
+                    {
+                        printf("\r\nTX %u:\t", (unsigned int)reply.size);
+                        for (pos = 0; pos != reply.size; ++pos)
+                        {
+                            printf("%.2X ", reply.data[pos]);
+                        }
+                        printf("\r\n");
+                    }
+                    appendLog(1, &reply);
+                    if (send(socket, (const char*)reply.data, reply.size - reply.position, 0) == -1)
+                    {
+                        //If error has occured
+                        svr_reset(&con->settings);
+
+                        close(socket);
+                        socket = -1;
+                    }
+                    printf("send from server = %s\n",&reply.data);
+
+                    bb_clear(&reply);
+                }
+            }
+            svr_reset(&con->settings);
+        }
+    }
+    bb_clear(&bb);
+    bb_clear(&reply);
+    bb_clear(&senderInfo);
 }
 
 
