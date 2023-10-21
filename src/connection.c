@@ -426,10 +426,10 @@ int Socket_Manage_Thread (connection* con)
 }
 
 
-void Socket_Listen_Thread(void* pVoid)
+void Socket_Listen_Thread(connection* con)
 {
     int socket;
-    connection* con = (connection*)pVoid;
+//    connection* con = (connection*)pVoid;
     struct sockaddr_in add;
     int ret;
     char tmp[10];
