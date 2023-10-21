@@ -108,6 +108,7 @@ typedef struct
     pthread_t receiverThread;
     pthread_t sendThread;
     pthread_t managerThread;
+    pthread_t serverlistenThread;
     unsigned long   waitTime;
     //Received data.
     gxByteBuffer data;

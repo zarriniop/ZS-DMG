@@ -349,9 +349,10 @@ int Socket_Connection_Start(connection* con)
 
     con->socket.Parameters.PORT = 30146;
     sprintf(con->socket.Parameters.IP, "109.125.142.200");
-    ret = pthread_create(&con->receiverThread, 	NULL, Socket_Receive_Thread	, (void*)con);
-    ret = pthread_create(&con->sendThread, 		NULL, Socket_Send_Thread	, (void*)con);
-    ret = pthread_create(&con->managerThread, 	NULL, Socket_Manage_Thread			, (void*)con);
+    ret = pthread_create(&con->receiverThread, 		NULL, Socket_Receive_Thread	, (void*)con);
+    ret = pthread_create(&con->sendThread, 			NULL, Socket_Send_Thread	, (void*)con);
+    ret = pthread_create(&con->managerThread, 		NULL, Socket_Manage_Thread	, (void*)con);
+    ret = pthread_create(&con->serverlistenThread, 	NULL, Socket_Listen_Thread	, (void*)con);
     return ret;
 }
 
@@ -448,7 +449,7 @@ void Socket_Listen_Thread(void* pVoid)
     {
         len = sizeof(client);
         bb_clear(&senderInfo);
-        socket = accept(con->socket, (struct sockaddr*) &client, &len);
+        socket = accept(con->socket.Socket_fd, (struct sockaddr*) &client, &len);
 
         printf("socket of client = %d\n",socket);
         // printf("client = %s\n",client.sin_addr);
