@@ -87,25 +87,21 @@ typedef struct{
 	SocktParameters		Parameters;
 	SocktStatus			Status;
 	int					Socket_fd;
-	char 				ReceiveFlag;
 //	struct timeval		Flag_Time;
 	struct sockaddr_in 	Serv_addr;
 	int 				Error;
 	socklen_t 			ErrorLen;
-	uint16_t			keepalive;
 } CLIENTSOCKET;
 
 typedef struct{
-	SocktParameters		Parameters;
 	SocktStatus			Status;
 	int					Socket_fd;
-	char 				ReceiveFlag;
+	int					Accept_fd;
 //	struct timeval		Flag_Time;
 	struct sockaddr_in 	Serv_addr;
 	int 				Error;
 	socklen_t 			ErrorLen;
-	uint16_t			keepalive;
-	uint16_t			server_port;
+	unsigned short		server_port;
 } SERVERSOCKET;
 
 typedef struct

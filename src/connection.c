@@ -344,13 +344,24 @@ void Socket_Send_Thread(void* pVoid)
     while (1)
     {
 
-        if (con->socket.Status.Connected == 1 && con->buffer.TX_Count>0)
+        if (con->socket.Status.Connected == true && con->buffer.TX_Count>0)
         {
 			if (send(con->socket.Socket_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
 			{
 				//If error has occured
 				svr_reset(&con->settings);
-				con->socket.Status.Connected = 0;
+				con->socket.Status.Connected = false;
+			}
+			printf("send to server %d = %s\n",con->buffer.TX_Count, &con->buffer.TX);
+			con->buffer.TX_Count = 0;
+        }
+        else if(con->serversocket.Status.Connected == true && con->buffer.TX_Count>0)
+        {
+			if (send(con->serversocket.Socket_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
+			{
+				//If error has occured
+				svr_reset(&con->settings);
+				con->serversocket.Status.Connected = false;
 			}
 			printf("send to server %d = %s\n",con->buffer.TX_Count, &con->buffer.TX);
 			con->buffer.TX_Count = 0;
@@ -358,6 +369,7 @@ void Socket_Send_Thread(void* pVoid)
         usleep(1000);
     }
 }
+
 
 //Initialize connection settings.
 int Socket_Connection_Start(connection* con)
@@ -471,9 +483,12 @@ int Socket_Server(connection* con)
     con->receiverThread 	= -1;
 //    con->socket 			= -1;
     con->serversocket.Socket_fd	= -1;
+    con->serversocket.Accept_fd = -1;
     con->closing 			= 0 ;
     bb_init(&con->data);
     bb_capacity(&con->data, 50);
+
+    con->serversocket.Status.Connected = false;
 
     con->serversocket.Socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (con->serversocket.Socket_fd == -1)
@@ -482,13 +497,11 @@ int Socket_Server(connection* con)
         //socket creation.
         return -1;
     }
-    printf("SERVER - SOCKET CREATED \n");
     if (setsockopt(con->serversocket.Socket_fd, SOL_SOCKET, SO_REUSEADDR, (char*)& fFlag, sizeof(fFlag)) == -1)
     {
         //setsockopt.
         return -1;
     }
-    printf("SERVER - SOCKET OPTION \n");
     add.sin_port 		= htons(con->serversocket.server_port);
     add.sin_addr.s_addr = htonl(INADDR_ANY);
     add.sin_family		= AF_INET;
@@ -498,7 +511,6 @@ int Socket_Server(connection* con)
     	printf("ERROR - SERVER - SOCKET BIND \n");
         return -1;
     }
-    printf("SERVER - SOCKET BIND \n");
     if ((ret = listen(con->serversocket.Socket_fd, 1)) == -1)
     {
         //socket listen failed.
@@ -529,26 +541,27 @@ void Socket_Listen_Thread(connection* con)
     bb_init(&reply);
     bb_capacity(&bb, 2048);
     memset(&client, 0, sizeof(client));
-    while (isConnected(con))
+    while (con->serversocket.Socket_fd != -1)
     {
         len = sizeof(client);
         bb_clear(&senderInfo);
-        socket = accept(con->serversocket.Socket_fd, (struct sockaddr*) &client, &len);
+        con->serversocket.Accept_fd = accept(con->serversocket.Socket_fd, (struct sockaddr*) &client, &len);
 
-        printf("socket of client = %d\n",socket);
+        printf("socket of client = %d\n",con->serversocket.Accept_fd);
         // printf("client = %s\n",client.sin_addr);
         // printf("len = %s\n",len);
 
-        if (isConnected(con))
+        if (con->serversocket.Socket_fd != -1)
         {
 //        	printf("SERVER - SOCKET ACCEPTED \n");
-            if ((ret = getpeername(socket, (struct sockaddr*) & add, &AddrLen)) == -1)
+            if ((ret = getpeername(con->serversocket.Accept_fd, (struct sockaddr*) & add, &AddrLen)) == -1)
             {
-                close(socket);
-                socket = -1;
+                close(con->serversocket.Accept_fd);
+                con->serversocket.Accept_fd = -1;
                 continue;
                 //Notify error.
             }
+            con->serversocket.Status.Connected = true;
             // printf("client = %s\n",client.sin_addr);
             // printf("len = %s\n",len);
             info = inet_ntoa(add.sin_addr);
@@ -556,75 +569,80 @@ void Socket_Listen_Thread(connection* con)
             bb_setInt8(&senderInfo, ':');
             hlp_intToString(tmp, 10, add.sin_port, 0, 0);
             bb_set(&senderInfo, (unsigned char*)tmp, (unsigned short)strlen(tmp));
-            while (isConnected(con))
+            while (con->serversocket.Socket_fd != -1)
             {
-                //If client is left wait for next client.
-                if ((ret = recv(socket, (char*) bb.data + bb.size, bb.capacity - bb.size, 0)) == -1)
-                {
+    			//If client is left wait for next client.
+
+    //        	 if ((ret = recv(con->socket.Socket_fd, (char*) bb.data + bb.size, bb.capacity - bb.size, 0)) == -1)
+    			if ((ret = recv(con->serversocket.Accept_fd, tmp, 2048, 0)) <= 0)
+    			{
+    				//Notify error.
                     //Notify error.
                     svr_reset(&con->settings);
-                    close(socket);
-                    socket = -1;
+                    close(con->serversocket.Accept_fd);
+                    con->serversocket.Accept_fd = -1;
+                    con->serversocket.Status.Connected = false;
                     break;
-                }
+    			}
 
 
-                printf("receive from server = %s\n",&bb.data);
+    			if (con->trace > GX_TRACE_LEVEL_WARNING)
+    			{
+    				printf("\r\nRX %d:\t", ret);
+    				for (pos = 0; pos != ret; ++pos)
+    				{
+    					printf("%.2X ", tmp[pos]);
+    				}
+    				printf("\r\n");
+    			}
 
+    //			appendLog(0, &bb);
 
-                //If client is closed the connection.
-                if (ret == 0)
-                {
-                    svr_reset(&con->settings);
-                    close(socket);
-                    socket = -1;
-                    break;
-                }
-                if (con->trace > GX_TRACE_LEVEL_WARNING)
-                {
-                    printf("\r\nRX %d:\t", ret);
-                    for (pos = 0; pos != ret; ++pos)
-                    {
-                        printf("%.2X ", bb.data[bb.size + pos]);
-                    }
-                    printf("\r\n");
-                }
-                bb.size = bb.size + ret;
-                appendLog(0, &bb);
+    			if(tmp[8] == 0xE6)
+    			{
 
+    				memcpy(con->buffer.RX, tmp, ret);
+    				con->buffer.RX_Count = ret;
+    			}
+    			else
+    			{
+    //				struct timeval  tv,strt;
+    //				long diff=0;
 
-                // printf("client = %s\n",client.sin_addr);
-                // printf("len = %s\n",len);
-                if (svr_handleRequest(&con->settings, &bb, &reply) != 0)
-                {
-                    close(socket);
-                    socket = -1;
-                }
-                bb.size = 0;
-                if (reply.size != 0)
-                {
-                    if (con->trace > GX_TRACE_LEVEL_WARNING)
-                    {
-                        printf("\r\nTX %u:\t", (unsigned int)reply.size);
-                        for (pos = 0; pos != reply.size; ++pos)
-                        {
-                            printf("%.2X ", reply.data[pos]);
-                        }
-                        printf("\r\n");
-                    }
-                    appendLog(1, &reply);
-                    if (send(socket, (const char*)reply.data, reply.size - reply.position, 0) == -1)
-                    {
-                        //If error has occured
-                        svr_reset(&con->settings);
+    				if (svr_handleRequest2(&con->settings, &tmp, ret, &reply) != 0)
+    				{
+                        close(con->serversocket.Accept_fd);
+                        con->serversocket.Accept_fd = -1;
+    				}
 
-                        close(socket);
-                        socket = -1;
-                    }
-                    printf("send from server = %s\n",&reply.data);
+    //				 gettimeofday (&tv, NULL);
+    //				 diff=tv.tv_usec - strt.tv_usec;
+    //				 if(diff < 0) diff+=1000000;
+    //				 printf("######### Delay in svr_handleRequest2=  %d\r\n",diff);
 
-                    bb_clear(&reply);
-                }
+    			}
+
+    			con->buffer.RX_Count = 0;
+
+    			if (reply.size != 0)
+    			{
+    				if (con->trace > GX_TRACE_LEVEL_WARNING)
+    				{
+    					printf("\r\nTX %u:\t", (unsigned int)reply.size);
+    					for (pos = 0; pos != reply.size; ++pos)
+    					{
+    						printf("%.2X ", reply.data[pos]);
+    					}
+    					printf("\r\n");
+    				}
+    //				appendLog(1, &reply);
+
+    				memcpy(con->buffer.TX, (const char*)reply.data, reply.size - reply.position);
+    				con->buffer.TX_Count = reply.size - reply.position;
+
+    				bb_clear(&reply);
+    			}
+    //            svr_reset(&con->settings);
             }
             svr_reset(&con->settings);
         }

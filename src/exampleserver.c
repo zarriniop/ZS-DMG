@@ -179,6 +179,7 @@ gxScriptAction script[9];
 gxScript arr[7];
 
 gxGPRSSetup gprsSetup;
+static unsigned char APN[15];
 gxScriptTable tarifficationScriptTable;
 gxScriptTable pushscripttable;
 gxScriptTable predefinedscriptsimageactivation;
@@ -2003,20 +2004,19 @@ int addPppSetup()
 int addGprsSetup()
 {
     int ret;
-    // static unsigned char APN[15];
     const unsigned char ln[6] = {0, 0, 25, 4, 0, 255};
     if ((ret = INIT_OBJECT(gprsSetup, DLMS_OBJECT_TYPE_GPRS_SETUP, ln)) == 0)
     {
-        // BB_ATTACH(gprsSetup.apn, APN, 0);
-        // ret = bb_addString(&gprsSetup.apn, "vpn.Gurux.fi");
-        // gprsSetup.pinCode = 16;
-        // gprsSetup.defaultQualityOfService.delay = 1;
-        // gprsSetup.defaultQualityOfService.meanThroughput = 10;
-        // gprsSetup.defaultQualityOfService.peakThroughput = 100;
+         BB_ATTACH(gprsSetup.apn, APN, 0);
+         ret = bb_addString(&gprsSetup.apn, "vpn.Gurux.fi");
+         gprsSetup.pinCode = 16;
+         gprsSetup.defaultQualityOfService.delay = 1;
+         gprsSetup.defaultQualityOfService.meanThroughput = 10;
+         gprsSetup.defaultQualityOfService.peakThroughput = 100;
 
-        // gprsSetup.requestedQualityOfService.delay = 1;
-        // gprsSetup.requestedQualityOfService.meanThroughput = 10;
-        // gprsSetup.requestedQualityOfService.peakThroughput = 100;
+         gprsSetup.requestedQualityOfService.delay = 1;
+         gprsSetup.requestedQualityOfService.meanThroughput = 10;
+         gprsSetup.requestedQualityOfService.peakThroughput = 100;
     }
     return ret;
 }
