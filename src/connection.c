@@ -42,7 +42,7 @@ extern gxGPRSSetup 	gprsSetup	;
 extern gxData 		imei		;
 extern gxData 		deviceid6	;
 extern connection 	lnWrapper , lniec , rs485;
-
+extern gxTcpUdpSetup udpSetup;
 
 //Initialize connection buffers.
 void con_initializeBuffers(connection * connection, int size)
@@ -238,7 +238,6 @@ int com_initializeSerialPort(connection* con, char* serialPort, unsigned char ie
         return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     }
     uint32_t baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
-    printf("communicationSpeed:%d - baudRate = %d\n",con->settings.hdlc->communicationSpeed,baudRate);
 
 //    return com_updateSerialportSettings(con,iec, baudRate);
     return Quectel_Update_Serial_Port_Settings(con, iec, baudRate);
@@ -248,11 +247,9 @@ int com_initializeSerialPort(connection* con, char* serialPort, unsigned char ie
 void Socket_Receive_Thread(void* pVoid)
 {
     connection* con = (connection*)pVoid;
-    struct sockaddr_in add;
     int ret;
     char tmp[2048];
     int pos;
-    char* info;
     gxByteBuffer reply;
     struct sockaddr_in client;
     //Get buffer data
@@ -266,71 +263,80 @@ void Socket_Receive_Thread(void* pVoid)
 			//If client is left wait for next client.
 
 //        	 if ((ret = recv(con->socket.Socket_fd, (char*) bb.data + bb.size, bb.capacity - bb.size, 0)) == -1)
-			if ((ret = recv(con->socket.Socket_fd, tmp, 2048, 0)) <= 0)
-			{
+
+        	ret = recv(con->socket.Socket_fd, tmp, 2048, 0);
+        	if(ret <= 0)
+        	{
 				//Notify error.
-//				printf(".............RECEIVE - RET:%d\n", ret);
 				svr_reset(&con->settings);
 				con->socket.Status.Connected = false;
-			}
-
-
-			if (con->trace > GX_TRACE_LEVEL_WARNING)
-			{
-				printf("\r\nRX %d:\t", ret);
-				for (pos = 0; pos != ret; ++pos)
-				{
-					printf("%.2X ", tmp[pos]);
-				}
-				printf("\r\n");
-			}
-
-//			appendLog(0, &bb);
-
-			if(tmp[8] == 0xE6)
-			{
-
-				memcpy(con->buffer.RX, tmp, ret);
-				con->buffer.RX_Count = ret;
-			}
-			else
-			{
-//				struct timeval  tv,strt;
-//				long diff=0;
-
-				if (svr_handleRequest2(&con->settings, &tmp, ret, &reply) != 0)
-				{
-
-				}
-
-//				 gettimeofday (&tv, NULL);
-//				 diff=tv.tv_usec - strt.tv_usec;
-//				 if(diff < 0) diff+=1000000;
-//				 printf("######### Delay in svr_handleRequest2=  %d\r\n",diff);
-
-			}
-
-			con->buffer.RX_Count = 0;
-
-			if (reply.size != 0)
+				printf("$$$$$$$$$$$$$$$$ ERROR - TCP READ \n");
+        	}
+        	else
 			{
 				if (con->trace > GX_TRACE_LEVEL_WARNING)
 				{
-					printf("\r\nTX %u:\t", (unsigned int)reply.size);
-					for (pos = 0; pos != reply.size; ++pos)
+					printf("\r\nRX %d:\t", ret);
+					for (pos = 0; pos != ret; ++pos)
 					{
-						printf("%.2X ", reply.data[pos]);
+						printf("%.2X ", tmp[pos]);
 					}
 					printf("\r\n");
 				}
-//				appendLog(1, &reply);
 
-				memcpy(con->buffer.TX, (const char*)reply.data, reply.size - reply.position);
-				con->buffer.TX_Count = reply.size - reply.position;
+	//			appendLog(0, &bb);
 
-				bb_clear(&reply);
+				if(tmp[8] == 0xE6)
+				{
+
+					memcpy(con->buffer.RX, tmp, ret);
+					con->buffer.RX_Count = ret;
+				}
+				else
+				{
+	//				struct timeval  tv,strt;
+	//				long diff=0;
+
+					if (svr_handleRequest2(&con->settings, &tmp, ret, &reply) != 0)
+					{
+
+					}
+
+	//				 gettimeofday (&tv, NULL);
+	//				 diff=tv.tv_usec - strt.tv_usec;
+	//				 if(diff < 0) diff+=1000000;
+	//				 printf("######### Delay in svr_handleRequest2=  %d\r\n",diff);
+
+				}
+
+				con->buffer.RX_Count = 0;
+
+				if (reply.size != 0)
+				{
+					if (con->trace > GX_TRACE_LEVEL_WARNING)
+					{
+						printf("\r\nTX %u:\t", (unsigned int)reply.size);
+						for (pos = 0; pos != reply.size; ++pos)
+						{
+							printf("%.2X ", reply.data[pos]);
+						}
+						printf("\r\n");
+					}
+	//				appendLog(1, &reply);
+
+					memcpy(con->buffer.TX, (const char*)reply.data, reply.size - reply.position);
+					con->buffer.TX_Count = reply.size - reply.position;
+
+					bb_clear(&reply);
+				}
 			}
-//            svr_reset(&con->settings);
+//			else
+//			{
+//				//Notify error.
+//				svr_reset(&con->settings);
+//				con->socket.Status.Connected = false;
+//				printf("$$$$$$$$$$$$$$$$ ERROR - TCP READ \n");
+//			}
         }
         usleep(10000);
     }
@@ -357,13 +363,13 @@ void Socket_Send_Thread(void* pVoid)
         }
         else if(con->serversocket.Status.Connected == true && con->buffer.TX_Count>0)
         {
-			if (send(con->serversocket.Socket_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
+			if (send(con->serversocket.Accept_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
 			{
 				//If error has occured
 				svr_reset(&con->settings);
 				con->serversocket.Status.Connected = false;
 			}
-			printf("send to server %d = %s\n",con->buffer.TX_Count, &con->buffer.TX);
+			printf("send to client %d = %s\n",con->buffer.TX_Count, &con->buffer.TX);
 			con->buffer.TX_Count = 0;
         }
         usleep(1000);
@@ -393,7 +399,7 @@ int Socket_Connection_Start(connection* con)
 
     con->socket.Parameters.PORT = 30146;
     sprintf(con->socket.Parameters.IP, "109.125.142.200");
-    con->serversocket.server_port = 30145;
+    con->serversocket.server_port = udpSetup.port;
 
     ret = pthread_create(&con->receiverThread, 		NULL, Socket_Receive_Thread	, (void*)con);
     ret = pthread_create(&con->sendThread, 			NULL, Socket_Send_Thread	, (void*)con);
@@ -419,7 +425,7 @@ void Socket_get_open(connection* con)
 //			report("sds","RS232 --> TCP-Client:Socket",n,"--> CREATE_OK!");
 //			printf("TCP-Client:Socket--> CREATE_OK!\n");
 //			report("sds","RS232 --> TCP-Client:Socket",n,"--> Connecting .....!");
-//			printf("TCP-Client:Socket--> Connecting .....\n");
+			printf("TCP-Client:Socket--> Connecting .....\n");
 
 		}
 
@@ -433,7 +439,7 @@ void Socket_get_open(connection* con)
 		con->socket.Status.Opened=true;
 
 //		report("sds","RS232 --> TCP-Client:Socket",n,"--> Connected !");
-//		printf("TCP-Client:Socket--> Connected\n");
+		printf("TCP-Client:Socket--> Connected\n");
 
 	}
 	else
@@ -524,22 +530,19 @@ int Socket_Server(connection* con)
 
 void Socket_Listen_Thread(connection* con)
 {
-    int socket;
 //    connection* con = (connection*)pVoid;
     struct sockaddr_in add;
     int ret;
-    char tmp[10];
+    char tmp[2048];
     socklen_t len;
     socklen_t AddrLen = sizeof(add);
     int pos;
     char* info;
-    gxByteBuffer bb, reply, senderInfo;
+    gxByteBuffer reply, senderInfo;
     struct sockaddr_in client;
     //Get buffer data
     bb_init(&senderInfo);
-    bb_init(&bb);
     bb_init(&reply);
-    bb_capacity(&bb, 2048);
     memset(&client, 0, sizeof(client));
     while (con->serversocket.Socket_fd != -1)
     {
@@ -564,11 +567,13 @@ void Socket_Listen_Thread(connection* con)
             con->serversocket.Status.Connected = true;
             // printf("client = %s\n",client.sin_addr);
             // printf("len = %s\n",len);
-            info = inet_ntoa(add.sin_addr);
-            bb_set(&senderInfo, (unsigned char*)info, (unsigned short)strlen(info));
-            bb_setInt8(&senderInfo, ':');
-            hlp_intToString(tmp, 10, add.sin_port, 0, 0);
-            bb_set(&senderInfo, (unsigned char*)tmp, (unsigned short)strlen(tmp));
+
+//            info = inet_ntoa(add.sin_addr);
+//            bb_set(&senderInfo, (unsigned char*)info, (unsigned short)strlen(info));
+//            bb_setInt8(&senderInfo, ':');
+//            hlp_intToString(tmp, 10, add.sin_port, 0, 0);
+//            bb_set(&senderInfo, (unsigned char*)tmp, (unsigned short)strlen(tmp));
+
             while (con->serversocket.Socket_fd != -1)
             {
     			//If client is left wait for next client.
@@ -647,9 +652,8 @@ void Socket_Listen_Thread(connection* con)
             svr_reset(&con->settings);
         }
     }
-    bb_clear(&bb);
     bb_clear(&reply);
-    bb_clear(&senderInfo);
+//    bb_clear(&senderInfo);
 }
 
 
@@ -1119,7 +1123,6 @@ void WAN_Connection (void)
 
 	APN_Param_Struct.op = START_A_DATA_CALL							;
 	APN_Param_Struct.apn = &gprsSetup.apn.data						;
-	sprintf(APN_Param_Struct.apn, "khzedcapn")					;
 //	printf("<= WAN Connection - APN:%s =>\n", APN_Param_Struct.apn)	;
 
 	APN_Param_Struct.profile_idx 	= 1		;
