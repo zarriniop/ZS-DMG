@@ -127,7 +127,6 @@ int main(int argc, char* argv[])
     LTE_Manager_Start();
 
     pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
-//    Servers_Monitor();
 
 
     while (1)
