@@ -170,7 +170,7 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
  ***********************************************************************************************/
 void GW_Run_Init(Buffer* GW_STRUCT,Buffer* HDLC_STRUCT)							//Initializing some variables
 {
-	printf("GW_Run_Init\n");
+//	printf("GW_Run_Init\n");
 	memset(&Control_Byte_Struct	, 0, sizeof(Control_Byte_Struct));
 }
 

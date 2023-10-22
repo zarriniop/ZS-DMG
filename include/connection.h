@@ -95,6 +95,19 @@ typedef struct{
 	uint16_t			keepalive;
 } CLIENTSOCKET;
 
+typedef struct{
+	SocktParameters		Parameters;
+	SocktStatus			Status;
+	int					Socket_fd;
+	char 				ReceiveFlag;
+//	struct timeval		Flag_Time;
+	struct sockaddr_in 	Serv_addr;
+	int 				Error;
+	socklen_t 			ErrorLen;
+	uint16_t			keepalive;
+	uint16_t			server_port;
+} SERVERSOCKET;
+
 typedef struct
 {
     //Is trace used.
@@ -102,13 +115,14 @@ typedef struct
 
     //Socked handle.
     CLIENTSOCKET 		socket;
-    uint16_t			server_port;
+    SERVERSOCKET 		serversocket;
     //Serial port handle.
     int 				comPort;
     //Receiver thread handle.
     pthread_t 			receiverThread;
     pthread_t 			sendThread;
     pthread_t 			managerThread;
+    pthread_t 			serverstart;
     pthread_t 			serverlistenThread;
     unsigned long   	waitTime;
     //Received data.
@@ -168,7 +182,7 @@ int	Socket_get_close(connection* con);
 
 int Socket_create(connection* con);
 
-
+int Socket_Server(connection* con);
 
 
 

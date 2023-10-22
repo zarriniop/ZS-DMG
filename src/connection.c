@@ -269,7 +269,7 @@ void Socket_Receive_Thread(void* pVoid)
 			if ((ret = recv(con->socket.Socket_fd, tmp, 2048, 0)) <= 0)
 			{
 				//Notify error.
-				printf(".............RECEIVE - RET:%d\n", ret);
+//				printf(".............RECEIVE - RET:%d\n", ret);
 				svr_reset(&con->settings);
 				con->socket.Status.Connected = false;
 			}
@@ -381,10 +381,12 @@ int Socket_Connection_Start(connection* con)
 
     con->socket.Parameters.PORT = 30146;
     sprintf(con->socket.Parameters.IP, "109.125.142.200");
+    con->serversocket.server_port = 30145;
+
     ret = pthread_create(&con->receiverThread, 		NULL, Socket_Receive_Thread	, (void*)con);
     ret = pthread_create(&con->sendThread, 			NULL, Socket_Send_Thread	, (void*)con);
     ret = pthread_create(&con->managerThread, 		NULL, Socket_Manage_Thread	, (void*)con);
-    ret = pthread_create(&con->serverlistenThread, 	NULL, Socket_Listen_Thread	, (void*)con);
+    ret = pthread_create(&con->serverstart, 		NULL, Socket_Server			, (void*)con);
     return ret;
 }
 
@@ -397,15 +399,15 @@ void Socket_get_open(connection* con)
 		con->socket.Status.Opened=false;
 
 //		report("sds","RS232 --> TCP-Client:Socket",n,"--> CONNECTION_CLOSE!!");
-		printf("TCP-Client:Socket--> CONNECTION_CLOSE!!\n");
+//		printf("TCP-Client:Socket--> CONNECTION_CLOSE!!\n");
 																	//===============( Create Socket )=========================
 //		if(ClientSocket.Socket_create(n)==OK)
 		if(Socket_create(con) == 1)
 		{
 //			report("sds","RS232 --> TCP-Client:Socket",n,"--> CREATE_OK!");
-			printf("TCP-Client:Socket--> CREATE_OK!\n");
+//			printf("TCP-Client:Socket--> CREATE_OK!\n");
 //			report("sds","RS232 --> TCP-Client:Socket",n,"--> Connecting .....!");
-			printf("TCP-Client:Socket--> Connecting .....\n");
+//			printf("TCP-Client:Socket--> Connecting .....\n");
 
 		}
 
@@ -419,7 +421,7 @@ void Socket_get_open(connection* con)
 		con->socket.Status.Opened=true;
 
 //		report("sds","RS232 --> TCP-Client:Socket",n,"--> Connected !");
-		printf("TCP-Client:Socket--> Connected\n");
+//		printf("TCP-Client:Socket--> Connected\n");
 
 	}
 	else
@@ -442,7 +444,7 @@ int Socket_Manage_Thread (connection* con)
 	{
 		if(con->socket.Status.Connected == false)
 		{
-			printf("Socket_get_open\n");
+//			printf("Socket_get_open\n");
 			Socket_get_open(con);
 		}
 
@@ -455,6 +457,56 @@ int Socket_Manage_Thread (connection* con)
 		sleep(1);
 
 	}
+}
+
+
+int Socket_Server(connection* con)
+{
+    struct sockaddr_in add = { 0 };
+    int fFlag = 1;
+    int ret;
+    //Reply wait time is 5 seconds.
+    con->waitTime 			= 5000;
+    con->comPort 			= -1;
+    con->receiverThread 	= -1;
+//    con->socket 			= -1;
+    con->serversocket.Socket_fd	= -1;
+    con->closing 			= 0 ;
+    bb_init(&con->data);
+    bb_capacity(&con->data, 50);
+
+    con->serversocket.Socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (con->serversocket.Socket_fd == -1)
+    {
+    	printf("ERROR - SERVER - SOCKET CREATED \n");
+        //socket creation.
+        return -1;
+    }
+    printf("SERVER - SOCKET CREATED \n");
+    if (setsockopt(con->serversocket.Socket_fd, SOL_SOCKET, SO_REUSEADDR, (char*)& fFlag, sizeof(fFlag)) == -1)
+    {
+        //setsockopt.
+        return -1;
+    }
+    printf("SERVER - SOCKET OPTION \n");
+    add.sin_port 		= htons(con->serversocket.server_port);
+    add.sin_addr.s_addr = htonl(INADDR_ANY);
+    add.sin_family		= AF_INET;
+    if ((ret = bind(con->serversocket.Socket_fd, (struct sockaddr*) & add, sizeof(add))) == -1)
+    {
+        //bind;
+    	printf("ERROR - SERVER - SOCKET BIND \n");
+        return -1;
+    }
+    printf("SERVER - SOCKET BIND \n");
+    if ((ret = listen(con->serversocket.Socket_fd, 1)) == -1)
+    {
+        //socket listen failed.
+        return -1;
+    }
+
+    ret = pthread_create(&con->serverlistenThread, 	NULL, Socket_Listen_Thread	, (void*)con);
+    return ret;
 }
 
 
@@ -481,16 +533,15 @@ void Socket_Listen_Thread(connection* con)
     {
         len = sizeof(client);
         bb_clear(&senderInfo);
-        socket = accept(con->socket.Socket_fd, (struct sockaddr*) &client, &len);
+        socket = accept(con->serversocket.Socket_fd, (struct sockaddr*) &client, &len);
 
         printf("socket of client = %d\n",socket);
         // printf("client = %s\n",client.sin_addr);
         // printf("len = %s\n",len);
 
-
-
         if (isConnected(con))
         {
+//        	printf("SERVER - SOCKET ACCEPTED \n");
             if ((ret = getpeername(socket, (struct sockaddr*) & add, &AddrLen)) == -1)
             {
                 close(socket);
@@ -508,9 +559,7 @@ void Socket_Listen_Thread(connection* con)
             while (isConnected(con))
             {
                 //If client is left wait for next client.
-                if ((ret = recv(socket, (char*)
-                    bb.data + bb.size,
-                    bb.capacity - bb.size, 0)) == -1)
+                if ((ret = recv(socket, (char*) bb.data + bb.size, bb.capacity - bb.size, 0)) == -1)
                 {
                     //Notify error.
                     svr_reset(&con->settings);
@@ -588,7 +637,7 @@ void Socket_Listen_Thread(connection* con)
 
 int	Socket_get_close(connection* con)
 {
-	printf("before close\n");
+//	printf("before close\n");
 	int sh=shutdown(con->socket.Socket_fd, SHUT_RDWR);
 	int cl=close(con->socket.Socket_fd);
 
