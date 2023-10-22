@@ -107,7 +107,7 @@ static gxIecHdlcSetup hdlcelectricalrs485port;
 
 static gxData securityreceiveframecounterbroadcastkey;
 
-static gxData ldn, id1, id2;
+static gxData ldn;
 static gxData eventCode;
 static gxData unixTime;
 static gxData invocationCounter;
@@ -2175,20 +2175,6 @@ int svr_InitObjects(
         const unsigned char ln[6] = {0, 0, 42, 0, 0, 255};
         INIT_OBJECT(ldn, DLMS_OBJECT_TYPE_DATA, ln);
         // var_addBytes(&ldn.value, (unsigned char *)buff, 16);
-    }
-
-    // Electricity ID 1
-    {
-        const unsigned char ln[6] = {1, 1, 0, 0, 0, 255};
-        INIT_OBJECT(id1, DLMS_OBJECT_TYPE_DATA, ln);
-        var_setString(&id1.value, buff, 16);
-    }
-
-    // Electricity ID 2.
-    {
-        const unsigned char ln[6] = {1, 1, 0, 0, 1, 255};
-        INIT_OBJECT(id2, DLMS_OBJECT_TYPE_DATA, ln);
-        var_setUInt32(&id2.value, SERIAL_NUMBER);
     }
 
     // active firmware id 2
