@@ -4408,3 +4408,90 @@ void svr_getDataType(
     gxValueEventCollection *args)
 {
 }
+
+
+
+
+
+
+void Read_Settings(SETTINGS *settings)
+{
+	char buffer[1000],data[10][100];
+	memset(buffer,0,sizeof(buffer));
+	for(int i=0;i<10;i++)
+	{
+		memset(data[i],0,sizeof(data[i]));
+	}
+    int fd = open(SETTINGS_PATH, O_RDONLY);
+    if (fd == -1) {
+        perror("Error opening file");
+    }
+    // Read data from the file
+    ssize_t bytes_read = read(fd, buffer, sizeof(buffer));
+    close(fd);
+    int ptr=0,cnt=0;
+    char tmp[50];
+    for(int i=0 ; i<bytes_read ; i++)
+    {
+    	if(buffer[i]=='\n')
+    	{
+    		memcpy(data[cnt],buffer+ptr,i-ptr);
+    		ptr=i+1;
+    		cnt++;
+    		memset(tmp,0,sizeof(tmp));
+    		switch(cnt)
+    		{
+    		case 1 :
+    		{
+    			memset(settings->SerialNumber,0,sizeof(settings->SerialNumber));
+    			strcpy(settings->SerialNumber,data[0]+13);
+    			printf("SerialNumber = %s\n",settings->SerialNumber);
+    			break;
+    		}
+    		case 2 :
+    		{
+    			memset(settings->ProductYear,0,sizeof(settings->ProductYear));
+    			strcpy(settings->ProductYear,data[1]+12);
+    			printf("ProductYear = %s\n",settings->ProductYear);
+    			break;
+    		}
+    		case 3 :
+    		{
+    			memset(settings->manufactureID,0,sizeof(settings->manufactureID));
+    			strcpy(settings->manufactureID,data[2]+14);
+    			printf("manufactureID = %s\n",settings->manufactureID);
+    			break;
+    		}
+    		case 4 :
+    		{
+    			memset(settings->IP,0,sizeof(settings->IP));
+    			strcpy(settings->IP,data[3]+3);
+    			printf("IP = %s\n",settings->IP);
+    			break;
+    		}
+    		case 5 :
+    		{
+    			memset(settings->PORT,0,sizeof(settings->PORT));
+    			strcpy(settings->PORT,data[4]+5);
+    			printf("PORT = %s\n",settings->PORT);
+    			break;
+    		}
+    		case 6 :
+    		{
+    			memset(settings->ListenPORT,0,sizeof(settings->ListenPORT));
+    			strcpy(settings->ListenPORT,data[5]+11);
+    			printf("ListenPORT = %s\n",settings->ListenPORT);
+    			break;
+    		}
+    		case 7 :
+    		{
+    			memset(settings->APN,0,sizeof(settings->APN));
+    			strcpy(settings->APN,data[6]+4);
+    			printf("APN = %s\n",settings->APN);
+    			break;
+    		}
+    		}
+    	}
+    }
+}
+
