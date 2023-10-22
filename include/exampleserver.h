@@ -24,6 +24,26 @@
 char DATAFILE[FILENAME_MAX];
 char IMAGEFILE[FILENAME_MAX];
 char TRACEFILE[FILENAME_MAX];
+
+#define  SETTINGS_PATH 	"/root/Settings.txt"
+
+typedef struct
+{
+	char SerialNumber[10];
+	char ProductYear[5];
+	char manufactureID[5];
+	char IP[17];
+	char PORT[7];
+	char ListenPORT[7];
+	char APN[22];
+}SETTINGS;
+SETTINGS Settings;
+
+
+
+
+void Read_Settings(SETTINGS *settings);
+
 void println(char* desc, gxByteBuffer* data);
 
 int svr_start(

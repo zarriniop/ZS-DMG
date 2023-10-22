@@ -68,7 +68,7 @@ int startServers(int port, int trace)
     }
 
     //Start server
-     if ((ret = svr_start_Serial(&lniec, "/dev/ttyUSB0")) != 0)
+     if ((ret = svr_start_Serial(&lniec, "/dev/ttyS0")) != 0)
      {
          return ret;
      }
