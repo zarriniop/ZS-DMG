@@ -132,8 +132,7 @@ int main(int argc, char* argv[])
     {
     	//git test
 		sleep(1);
-
-		//Hello :)
+		//Goodbye
     }
     return 0;
 }
