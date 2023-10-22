@@ -146,7 +146,7 @@ static gxActionSchedule actionScheduleDisconnectOpen;
 static gxActionSchedule actionScheduleDisconnectClose;
 static gxActionSchedule imagetransferactivationSchedule;
 
-static gxPushSetup pushSetup;
+gxPushSetup pushSetup;
 static gxDisconnectControl disconnectControl;
 static gxProfileGeneric loadProfile;
 static gxProfileGeneric standardeventlog;

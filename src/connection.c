@@ -1189,3 +1189,110 @@ void WAN_Connection (void)
 		sleep(2);
 	}
 }
+
+
+
+
+
+
+
+
+
+int PushSetup_OnConnectivity()
+{
+    int ret;
+    extern gxPushSetup pushSetup;
+    message messages;
+    gxByteBuffer* bb;
+    mes_init(&messages);
+    dlmsSettings cl;
+
+    cl_init(&cl, 1, 1, 102, DLMS_AUTHENTICATION_HIGH_GMAC, NULL, DLMS_INTERFACE_TYPE_WRAPPER);
+
+    char *str1= bb_toString(&pushSetup.destination);
+    char *IP, *Port;
+    IP = strtok(str1,":");
+    printf("IP= %s\n",IP);
+    Port = strtok(NULL,":");
+    printf("Port= %s\n",Port);
+    int Socket;
+    ret = connectServer_pushon(IP, Port, &Socket) ;
+
+    printf("ret of connectServer_pushon = %d\n",ret);
+
+    ret = notify_generatePushSetupMessages(&cl, NULL, &pushSetup, &messages);
+
+    for (int pos = 0; pos != messages.size; ++pos)
+    {
+        bb = messages.data[pos];
+        if ((ret = send(Socket, bb->data, bb->size, 0)) == -1)
+        {
+            mes_clear(&messages);
+            break;
+        }
+
+        for (int n = 0; n < bb->size; n++)
+        {
+            printf("%.2X-", bb->data[n]);
+        }
+        printf("\n");
+    }
+    mes_clear(&messages);
+    closeServer(&Socket);
+    cl_clear(&cl);
+}
+
+int connectServer_pushon(char* address, char *port, int* s)
+{
+    int ret;
+    struct sockaddr_in add;
+    //create socket.
+    *s = socket(AF_INET, SOCK_STREAM, 0);
+    if (*s == -1)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    int port_i = atoi(port);
+
+    add.sin_port = htons(port_i);
+    add.sin_family = AF_INET;
+    add.sin_addr.s_addr = inet_addr(address);
+    //If address is give as name
+    if (add.sin_addr.s_addr == INADDR_NONE)
+    {
+        struct hostent* Hostent = gethostbyname(address);
+        if (Hostent == NULL)
+        {
+            int err = errno;
+            closeServer(s);
+            return err;
+        };
+        add.sin_addr = *(struct in_addr*)(void*)Hostent->h_addr_list[0];
+    };
+
+    //Connect to the meter.
+    ret = connect(*s, (struct sockaddr*)&add, sizeof(struct sockaddr_in));
+    if (ret == -1)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    };
+    return DLMS_ERROR_CODE_OK;
+
+}
+
+
+int closeServer(int* s)
+{
+    if (*s != -1)
+    {
+        close(*s);
+        * s = -1;
+    }
+    return 0;
+}
+
+
+
+
+
+

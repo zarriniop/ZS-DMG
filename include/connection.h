@@ -39,6 +39,8 @@ extern "C" {
 #define true 	1
 #define false 	0
 
+extern gxPushSetup pushSetup;
+
 
 static uint32_t Boudrate[]={ 300 , 600 , 1200 , 2400 , 4800 , 9600 , 19200 , 38400 , 57600 , 115200 };
 
@@ -240,7 +242,11 @@ void WAN_Init (void);
 
 void WAN_Connection (void);
 
+int PushSetup_OnConnectivity();
 
+int connectServer_pushon(char* address, char *port, int* s);
+
+int closeServer(int* s);
 
 #ifdef  __cplusplus
 }

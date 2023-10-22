@@ -36,7 +36,7 @@ typedef struct
 }SETTINGS;
 SETTINGS Settings;
 
-
+void Read_Settings(SETTINGS *settings);
 
 
 char DATAFILE[FILENAME_MAX];
