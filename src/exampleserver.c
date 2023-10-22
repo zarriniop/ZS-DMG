@@ -2145,6 +2145,7 @@ int svr_InitObjects(
 {
     char buff[17];
     int ret;
+    Read_Settings(&Settings);
     OA_ATTACH(settings->base.objects, ALL_OBJECTS);
     ///////////////////////////////////////////////////////////////////////
     // Add Logical Device Name. 123456 is meter serial number.
