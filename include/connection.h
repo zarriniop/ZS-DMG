@@ -101,21 +101,22 @@ typedef struct
     unsigned char trace;
 
     //Socked handle.
-    CLIENTSOCKET socket;
+    CLIENTSOCKET 		socket;
+    uint16_t			server_port;
     //Serial port handle.
-    int comPort;
+    int 				comPort;
     //Receiver thread handle.
-    pthread_t receiverThread;
-    pthread_t sendThread;
-    pthread_t managerThread;
-    pthread_t serverlistenThread;
-    unsigned long   waitTime;
+    pthread_t 			receiverThread;
+    pthread_t 			sendThread;
+    pthread_t 			managerThread;
+    pthread_t 			serverlistenThread;
+    unsigned long   	waitTime;
     //Received data.
-    gxByteBuffer data;
+    gxByteBuffer 		data;
     //If receiver thread is closing.
-    unsigned char closing;
-    dlmsServerSettings settings;
-    Buffer buffer;
+    unsigned char 		closing;
+    dlmsServerSettings 	settings;
+    Buffer 				buffer;
 } connection;
 
 

@@ -128,7 +128,6 @@ int main(int argc, char* argv[])
 
     pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
 
-
     while (1)
     {
 		sleep(1);
