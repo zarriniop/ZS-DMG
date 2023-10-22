@@ -133,9 +133,7 @@ uint16_t GetLinuxBaudRate(uint32_t baudRate)
     return br;
 }
 
-int com_updateSerialportSettings(connection* con,
-    unsigned char iec,
-    uint32_t baudRate)
+int com_updateSerialportSettings(connection* con, unsigned char iec, uint32_t baudRate)
 {
     int ret;
     struct termios options;
@@ -187,13 +185,46 @@ int com_updateSerialportSettings(connection* con,
     return 0;
 }
 
-int com_initializeSerialPort(connection* con,
-    char* serialPort,
-    unsigned char iec)
+int Quectel_Update_Serial_Port_Settings(connection* con, unsigned char iec, uint32_t baudRate)
+{
+	ST_UARTDCB dcb;
+    int ret;
+
+    if (iec)
+    {
+    	dcb.parity = PB_EVEN;
+    	dcb.stopbit = SB_1;
+    	dcb.databit = DB_CS7;
+    	dcb.baudrate = B_300;
+    }
+    else
+    {
+        // 8n1, see termios.h for more information
+    	dcb.parity = PB_NONE;
+    	dcb.stopbit = SB_1;
+    	dcb.databit = DB_CS8;
+    	dcb.baudrate = baudRate;
+    }
+
+    //hardware flow control is used as default.
+    //options.c_cflag |= CRTSCTS;
+
+    if (Ql_UART_SetDCB(con->comPort, &dcb) != 0)
+    {
+        ret = errno;
+        printf("Failed to Open port. tcsetattr failed.\r");
+        return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
+    }
+    return 0;
+}
+
+int com_initializeSerialPort(connection* con, char* serialPort, unsigned char iec)
 {
     int ret;
     // read/write | not controlling term | don't wait for DCD line signal.
-    con->comPort = open(serialPort, O_RDWR | O_NOCTTY | O_NONBLOCK);
+//    con->comPort = open(serialPort, O_RDWR | O_NOCTTY | O_NONBLOCK);
+
+    con->comPort = Ql_UART_Open(serialPort, B_9600, FC_NONE);
     if (con->comPort == -1) // if open is unsuccessful.
     {
         ret = errno;
@@ -207,9 +238,10 @@ int com_initializeSerialPort(connection* con,
         return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     }
     uint32_t baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
-//    printf("baudRate = %d\n",baudRate);
+    printf("communicationSpeed:%d - baudRate = %d\n",con->settings.hdlc->communicationSpeed,baudRate);
 
-    return com_updateSerialportSettings(con,iec, baudRate);
+//    return com_updateSerialportSettings(con,iec, baudRate);
+    return Quectel_Update_Serial_Port_Settings(con, iec, baudRate);
 }
 
 
@@ -603,7 +635,7 @@ int Socket_create(connection* con)								//===============( Create client )====
 
 
 
-void* UnixSerialPortThread(void* pVoid)
+void* IEC_Serial_Thread(void* pVoid)
 {
     int ret;
     unsigned char data;
@@ -666,7 +698,8 @@ void* UnixSerialPortThread(void* pVoid)
                     {
                         /*Change baud rate settings if optical probe is used.*/
                         printf("%s %d", "Connected with optical probe. The new baudrate is:", sr.newBaudRate);
-                        com_updateSerialportSettings(con,0, sr.newBaudRate);
+//                        com_updateSerialportSettings(con,0, sr.newBaudRate);
+                        Quectel_Update_Serial_Port_Settings(con,0, sr.newBaudRate);
                     }
                     else if (con->settings.base.connected == DLMS_CONNECTION_STATE_NONE)
                     {
@@ -676,7 +709,8 @@ void* UnixSerialPortThread(void* pVoid)
                         usleep(100000);
                         uint16_t baudRate = 300 << (int)con->settings.localPortSetup->defaultBaudrate;
                         printf("%s %d", "Disconnected with optical probe. The new baudrate is:", baudRate);
-                        com_updateSerialportSettings(con,1, 300);
+//                        com_updateSerialportSettings(con,1, 300);
+                        Quectel_Update_Serial_Port_Settings(con,1, 300);
                     }
                 }
                 bb_clear(&reply);
@@ -687,7 +721,7 @@ void* UnixSerialPortThread(void* pVoid)
 }
 
 
-void* Unixrs485RecSerialThread(void* pVoid)
+void* RS485_Receive_Thread(void* pVoid)
 {
     int ret;
     unsigned char data;
@@ -736,30 +770,37 @@ void* Unixrs485RecSerialThread(void* pVoid)
 }
 
 
-
-
-
-void* Unixrs485SendSerialThread(void* pVoid)
+void* RS485_Send_Thread(void* pVoid)
 {
     int ret;
+    uint32_t baudRate;
+    uint32_t delay_us;
     connection* con = (connection*)pVoid;
     while (1)
     {
         if(con->buffer.TX_Count>0)
         {
-            ret = write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
+        	system("echo 1 > /sys/class/leds/DIR_485/brightness");
+//            ret = write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
+            ret = Ql_UART_Write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
+
+            baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
+            delay_us = ((con->buffer.TX_Count * 10000)/baudRate);
+            printf("******************************delay_us=%d\n", delay_us);
             con->buffer.TX_Count = 0 ;
+            usleep(delay_us*1000);
+
+            system("echo 0 > /sys/class/leds/DIR_485/brightness");
         }
-        usleep(10000);
+        sleep(1);
+//        usleep(10000);
     }
     return NULL;
 }
 
 
 //Initialize connection settings.
-int svr_listen_serial(
-    connection* con,
-     char *file)
+int IEC_Serial_Start(connection* con, char *file)
 {
     int ret;
     if (!isConnected(con))
@@ -772,14 +813,11 @@ int svr_listen_serial(
 
     if(con->settings.localPortSetup->defaultMode==0) interfaceType=DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E;
     else interfaceType=DLMS_INTERFACE_TYPE_HDLC;
-    if ((ret = com_initializeSerialPort(
-        con,
-        file,
-        interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)) != 0)
+    if ((ret = com_initializeSerialPort(con, file, interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)) != 0)
     {
         return ret;
     }
-    ret = pthread_create(&con->receiverThread, NULL, UnixSerialPortThread, (void*)con);
+    ret = pthread_create(&con->receiverThread, NULL, IEC_Serial_Thread, (void*)con);
     return ret;
 }
 
@@ -787,15 +825,10 @@ int svr_listen_serial(
 
 
 //Initialize connection settings.
-int rs485_listen_serial(
-    connection* con,
-     char *file)
+int RS485_Serial_Start(connection* con, char *file)
 {
     int ret;
-    if ((ret = com_initializeSerialPort(
-        con,
-        file,
-        0)) != 0)
+    if ((ret = com_initializeSerialPort(con, file, 0)) != 0)
     {
         return ret;
     }
@@ -803,8 +836,8 @@ int rs485_listen_serial(
     con->buffer.RX_Count = 0 ;
     con->buffer.TX_Count = 0 ;
     con->buffer.Timeout_ms = 1000;
-    ret = pthread_create(&con->receiverThread, NULL, Unixrs485RecSerialThread, (void*)con);
-    ret = pthread_create(&con->sendThread, NULL, Unixrs485SendSerialThread, (void*)con);
+    ret = pthread_create(&con->receiverThread, NULL, RS485_Receive_Thread, (void*)con);
+    ret = pthread_create(&con->sendThread, NULL, RS485_Send_Thread, (void*)con);
     ret = pthread_create(&con->managerThread, NULL, GW_Start, (void*)con);
     return ret;
 }

@@ -137,33 +137,23 @@ typedef struct
 	char 			password[20];
 }APN_PARAM_STRUCT_TYPEDEF;
 
-void con_initializeBuffers(
-    connection* connection,
-    int size);
+void con_initializeBuffers(connection* connection, int size);
 
 
 uint16_t GetLinuxBaudRate(uint32_t baudRate);
 
+int com_updateSerialportSettings(connection* con, unsigned char iec, uint32_t baudRate);
+
+int Quectel_Update_Serial_Port_Settings(connection* con, unsigned char iec, uint32_t baudRate);
+
+int com_initializeSerialPort(connection* con, char* serialPort, unsigned char iec);
 
 
-
-
-int com_updateSerialportSettings(connection* con,
-    unsigned char iec,
-    uint32_t baudRate);
-
-
-
-
-
-int com_initializeSerialPort(connection* con,
-    char* serialPort,
-    unsigned char iec);
-
-void Socket_Listen_Thread(void* pVoid);
 
 //void ListenerThread(void* pVoid);
 void Socket_Receive_Thread(void* pVoid);
+
+void Socket_Listen_Thread(connection* con);
 
 void Socket_Send_Thread(void* pVoid);
 
@@ -177,37 +167,32 @@ int	Socket_get_close(connection* con);
 
 int Socket_create(connection* con);
 
-void* UnixListenerThread(void* pVoid);
-
-void* UnixSerialPortThread(void* pVoid);
 
 
-void* Unixrs485RecSerialThread(void* pVoid);
 
-void* Unixrs485SendSerialThread(void* pVoid);
+
 
 void GW_Start (void* pVoid);
 
-int svr_listen_serial(
-    connection* con,
-     char *file);
 
 
-int rs485_listen_serial(
-    connection* con,
-     char *file);
+int IEC_Serial_Start(connection* con, char *file);
+
+void* IEC_Serial_Thread(void* pVoid);
 
 
-int svr_listen_TCP(
-    connection* con,
-    unsigned short port);
+
+int RS485_Serial_Start(connection* con, char *file);
+
+void* RS485_Receive_Thread(void* pVoid);
+
+void* RS485_Send_Thread(void* pVoid);
 
 
 
 
 //Close connection..
-int con_close(
-    connection* con);
+int con_close(connection* con);
 
 
 

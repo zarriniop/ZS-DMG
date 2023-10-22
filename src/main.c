@@ -62,19 +62,19 @@ int Servers_Start(int trace)
     svr_InitObjects(&lniec.settings);
 
     //Start server
-    if ((ret = svr_start(&lnWrapper)) != 0)
+    if ((ret = TCP_start(&lnWrapper)) != 0)
     {
         return ret;
     }
 
     //Start server
-    // if ((ret = svr_start_Serial(&lniec, "/dev/ttyUSB0")) != 0)
+    // if ((ret = IEC_start(&lniec, "/dev/ttyUSB0")) != 0)
     // {
     //     return ret;
     // }
 
 
-    if((ret = rs485_start_Serial(&rs485, RS485_SERIAL_FD)) != 0 )
+    if((ret = rs485_start(&rs485, RS485_SERIAL_FD)) != 0 )
     {
         return ret;
     }
@@ -102,6 +102,9 @@ void Servers_Monitor (void)
 			printf("lniec monitor failed.\r\n");
 		}
 
+//		memset(rs485.buffer.TX, 'A', 20);
+//		rs485.buffer.TX_Count = 20;
+//		printf("******************************Servers_Monitor\n");
 		sleep(1);
     }
     con_close(&lnWrapper);
@@ -130,12 +133,18 @@ int main(int argc, char* argv[])
 
     LTE_Manager_Start();
 
-    Servers_Monitor();
+    pthread_t SVR_Monitor;
+    pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
+//    Servers_Monitor();
 
-//    while(1)
-//    {
-//    	sleep(10);
-//    }
+
+    while (1)
+    {
+		memset(rs485.buffer.TX, 'A', 500);
+		rs485.buffer.TX_Count = 500;
+		printf("******************************Servers_Monitor\n");
+		sleep(1);
+    }
     return 0;
 }
 

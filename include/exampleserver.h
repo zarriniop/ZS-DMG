@@ -25,19 +25,14 @@ char IMAGEFILE[FILENAME_MAX];
 char TRACEFILE[FILENAME_MAX];
 void println(char* desc, gxByteBuffer* data);
 
-int svr_start(connection *con);
+int TCP_start(connection *con);
 
-int svr_start_Serial(
-    connection *con,
-    char *file);
+int IEC_start(connection *con, char *file);
 
-int rs485_start_Serial(
-connection *con,
-char *file);
+int rs485_start(connection *con, char *file);
     
 
-int svr_InitObjects(
-    dlmsServerSettings *settings);
+int svr_InitObjects(dlmsServerSettings *settings);
 
 
 /**
@@ -49,10 +44,7 @@ int svr_InitObjects(
 *            Client address.
 * @return True, if data is sent to this server.
 */
-unsigned char svr_isTarget(
-    dlmsSettings *settings,
-    unsigned long int serverAddress,
-    unsigned long clientAddress);
+unsigned char svr_isTarget(dlmsSettings *settings, unsigned long int serverAddress, unsigned long clientAddress);
 
 /**
 * Get attribute access level.
