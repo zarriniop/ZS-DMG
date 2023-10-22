@@ -130,9 +130,7 @@ int main(int argc, char* argv[])
 
     while (1)
     {
-    	//git test
 		sleep(1);
-		//Goodbye
     }
     return 0;
 }
