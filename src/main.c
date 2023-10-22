@@ -18,10 +18,6 @@
 /********************************************|
 |*			Variables & Definitions			*|
 |********************************************/
-
-/********************
- *	HAJIAN Param	*
- ********************/
 unsigned char lnframeBuff	[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE]	;
 unsigned char lnpduBuff		[PDU_BUFFER_SIZE]						;
 unsigned char ln47frameBuff	[WRAPPER_BUFFER_SIZE]					;
@@ -29,6 +25,7 @@ unsigned char ln47pduBuff	[PDU_BUFFER_SIZE]						;
 
 connection lnWrapper , lniec , rs485;
 
+pthread_t SVR_Monitor;
 /********************
  *	pthread Param	*
  ********************/
@@ -101,10 +98,6 @@ void Servers_Monitor (void)
 		{
 			printf("lniec monitor failed.\r\n");
 		}
-
-//		memset(rs485.buffer.TX, 'A', 20);
-//		rs485.buffer.TX_Count = 20;
-//		printf("******************************Servers_Monitor\n");
 		sleep(1);
     }
     con_close(&lnWrapper);
@@ -133,16 +126,12 @@ int main(int argc, char* argv[])
 
     LTE_Manager_Start();
 
-    pthread_t SVR_Monitor;
     pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
 //    Servers_Monitor();
 
 
     while (1)
     {
-		memset(rs485.buffer.TX, 'A', 500);
-		rs485.buffer.TX_Count = 500;
-		printf("******************************Servers_Monitor\n");
 		sleep(1);
     }
     return 0;

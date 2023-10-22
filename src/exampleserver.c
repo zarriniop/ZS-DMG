@@ -1755,7 +1755,7 @@ int addHdlcElectricalRS4785Port(dlmsServerSettings *settings)
     unsigned char ln[6] = {0, 2, 22, 0, 0, 255};
     if ((ret = INIT_OBJECT(hdlcelectricalrs485port, DLMS_OBJECT_TYPE_IEC_HDLC_SETUP, ln)) == 0)
     {
-        hdlcelectricalrs485port.communicationSpeed = DLMS_BAUD_RATE_19200;
+        hdlcelectricalrs485port.communicationSpeed = DLMS_BAUD_RATE_9600;
         hdlcelectricalrs485port.windowSizeReceive = hdlcelectricalrs485port.windowSizeTransmit = 1;
         // hdlcelectricalrs485port.maximumInfoLengthTransmit = hdlcelectricalrs485port.maximumInfoLengthReceive = 128;
         // hdlcelectricalrs485port.inactivityTimeout = 180;

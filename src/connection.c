@@ -781,12 +781,11 @@ void* RS485_Send_Thread(void* pVoid)
         if(con->buffer.TX_Count>0)
         {
         	system("echo 1 > /sys/class/leds/DIR_485/brightness");
-//            ret = write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
-            ret = Ql_UART_Write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
+            ret = write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
+//            ret = Ql_UART_Write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
 
             baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
             delay_us = ((con->buffer.TX_Count * 10000)/baudRate);
-            printf("******************************delay_us=%d\n", delay_us);
             con->buffer.TX_Count = 0 ;
             usleep(delay_us*1000);
 
