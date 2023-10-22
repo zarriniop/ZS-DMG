@@ -1264,13 +1264,15 @@ int addTcpUdpSetup()
     // Add Tcp/Udp setup. Default Logical Name is 0.0.25.0.0.255.
     const unsigned char ln[6] = {0, 0, 25, 0, 0, 255};
     INIT_OBJECT(udpSetup, DLMS_OBJECT_TYPE_TCP_UDP_SETUP, ln);
-    udpSetup.port = 4059;
+    udpSetup.port = atoi(Settings.ListenPORT);
+    printf("ListenPORT = %d\n",atoi(Settings.ListenPORT));
     udpSetup.ipSetup = &ip4Setup;
     udpSetup.maximumSimultaneousConnections = 5;
     udpSetup.maximumSegmentSize = 1280;
     udpSetup.inactivityTimeout = 180;
     return 0;
 }
+
 
 ///////////////////////////////////////////////////////////////////////
 // Add profile generic (historical data) object.
@@ -1457,13 +1459,13 @@ int addEventLogProfileGeneric(dlmsSettings *settings)
 ///////////////////////////////////////////////////////////////////////
 int addAutoConnect()
 {
-    // gxByteBuffer *str;
+     gxByteBuffer *str;
     // gxtime *start, *end;
     const unsigned char ln[6] = {0, 0, 2, 1, 0, 255};
     INIT_OBJECT(autoConnect, DLMS_OBJECT_TYPE_AUTO_CONNECT, ln);
     autoConnect.mode = DLMS_AUTO_CONNECT_MODE_PERMANENTLY_CONNECT;
-    autoConnect.repetitions = 0;
-    autoConnect.repetitionDelay = 0;
+    autoConnect.repetitions = 0 ;
+    autoConnect.repetitionDelay = 0 ;
     //this comment is ok
     // Calling is allowed between 1am to 6am.
     // start = (gxtime *)malloc(sizeof(gxtime));
@@ -1471,12 +1473,19 @@ int addAutoConnect()
     // end = (gxtime *)malloc(sizeof(gxtime));
     // time_init(end, -1, -1, -1, 6, 0, 0, -1, -1);
     // arr_push(&autoConnect.callingWindow, key_init(start, end));
-    // str = (gxByteBuffer *)malloc(sizeof(gxByteBuffer));
-    // bb_init(str);
-    // bb_addString(str, "Gurux");
-    // arr_push(&autoConnect.destinations, str);
+     str = (gxByteBuffer *)malloc(sizeof(gxByteBuffer));
+     bb_init(str);
+     char str1[100];
+     memset(str1,0,sizeof(str1));
+     sprintf(str1,"%s:%s",Settings.IP,Settings.PORT);
+     printf("IP:PORT = %s\n",str1);
+     bb_addString(str, str1);
+     arr_push(&autoConnect.destinations, str);
     return 0;
 }
+
+
+
 
 ///////////////////////////////////////////////////////////////////////
 // Add Activity Calendar object.
@@ -2002,24 +2011,29 @@ int addPppSetup()
 ///////////////////////////////////////////////////////////////////////
 int addGprsSetup()
 {
-    int ret;
-    // static unsigned char APN[15];
-    const unsigned char ln[6] = {0, 0, 25, 4, 0, 255};
-    if ((ret = INIT_OBJECT(gprsSetup, DLMS_OBJECT_TYPE_GPRS_SETUP, ln)) == 0)
-    {
-        // BB_ATTACH(gprsSetup.apn, APN, 0);
-        // ret = bb_addString(&gprsSetup.apn, "vpn.Gurux.fi");
-        // gprsSetup.pinCode = 16;
-        // gprsSetup.defaultQualityOfService.delay = 1;
-        // gprsSetup.defaultQualityOfService.meanThroughput = 10;
-        // gprsSetup.defaultQualityOfService.peakThroughput = 100;
+int ret;
+//     static unsigned char APN[15];
+const unsigned char ln[6] = {0, 0, 25, 4, 0, 255};
+if ((ret = INIT_OBJECT(gprsSetup, DLMS_OBJECT_TYPE_GPRS_SETUP, ln)) == 0)
+{
+//	 BB_ATTACH(gprsSetup.apn, APN, 0);
+     ret = bb_addString(&gprsSetup.apn, Settings.APN);
+     printf("APN = %s\n",Settings.APN);
+    // gprsSetup.pinCode = 16;
+    // gprsSetup.defaultQualityOfService.delay = 1;
+    // gprsSetup.defaultQualityOfService.meanThroughput = 10;
+    // gprsSetup.defaultQualityOfService.peakThroughput = 100;
 
-        // gprsSetup.requestedQualityOfService.delay = 1;
-        // gprsSetup.requestedQualityOfService.meanThroughput = 10;
-        // gprsSetup.requestedQualityOfService.peakThroughput = 100;
-    }
-    return ret;
+    // gprsSetup.requestedQualityOfService.delay = 1;
+    // gprsSetup.requestedQualityOfService.meanThroughput = 10;
+//     gprsSetup.requestedQualityOfService.peakThroughput = 100;
 }
+return ret;
+}
+
+
+
+
 ///////////////////////////////////////////////////////////////////////
 // Add push setup object. (On Connectivity)
 ///////////////////////////////////////////////////////////////////////
@@ -2195,14 +2209,15 @@ int svr_InitObjects(
         // var_setString(&activefirmwaresignature2.value, buf, 49);
     }
 
-    // Device ID 1
 
+    // Device ID 1
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 0, 255};
         INIT_OBJECT(deviceid1, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[8];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid1.value, buf, 8);
+        char buf[8];
+        printf("SerialNumber333 = %s\n",Settings.SerialNumber);
+        sprintf(buf,"%s",Settings.SerialNumber);
+        var_setString(&deviceid1.value, buf, 8);
     }
 
     // Device ID 2
@@ -2251,13 +2266,14 @@ int svr_InitObjects(
     }
 
     // Device ID 7
-    {
-        const unsigned char ln[6] = {1, 0, 0, 0, 0, 255};
-        INIT_OBJECT(deviceid7, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[14];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid7.value, buf, 14);
-    }
+   {
+       const unsigned char ln[6] = {1, 0, 0, 0, 0, 255};
+       INIT_OBJECT(deviceid7, DLMS_OBJECT_TYPE_DATA, ln);
+        char buf[15];
+        sprintf(buf, "%s31%s%s",Settings.manufactureID,Settings.ProductYear,Settings.SerialNumber);
+        printf("buf = %s\n",buf);
+        var_setString(&deviceid7.value, buf, 15);
+   }
 
     // Error Register
     {
