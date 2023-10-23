@@ -401,9 +401,9 @@ int Socket_Connection_Start(connection* con)
     sprintf(con->socket.Parameters.IP, "109.125.142.200");
     con->serversocket.server_port = udpSetup.port;
 
-//    ret = pthread_create(&con->receiverThread, 		NULL, Socket_Receive_Thread	, (void*)con);
+    ret = pthread_create(&con->receiverThread, 		NULL, Socket_Receive_Thread	, (void*)con);
     ret = pthread_create(&con->sendThread, 			NULL, Socket_Send_Thread	, (void*)con);
-//    ret = pthread_create(&con->managerThread, 		NULL, Socket_Manage_Thread	, (void*)con);
+    ret = pthread_create(&con->managerThread, 		NULL, Socket_Manage_Thread	, (void*)con);
     ret = pthread_create(&con->serverstart, 		NULL, Socket_Server			, (void*)con);
     return ret;
 }
