@@ -2008,7 +2008,7 @@ int addGprsSetup()
     if ((ret = INIT_OBJECT(gprsSetup, DLMS_OBJECT_TYPE_GPRS_SETUP, ln)) == 0)
     {
 //         BB_ATTACH(gprsSetup.apn, APN, 0);
-         ret = bb_addString(&gprsSetup.apn, "vpn.Gurux.fi");
+         ret = bb_addString(&gprsSetup.apn, "mtnirancell");
          gprsSetup.pinCode = 16;
          gprsSetup.defaultQualityOfService.delay = 1;
          gprsSetup.defaultQualityOfService.meanThroughput = 10;

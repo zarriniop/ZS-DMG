@@ -384,6 +384,7 @@ int Socket_Connection_Start(connection* con)
 
     con->socket.Parameters.PORT = 30146;
     sprintf(con->socket.Parameters.IP, "109.125.142.200");
+//    sprintf(con->socket.Parameters.IP, "192.168.1.134");
     con->serversocket.server_port = udpSetup.port;
 
     ret = pthread_create(&con->receiverThread, 		NULL, Socket_Receive_Thread	, (void*)con);
@@ -1107,7 +1108,7 @@ void WAN_Connection (void)
 	memset(&Sig_Strg_Info,0,sizeof(QL_NW_SIGNAL_STRENGTH_INFO_T));
 
 	APN_Param_Struct.op = START_A_DATA_CALL							;
-	APN_Param_Struct.apn = &gprsSetup.apn.data						;
+//	APN_Param_Struct.apn = &gprsSetup.apn.data						;
 //	printf("<= WAN Connection - APN:%s =>\n", APN_Param_Struct.apn)	;
 
 	APN_Param_Struct.profile_idx 	= 1		;
