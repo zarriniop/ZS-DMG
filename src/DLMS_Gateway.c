@@ -424,8 +424,8 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, uint8_t
 	MAC_frame[last_byte + 1] = (uint8_t) (FCS >> 8);
 	MAC_frame[last_byte + 2] = (uint8_t) (FCS & 0x00FF);
 
-	MAC_frame_Size = MAC_frame_Size + APDU_size + LLC_SUB_LAYER_SIZE;
-	MAC_frame[MAC_frame_Size-1] = 0x7E;		//End flag
+	MAC_frame_Size 						= MAC_frame_Size + APDU_size + LLC_SUB_LAYER_SIZE;
+	MAC_frame[MAC_frame_Size-1] 		= 0x7E										;		//End flag
 	Frame_Format 						= ((MAC_frame_Size - 2) & 0x07FF) | (0xA000);
 	MAC_frame[FRAME_FRMT_START_BYTE] 	= (uint8_t) (Frame_Format >> 8)				;
 	MAC_frame[FRAME_FRMT_START_BYTE+1] 	= (uint8_t) (Frame_Format & 0xFF)			;
@@ -680,7 +680,8 @@ int64_t Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT)		//Con
 								HES_Frame[APDU_LEN_START_BYTE] 			= (uint8_t) (APDU_Len_for_Last_Segment >> 8);
 								HES_Frame[APDU_LEN_START_BYTE+1] 		= (uint8_t) (APDU_Len_for_Last_Segment & 0x00FF);
 
-								memcpy(GW_STRUCT->TX, HES_Frame, sizeof(HES_Frame));
+//								memcpy(GW_STRUCT->TX, HES_Frame, sizeof(HES_Frame));
+								memcpy(GW_STRUCT->TX, HES_Frame, HES_Frame_Size_for_Last_Segment);
 
 								printf("--------------------------------------------------------\n");
 								printf("Meter2GW_Frame_Convertor:%d\n", Last_Byte_Buffer_Meter2GW);
