@@ -370,6 +370,7 @@ int Socket_Connection_Start(connection* con)
     con->comPort = -1;
     con->receiverThread = -1;
     con->socket.Socket_fd = -1;
+    con->serversocket.Socket_fd = -1;
     con->closing = 0;
     bb_init(&con->data);
     bb_capacity(&con->data, 50);
@@ -377,8 +378,9 @@ int Socket_Connection_Start(connection* con)
     con->buffer.TX_Count = 0;
     con->buffer.RX_Count = 0;
 
-    con->socket.Status.Connected 	= false;
-    con->socket.Status.Opened 		= true;
+    con->socket.Status.Connected 		= false	;
+    con->socket.Status.Opened 			= true	;
+    con->serversocket.Status.Connected 	= false	;
 
     con->socket.Parameters.PORT = 30146;
     sprintf(con->socket.Parameters.IP, "109.125.142.200");
