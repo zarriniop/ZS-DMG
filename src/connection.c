@@ -270,7 +270,6 @@ void Socket_Receive_Thread(void* pVoid)
 				//Notify error.
 				svr_reset(&con->settings);
 				con->socket.Status.Connected = false;
-				printf("$$$$$$$$$$$$$$$$ ERROR - TCP READ \n");
         	}
         	else
 			{
@@ -294,19 +293,10 @@ void Socket_Receive_Thread(void* pVoid)
 				}
 				else
 				{
-	//				struct timeval  tv,strt;
-	//				long diff=0;
-
 					if (svr_handleRequest2(&con->settings, &tmp, ret, &reply) != 0)
 					{
 
 					}
-
-	//				 gettimeofday (&tv, NULL);
-	//				 diff=tv.tv_usec - strt.tv_usec;
-	//				 if(diff < 0) diff+=1000000;
-	//				 printf("######### Delay in svr_handleRequest2=  %d\r\n",diff);
-
 				}
 
 				con->buffer.RX_Count = 0;
@@ -330,13 +320,6 @@ void Socket_Receive_Thread(void* pVoid)
 					bb_clear(&reply);
 				}
 			}
-//			else
-//			{
-//				//Notify error.
-//				svr_reset(&con->settings);
-//				con->socket.Status.Connected = false;
-//				printf("$$$$$$$$$$$$$$$$ ERROR - TCP READ \n");
-//			}
         }
         usleep(10000);
     }
@@ -404,7 +387,7 @@ int Socket_Connection_Start(connection* con)
     ret = pthread_create(&con->receiverThread, 		NULL, Socket_Receive_Thread	, (void*)con);
     ret = pthread_create(&con->sendThread, 			NULL, Socket_Send_Thread	, (void*)con);
     ret = pthread_create(&con->managerThread, 		NULL, Socket_Manage_Thread	, (void*)con);
-    ret = pthread_create(&con->serverstart, 		NULL, Socket_Server			, (void*)con);
+//    ret = pthread_create(&con->serverstart, 		NULL, Socket_Server			, (void*)con);
     return ret;
 }
 
