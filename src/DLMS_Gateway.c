@@ -315,8 +315,8 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, uint8_t
 	/* Detecting APDU in GW frame */
 	Add_Len 		= GW_STRUCT->RX[10]						;									//Reading Physical Address length from 10th array of received format
 	APDU_start_add 	= HEADER_PREFIX_MIN_SIZE_GW_PRTCL + Add_Len		;									//Calculating start point to read APDU information
-	APDU_size 		= (((uint16_t) (GW_STRUCT->RX[6])) << 8) | GW_STRUCT->RX[7]	;		//Reading APDU bytes size from received frame
-	memcpy(APDU, GW_STRUCT->RX + APDU_start_add, APDU_size)	;
+//	APDU_size 		= (((uint16_t) (GW_STRUCT->RX[6])) << 8) | GW_STRUCT->RX[7]	;		//Reading APDU bytes size from received frame
+//	memcpy(APDU, GW_STRUCT->RX + APDU_start_add, APDU_size)	;
 
 	MAC_frame_Size = MIN_HDLC_SIZE;			//Min MAC frame size
 
@@ -340,17 +340,19 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, uint8_t
 		return -1;
 	}
 
-	MAC_frame_Size = MAC_frame_Size + APDU_size + LLC_SUB_LAYER_SIZE;
+//	MAC_frame_Size = MAC_frame_Size + APDU_size + LLC_SUB_LAYER_SIZE;
+//
+//	uint8_t MAC_frame[MAC_frame_Size];
 
-	uint8_t MAC_frame[MAC_frame_Size];
+	uint8_t MAC_frame[2048];
 	memset(MAC_frame, 0, sizeof(MAC_frame));
 
 	MAC_frame[0] 				= 0x7E;		//Start flag
-	MAC_frame[MAC_frame_Size-1] = 0x7E;		//End flag
+//	MAC_frame[MAC_frame_Size-1] = 0x7E;		//End flag
 
-	Frame_Format 						= ((MAC_frame_Size - 2) & 0x07FF) | (0xA000);
-	MAC_frame[FRAME_FRMT_START_BYTE] 	= (uint8_t) (Frame_Format >> 8)				;
-	MAC_frame[FRAME_FRMT_START_BYTE+1] 	= (uint8_t) (Frame_Format & 0xFF)			;
+//	Frame_Format 						= ((MAC_frame_Size - 2) & 0x07FF) | (0xA000);
+//	MAC_frame[FRAME_FRMT_START_BYTE] 	= (uint8_t) (Frame_Format >> 8)				;
+//	MAC_frame[FRAME_FRMT_START_BYTE+1] 	= (uint8_t) (Frame_Format & 0xFF)			;
 
 	if(0 <= Logical_Address && Logical_Address <= 16383)
 	{
@@ -404,16 +406,29 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, uint8_t
 
 	APDU_start_byte = last_byte + MAC_MIN_APDU_START_BYTE;
 
-	for(int k=0; k<APDU_size; k++)
-	{
-		MAC_frame[APDU_start_byte + k] = APDU[k];
-	}
+//	for(int k=0; k<APDU_size; k++)
+//	{
+//		APDU_size ++;
+//		MAC_frame[APDU_start_byte + k] = APDU[k];
+//	}
 
+	APDU_size = 0;
+	for(int k=APDU_start_add; k<GW_STRUCT->RX_Count; k++)
+	{
+		MAC_frame[APDU_start_byte + APDU_size] = GW_STRUCT->RX[k];
+		APDU_size ++;
+	}
 	last_byte = APDU_start_byte + APDU_size - 1;
 
 	FCS = countCRC(&MAC_frame, 1, last_byte);
 	MAC_frame[last_byte + 1] = (uint8_t) (FCS >> 8);
 	MAC_frame[last_byte + 2] = (uint8_t) (FCS & 0x00FF);
+
+	MAC_frame_Size = MAC_frame_Size + APDU_size + LLC_SUB_LAYER_SIZE;
+	MAC_frame[MAC_frame_Size-1] = 0x7E;		//End flag
+	Frame_Format 						= ((MAC_frame_Size - 2) & 0x07FF) | (0xA000);
+	MAC_frame[FRAME_FRMT_START_BYTE] 	= (uint8_t) (Frame_Format >> 8)				;
+	MAC_frame[FRAME_FRMT_START_BYTE+1] 	= (uint8_t) (Frame_Format & 0xFF)			;
 
 	memcpy(HDLC_STRUCT->TX, MAC_frame, sizeof(MAC_frame));
 	Gate_Meter_size = MAC_frame_Size;
