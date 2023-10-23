@@ -131,6 +131,7 @@ int main(int argc, char* argv[])
     while (1)
     {
 		sleep(1);
+//		printf("lnWrapper.buffer.RX_Count:%d\n",lnWrapper.buffer.RX_Count);
     }
     return 0;
 }

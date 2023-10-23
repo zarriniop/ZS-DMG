@@ -287,9 +287,9 @@ void Socket_Receive_Thread(void* pVoid)
 
 				if(tmp[8] == 0xE6)
 				{
-
 					memcpy(con->buffer.RX, tmp, ret);
-					con->buffer.RX_Count = ret;
+					con->buffer.RX_Count += ret;
+					printf("Checking 0xE6 - rx:%d\n", con->buffer.RX_Count);
 				}
 				else
 				{
@@ -298,8 +298,6 @@ void Socket_Receive_Thread(void* pVoid)
 
 					}
 				}
-
-				con->buffer.RX_Count = 0;
 
 				if (reply.size != 0)
 				{
@@ -383,6 +381,7 @@ int Socket_Connection_Start(connection* con)
     con->serversocket.Status.Connected 	= false	;
 
     con->socket.Parameters.PORT = 30146;
+//    sprintf(con->socket.Parameters.IP, "10.21.1.96");
     sprintf(con->socket.Parameters.IP, "109.125.142.200");
 //    sprintf(con->socket.Parameters.IP, "192.168.1.134");
     con->serversocket.server_port = udpSetup.port;
@@ -781,48 +780,67 @@ void* IEC_Serial_Thread(void* pVoid)
 void* RS485_Receive_Thread(void* pVoid)
 {
     int ret;
-    unsigned char data;
+    unsigned char data[1024];
     unsigned char first = 1;
     int bytesRead;
     connection* con = (connection*)pVoid;
-
+    Buffer temp;
+    struct timeval  tim;
 
     while (1)
     {
-        bytesRead = read(con->comPort, &data, 1);
-        if (bytesRead < 1)
-        {
-            //If there is no data on the read buffer.
-            if (errno != EAGAIN)
-            {
-                break;
-            }
-        }
-        else
-        {
-            printf("data = %.2X\n",data);
-            printf("con->buffer.RX_Count  = %d\n",con->buffer.RX_Count);
-            con->buffer.RX[con->buffer.RX_Count] = data ;
-            con->buffer.RX_Count++ ;
-            printf("con->rs485.RX = ");
-            for(int i = 0 ; i < con->buffer.RX_Count ; i++)
-            {
-                printf("%.2X ",con->buffer.RX[i]);
-            }
-            printf("\n");
-            // if (con->trace > GX_TRACE_LEVEL_WARNING)
-            // {
-            //     if (first)
-            //     {
-            //         printf("\nRX:\t");
-            //         first = 0;
-            //     }
-            //     printf("%.2X ", data);
+    	/*
+        bytesRead = read(con->comPort, &data, 1024);
+        printf("RS485\n");
+    	if(bytesRead>0)
+    	{
+    		gettimeofday (&tim, NULL);
+    		if(temp.RX_Count + bytesRead < 2048)
+    		{
+    			printf("RCV 485:%d\n", bytesRead);
+    			memcpy(temp.RX + temp.RX_Count, data, bytesRead);
+    			temp.RX_Count += bytesRead;
+    			bytesRead = 0;
+    		}
+    	}
+    	else
+    	{
+    		if(temp.RX_Count > 0)
+    		{
+    			//==============( Send On Timeout )=================
+//    			if( diff_time_ms(&tim) > 100)
+    			{
+    				memcpy(con->buffer.RX, temp.RX, temp.RX_Count);
+    				con->buffer.RX_Count = temp.RX_Count;
 
-            // }
-        }
-        usleep(1000);
+    				temp.RX_Count = 0;
+
+    	            printf("con->rs485.RX = ");
+    	            for(int i = 0 ; i < con->buffer.RX_Count ; i++)
+    	            {
+    	                printf("%.2X ",con->buffer.RX[i]);
+    	            }
+    	            printf("\n");
+    			}
+    		}
+    	}
+    	*/
+
+    	bytesRead = read(con->comPort, &con->buffer.RX, 1024);
+    	con->buffer.RX_Count = bytesRead;
+
+    	printf("*******************************\n");
+    	printf("RS485-RCV:%d\n", con->buffer.RX_Count);
+    	for (int m=0; m<con->buffer.RX_Count; m++)
+    	{
+    		printf("%.2X-",con->buffer.RX[m]);
+    	}
+    	printf("\n");
+    	printf("*******************************\n");
+
+    	usleep(1000);
     }
+
     return NULL;
 }
 
@@ -843,6 +861,7 @@ void* RS485_Send_Thread(void* pVoid)
 
             baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
             delay_us = ((con->buffer.TX_Count * 10000)/baudRate);
+            printf("RS485 Send : %d\n", con->buffer.TX_Count);
             con->buffer.TX_Count = 0 ;
             usleep(delay_us*1000);
 
@@ -891,7 +910,7 @@ int RS485_Serial_Start(connection* con, char *file)
     
     con->buffer.RX_Count = 0 ;
     con->buffer.TX_Count = 0 ;
-    con->buffer.Timeout_ms = 1000;
+    con->buffer.Timeout_ms = 5000;
     ret = pthread_create(&con->receiverThread, NULL, RS485_Receive_Thread, (void*)con);
     ret = pthread_create(&con->sendThread, NULL, RS485_Send_Thread, (void*)con);
     ret = pthread_create(&con->managerThread, NULL, GW_Start, (void*)con);
@@ -902,7 +921,7 @@ int RS485_Serial_Start(connection* con, char *file)
 void GW_Start (void* pVoid)
 {
 	connection* con = (connection*)pVoid;
-	GW_Run(&lnWrapper.buffer , con->buffer);
+	GW_Run(&lnWrapper.buffer , &rs485.buffer);
 }
 
 //Close connection.
@@ -1108,7 +1127,8 @@ void WAN_Connection (void)
 	memset(&Sig_Strg_Info,0,sizeof(QL_NW_SIGNAL_STRENGTH_INFO_T));
 
 	APN_Param_Struct.op = START_A_DATA_CALL							;
-//	APN_Param_Struct.apn = &gprsSetup.apn.data						;
+	APN_Param_Struct.apn = &gprsSetup.apn.data						;
+	sprintf(APN_Param_Struct.apn, "mtnirancell")					;
 //	printf("<= WAN Connection - APN:%s =>\n", APN_Param_Struct.apn)	;
 
 	APN_Param_Struct.profile_idx 	= 1		;
@@ -1195,4 +1215,31 @@ void WAN_Connection (void)
 		}
 		sleep(2);
 	}
+}
+
+
+
+//calculating time differential based on micro-second
+long diff_time_us(struct timeval *start)
+{
+	 struct timeval  tv;
+	 long diff=0;
+	 gettimeofday (&tv, NULL);
+	 diff=tv.tv_usec - start->tv_usec;
+	 if(diff < 0) diff+=1000000;
+
+	 return diff;
+}
+
+//calculating time differential based on milli-second
+long diff_time_ms(struct timeval *start)
+{
+	 struct timeval  tv;
+	 long diff=0;
+	 gettimeofday (&tv, NULL);
+	 diff=tv.tv_usec - start->tv_usec;
+	 if(diff < 0) diff += 1000000;
+	 diff = diff/1000;
+	 diff += ((tv.tv_sec - start->tv_sec)*1000);
+	 return diff;
 }

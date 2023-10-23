@@ -170,7 +170,7 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
  ***********************************************************************************************/
 void GW_Run_Init(Buffer* GW_STRUCT,Buffer* HDLC_STRUCT)							//Initializing some variables
 {
-//	printf("GW_Run_Init\n");
+	printf("GW_Run_Init\n");
 	memset(&Control_Byte_Struct	, 0, sizeof(Control_Byte_Struct));
 }
 
@@ -272,6 +272,7 @@ int8_t Handle_GW_Frame (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)			//Checking val
 				}
 			}
 		}
+		printf("||FRAME NOT VALID||\n");
 	}
 	else
 	{
@@ -754,7 +755,6 @@ uint8_t GW2HDLC_SNRM_Generator (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)		//Gener
 	APDU_size 		= (((uint16_t) (GW_STRUCT->RX[APDU_LEN_START_BYTE])) << 8) | GW_STRUCT->RX[APDU_LEN_START_BYTE+1];		//Reading APDU bytes size from received frame
 	memcpy(APDU, GW_STRUCT->RX + APDU_start_add, APDU_size);
 
-
 	MAC_frame_Size = MIN_SNRM_SIZE;												//Min MAC frame size
 
 	Logical_Address = (((uint16_t) (GW_STRUCT->RX[HES_DST_ADD_START_BYTE])) << 8) | ((uint16_t) (GW_STRUCT->RX[HES_DST_ADD_START_BYTE + 1]));
@@ -777,7 +777,7 @@ uint8_t GW2HDLC_SNRM_Generator (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)		//Gener
 		return -1;
 	}
 
-	uint8_t MAC_frame[MAC_frame_Size];
+	unsigned char MAC_frame[MAC_frame_Size];
 	memset(MAC_frame, 0, sizeof(MAC_frame));
 
 	MAC_frame[START_FLAG_BYTE] 	= 0x7E;		//Start flag
@@ -817,6 +817,7 @@ uint8_t GW2HDLC_SNRM_Generator (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)		//Gener
 
 	last_byte += 5;
 
+	printf("mac frame size:%d , last byte:%d \n", MAC_frame_Size, last_byte+1);
 	memcpy(HDLC_STRUCT->TX, MAC_frame, last_byte+1);
 
 	GW_State = WAITING_FOR_SNRM_RESPONSE;
