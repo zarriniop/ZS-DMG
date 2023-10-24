@@ -151,6 +151,8 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 					else
 						GW_State = RESPONSE_FOR_MDM;
 
+					printf("**GW_State:%d\n", GW_State);
+
 				}
 
 				break;
@@ -166,9 +168,11 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 			case RESPONSE_FOR_MDM:
 				ret = Meter2GW_Frame_Convertor(&HDLC_tmp, GW_STRUCT, &Control_Byte_Struct);
 
+				printf("ret : %d , GW_State: %d \n", ret, GW_State);
+
 				if(ret > 0)
 				{
-					GW_STRUCT->RX_Count = ret;
+					GW_STRUCT->TX_Count = ret;
 				}
 
 				break;
@@ -581,9 +585,9 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, CTRL_BY
 
 	MAC_frame[last_byte + 1] = ((GW_STRUCT->RX[HES_SRC_ADD_START_BYTE+1] << 1) & (0xFE)) | 0x1;			//Source Address
 
-	if(Control_Byte >= 0 && Control_Byte <= 255)
+	if(Control_Byte_Struct->Ctrl_Byte >= 0 && Control_Byte_Struct->Ctrl_Byte <= 255)
 	{
-		MAC_frame[last_byte + 2] = Control_Byte;
+		MAC_frame[last_byte + 2] = Control_Byte_Struct->Ctrl_Byte;
 	}
 	else
 	{
