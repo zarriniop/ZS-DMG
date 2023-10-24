@@ -253,21 +253,12 @@ static const uint16_t FCS16Table[] = {
        0xF78F, 0xE606, 0xD49D, 0xC514, 0xB1AB, 0xA022, 0x92B9, 0x8330,
        0x7BC7, 0x6A4E, 0x58D5, 0x495C, 0x3DE3, 0x2C6A, 0x1EF1, 0x0F78};
 
-struct
+typedef struct
 {
 	uint8_t RRR;
 	uint8_t SSS;
 	uint8_t Ctrl_Byte;
-}Control_Byte_Struct;
-
-
-typedef struct
-{
-	char 		GW_RX_tmp	[2048];
-	char 		HDLC_RX_tmp	[2048];
-	uint16_t 	GW_RC_tmp;
-	uint16_t 	GW_TC_tmp;
-}TEMP;
+}CTRL_BYTE_STR_TD;
 
 typedef enum {
 	READY_TO_GENERATE_SNRM		=	0,
@@ -283,14 +274,14 @@ typedef enum {
 
 typedef enum {
 	WAIT_FOR_GET_FRAME			= 0	,
-	SNRM_REQ						,
-	SNRM_RES						,
-	INFO_FRAME						,
+	SNRM_REQUEST					,
+	SNRM_RESPONSE					,
+	INFORMATION_FRAME				,
 	RESPONSE						,
 	SEGMENT							,
 	RESPONSE_FOR_MDM				,
-	DISC_REQ						,
-	DISC_RES
+	DISC_REQUEST					,
+	DISC_RESPONSE
 }GW_STATE;
 
 
@@ -323,11 +314,11 @@ uint8_t 		GW2HDLC_SNRM_Generator 			(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)				
 uint16_t 		HDLC_Send_SNRM					(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)						;
 int8_t 			GW2HDLC_DISC_Generator 			(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)						;
 uint8_t 		HDLC_Send_DISC 					(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)						;
-int8_t 			Check_GW_Frame_Valid 			(Buffer* GW_STRUCT)															;
-uint8_t 		Check_GW_Frame_Type 			(Buffer* GW_STRUCT)															;
-int16_t 		GW2HDLC_Frame_Convertor 		(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, uint8_t Control_Byte)	;
+int8_t 			Check_GW_Frame_Valid 			(Buffer* GW_STRUCT)												;
+uint8_t 		Check_GW_Frame_Type 			(Buffer* GW_STRUCT)												;
+int16_t 		GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, CTRL_BYTE_STR_TD* Control_Byte_Struct);
 uint8_t 		GW2HDLC_Poll_For_Remained_Data 	(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, uint8_t Control_Byte)	;
-int64_t 		Meter2GW_Frame_Convertor		(Buffer* HDLC_STRUCT, Buffer* GW_STRUCT)						;
+int 			Meter2GW_Frame_Convertor 		(Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_STR_TD* Control_Byte_Struct)			;
 uint8_t 		Control_Byte 					(uint8_t RRR, uint8_t SSS, FRAME_TYPE frame_type)										;
 static uint16_t countCRC						(char* Buff, uint32_t index, uint32_t count)											;
 
