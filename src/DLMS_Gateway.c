@@ -82,6 +82,7 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 						if(Check_GW_Frame_Type(GW_STRUCT->RX) == RLRQ_TAG)				//Checking RLRQ frame for generating DISC frame
 						{
 							uint8_t ret_disc = HDLC_Send_DISC(GW_STRUCT, HDLC_STRUCT)	;		//Generating HDLC DISC frame for sending to meter
+
 							GW_State = WAITING_FOR_DISC_RESPONSE						;
 							printf("||DISC FRAME SENT - RET:%d||\n", ret_disc)			;
 						}
@@ -260,7 +261,7 @@ int8_t Handle_GW_Frame (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)			//Checking val
 					HDLC_STRUCT->TX_Count = HDLC_Size;
 					printf("REQUEST CONVERTED FROM DLMS2HDLC - RET:%d\n", HDLC_STRUCT->TX_Count)					;
 					GW_State = WAITING_FOR_RESPONSE;
-					GW_STRUCT->RX_Count = 0;
+//					GW_STRUCT->RX_Count = 0;
 					return AARQ_CONVERTED;
 				}
 				else
@@ -309,6 +310,10 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, uint8_t
 	uint16_t 	dst_add_log 	= 0	;
 	uint16_t 	dst_add_phy 	= 0	;
 	uint16_t 	Frame_Format	= 0	;
+
+	uint8_t		HCS_Count		= 0	;
+	uint16_t	FCS_Count		= 0	;
+
 
 	memset(APDU, 0, sizeof(APDU));
 
@@ -396,9 +401,10 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, uint8_t
 	}
 
 
-	HCS = countCRC(MAC_frame, 1, last_byte+2);
-	MAC_frame[last_byte + 3] = (uint8_t) (HCS >> 8);
-	MAC_frame[last_byte + 4] = (uint8_t) (HCS & 0x00FF);
+	HCS_Count = last_byte+2;
+//	HCS = countCRC(MAC_frame, 1, last_byte+2);
+//	MAC_frame[last_byte + 3] = (uint8_t) (HCS >> 8);
+//	MAC_frame[last_byte + 4] = (uint8_t) (HCS & 0x00FF);
 
 	MAC_frame[last_byte + 5] = 0xE6;	//LLC sub-layer
 	MAC_frame[last_byte + 6] = 0xE6;
@@ -420,15 +426,24 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, uint8_t
 	}
 	last_byte = APDU_start_byte + APDU_size - 1;
 
-	FCS = countCRC(&MAC_frame, 1, last_byte);
-	MAC_frame[last_byte + 1] = (uint8_t) (FCS >> 8);
-	MAC_frame[last_byte + 2] = (uint8_t) (FCS & 0x00FF);
+	FCS_Count = last_byte;
+//	FCS = countCRC(&MAC_frame, 1, last_byte);
+//	MAC_frame[last_byte + 1] = (uint8_t) (FCS >> 8);
+//	MAC_frame[last_byte + 2] = (uint8_t) (FCS & 0x00FF);
 
 	MAC_frame_Size 						= MAC_frame_Size + APDU_size + LLC_SUB_LAYER_SIZE;
 	MAC_frame[MAC_frame_Size-1] 		= 0x7E										;		//End flag
 	Frame_Format 						= ((MAC_frame_Size - 2) & 0x07FF) | (0xA000);
 	MAC_frame[FRAME_FRMT_START_BYTE] 	= (uint8_t) (Frame_Format >> 8)				;
 	MAC_frame[FRAME_FRMT_START_BYTE+1] 	= (uint8_t) (Frame_Format & 0xFF)			;
+
+	HCS = countCRC(MAC_frame, 1, HCS_Count);
+	MAC_frame[HCS_Count + 1] = (uint8_t) (HCS >> 8);
+	MAC_frame[HCS_Count + 2] = (uint8_t) (HCS & 0x00FF);
+
+	FCS = countCRC(&MAC_frame, 1, FCS_Count);
+	MAC_frame[FCS_Count + 1] = (uint8_t) (FCS >> 8);
+	MAC_frame[FCS_Count + 2] = (uint8_t) (FCS & 0x00FF);
 
 	memcpy(HDLC_STRUCT->TX, MAC_frame, sizeof(MAC_frame));
 	Gate_Meter_size = MAC_frame_Size;
@@ -443,6 +458,7 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, uint8_t
 	{
 		Control_Byte_Struct.SSS ++;
 	}
+	printf("G2M - NR:%d ,NS:%d\n", Control_Byte_Struct.RRR, Control_Byte_Struct.SSS);
 
 	printf("-----------------------------------------------------------------------\n");
 	printf("PREPARED DLMS FRAME FOR SENDING FROM GW2HDLC - LEN:%d\n", MAC_frame_Size);
@@ -664,6 +680,7 @@ int64_t Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT)		//Con
 							{
 								Control_Byte_Struct.RRR ++;
 							}
+							printf("M2G - NR:%d ,NS:%d\n", Control_Byte_Struct.RRR, Control_Byte_Struct.SSS);
 
 							if(Segment_bit == LAST_FRAME_IN_SEGMENTATION)
 							{
@@ -684,7 +701,7 @@ int64_t Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT)		//Con
 								memcpy(GW_STRUCT->TX, HES_Frame, HES_Frame_Size_for_Last_Segment);
 
 								printf("--------------------------------------------------------\n");
-								printf("Meter2GW_Frame_Convertor:%d\n", Last_Byte_Buffer_Meter2GW);
+								printf("Meter2GW_Frame_Convertor-Converted_SB:%d\n", Last_Byte_Buffer_Meter2GW);
 								for(int i=0; i<Last_Byte_Buffer_Meter2GW+1; i++)
 								{
 									printf("0x%x-", GW_STRUCT->TX[i]);
@@ -698,6 +715,14 @@ int64_t Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT)		//Con
 							}
 							else if(Segment_bit == SINGLE_FRAME_IN_SEGMENTATION)
 							{
+								printf("--------------------------------------------------------\n");
+								printf("Meter2GW_Frame_Convertor-Converted-Single Frame:%d\n", Last_Byte_Buffer_Meter2GW);
+								for(int i=0; i<HES_Frame_Size; i++)
+								{
+									printf("0x%x-", GW_STRUCT->TX[i]);
+								}
+								printf("\n--------------------------------------------------------\n");
+
 								memset(Buffer_Data_Meter2GW_Frame_Convertor, 0, sizeof(Buffer_Data_Meter2GW_Frame_Convertor));
 								Last_Byte_Buffer_Meter2GW = 0;
 							}
@@ -855,6 +880,7 @@ uint8_t GW2HDLC_SNRM_Generator (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)		//Gener
  ***********************************************************************************************/
 uint8_t Check_GW_Frame_Type (Buffer* GW_STRUCT)				//Checking first APDU byte in GW frame
 {
+	printf("add len:%d , rx_start_apdu:%d\n", GW_STRUCT->RX[ADD_LEN_BYTE], GW_STRUCT->RX[HES_PHY_ADD_START_BYTE + GW_STRUCT->RX[ADD_LEN_BYTE]]);
 	return GW_STRUCT->RX[HES_PHY_ADD_START_BYTE + GW_STRUCT->RX[ADD_LEN_BYTE]];
 }
 
