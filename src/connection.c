@@ -275,7 +275,7 @@ void Socket_Receive_Thread(void* pVoid)
 			{
 				if (con->trace > GX_TRACE_LEVEL_WARNING)
 				{
-					printf("\r\nRX %d:\t", ret);
+					printf("\r\nTCP CLIENT - RCV %d:\t", ret);
 					for (pos = 0; pos != ret; ++pos)
 					{
 						printf("%.2X ", tmp[pos]);
@@ -338,6 +338,17 @@ void Socket_Send_Thread(void* pVoid)
 				//If error has occured
 				svr_reset(&con->settings);
 				con->socket.Status.Connected = false;
+			}
+			else
+			{
+		    	printf("*******************************\n");
+		    	printf("TCP CLIENT - SEND:%d\n", con->buffer.TX_Count);
+		    	for (int m=0; m<con->buffer.TX_Count; m++)
+		    	{
+		    		printf("%.2X-",con->buffer.TX[m]);
+		    	}
+		    	printf("\n");
+		    	printf("*******************************\n");
 			}
 			printf("send to server %d = %s\n",con->buffer.TX_Count, &con->buffer.TX);
 			con->buffer.TX_Count = 0;
@@ -861,7 +872,15 @@ void* RS485_Send_Thread(void* pVoid)
 
             baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
             delay_us = ((con->buffer.TX_Count * 10000)/baudRate);
-            printf("RS485 Send : %d\n", con->buffer.TX_Count);
+//            printf("RS485 Send : %d\n", con->buffer.TX_Count);
+        	printf("*******************************\n");
+        	printf("RS485-SND:%d\n", con->buffer.TX_Count);
+        	for (int m=0; m<con->buffer.TX_Count; m++)
+        	{
+        		printf("%.2X-",con->buffer.TX[m]);
+        	}
+        	printf("\n");
+        	printf("*******************************\n");
             con->buffer.TX_Count = 0 ;
             usleep(delay_us*1000);
 
