@@ -37,56 +37,56 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 
 	GW_Run_Init(GW_STRUCT, HDLC_STRUCT);
 
-	while(1)
-	{
-		switch(GW_State)
-		{
-
-			case WAIT_FOR_GET_FRAME:
-
-
-
-				break;
-
-			case SNRM_REQ:
-
-				break;
-
-			case SNRM_RES:
-
-				break;
-
-			case INFO_FRAME:
-
-				break;
-
-			case RESPONSE:
-
-				break;
-
-			case SEGMENT:
-
-				break;
-
-			case RESPONSE_FOR_MDM:
-
-				break;
-
-			case DISC_REQ:
-
-				break;
-
-			case DISC_RES:
-
-				break;
-
-			default:
-
-				break;
-
-
-		}
-	}
+//	while(1)
+//	{
+//		switch(GW_State)
+//		{
+//
+//			case WAIT_FOR_GET_FRAME:
+//
+//
+//
+//				break;
+//
+//			case SNRM_REQ:
+//
+//				break;
+//
+//			case SNRM_RES:
+//
+//				break;
+//
+//			case INFO_FRAME:
+//
+//				break;
+//
+//			case RESPONSE:
+//
+//				break;
+//
+//			case SEGMENT:
+//
+//				break;
+//
+//			case RESPONSE_FOR_MDM:
+//
+//				break;
+//
+//			case DISC_REQ:
+//
+//				break;
+//
+//			case DISC_RES:
+//
+//				break;
+//
+//			default:
+//
+//				break;
+//
+//
+//		}
+//	}
 
 
 	while(1)
@@ -186,7 +186,7 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 				if (HDLC_STRUCT->RX_Count > 0)					//Receiving DISC response from meter
 				{
 //					printf("\n---------------------------------------------------------\n");
-					printf("DISC RESPONSE - LEN:%d\n", HDLC_STRUCT->RX_Count);
+					printusleep(1000);f("DISC RESPONSE - LEN:%d\n", HDLC_STRUCT->RX_Count);
 //					for(int i=0; i<HDLC_STRUCT->RX_Count; i++)
 //					{
 //						printf("0x%x-", HDLC_STRUCT->RX[i]);
