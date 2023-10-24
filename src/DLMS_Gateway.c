@@ -72,25 +72,25 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 				{
 					printf("||RESPONSE RECEIVED||\n");
 					Timer = 0;
-					GW_State = AARQ_RESPONSE_RECEIVED;
-					int64_t GW_size = Meter2GW_Frame_Convertor (HDLC_STRUCT, GW_STRUCT);		//Converting HDLC response frame to GW frame
-					printf("*****GW_size:%d - GW_State:%d - GW_STRUCT->RX[13]:%d\n", GW_size, GW_State, GW_STRUCT->RX[13]);
-					if(GW_size > 0 && GW_State == WAITING_FOR_REQUEST)			//Finalizing GW frame size (because of being multi-segment frame)
+
+//					printf("*****GW_size:%d - GW_State:%d - GW_STRUCT->RX[13]:%d\n", GW_size, GW_State, GW_STRUCT->RX[13]);
+
+					if(Check_GW_Frame_Type(GW_STRUCT->RX) == RLRQ_TAG)				//Checking RLRQ frame for generating DISC frame
 					{
-						GW_STRUCT->TX_Count = GW_size;
+						uint8_t ret_disc = HDLC_Send_DISC(GW_STRUCT, HDLC_STRUCT)	;		//Generating HDLC DISC frame for sending to meter
 
-						if(Check_GW_Frame_Type(GW_STRUCT->RX) == RLRQ_TAG)				//Checking RLRQ frame for generating DISC frame
-						{
-							uint8_t ret_disc = HDLC_Send_DISC(GW_STRUCT, HDLC_STRUCT)	;		//Generating HDLC DISC frame for sending to meter
-
-							GW_State = WAITING_FOR_DISC_RESPONSE						;
-							printf("||DISC FRAME SENT - RET:%d||\n", ret_disc)			;
-						}
+						GW_State = WAITING_FOR_DISC_RESPONSE						;
+						printf("||DISC FRAME SENT - RET:%d||\n", ret_disc)			;
 					}
+					else
+					{
+						GW_State = AARQ_RESPONSE_RECEIVED;
+						int64_t GW_size = Meter2GW_Frame_Convertor (HDLC_STRUCT, GW_STRUCT);		//Converting HDLC response frame to GW frame
 
-					HDLC_STRUCT	->RX_Count = 0;
-					GW_STRUCT	->RX_Count = 0;
-					break;
+						HDLC_STRUCT	->RX_Count = 0;
+						GW_STRUCT	->RX_Count = 0;
+						break;
+					}
 				}
 				usleep(1000);
 				Timer ++;
@@ -126,15 +126,18 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 			{
 				if (HDLC_STRUCT->RX_Count > 0)					//Receiving DISC response from meter
 				{
-					printf("\n---------------------------------------------------------\n");
+//					printf("\n---------------------------------------------------------\n");
 					printf("DISC RESPONSE - LEN:%d\n", HDLC_STRUCT->RX_Count);
-					for(int i=0; i<HDLC_STRUCT->RX_Count; i++)
-					{
-						printf("0x%x-", HDLC_STRUCT->RX[i]);
-					}
-					printf("\n---------------------------------------------------------\n");
+//					for(int i=0; i<HDLC_STRUCT->RX_Count; i++)
+//					{
+//						printf("0x%x-", HDLC_STRUCT->RX[i]);
+//					}
+//					printf("\n---------------------------------------------------------\n");
 
-					HDLC_STRUCT->RX_Count = 0;
+					int64_t GW_size = Meter2GW_Frame_Convertor (HDLC_STRUCT, GW_STRUCT);		//Converting HDLC response frame to GW frame
+
+					HDLC_STRUCT	->RX_Count = 0;
+					GW_STRUCT	->RX_Count = 0;
 
 					GW_State = READY_TO_GENERATE_SNRM;
 					Timer = 0;
@@ -892,6 +895,9 @@ uint8_t Check_GW_Frame_Type (Buffer* GW_STRUCT)				//Checking first APDU byte in
  ***********************************************************************************************/
 uint16_t HDLC_Send_SNRM (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 {
+	Control_Byte_Struct.RRR = 0;
+	Control_Byte_Struct.SSS = 0;
+
 	HDLC_STRUCT->TX_Count = GW2HDLC_SNRM_Generator (GW_STRUCT, HDLC_STRUCT);
 
 	return HDLC_STRUCT->RX_Count;
@@ -989,13 +995,13 @@ uint8_t GW2HDLC_Poll_For_Remained_Data (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, 
 
 	memcpy(HDLC_STRUCT->TX, MAC_frame, last_byte+1);
 
-	printf("\n-----------------------------------------------------------------\n");
-	printf("||PREPARED RECEIVE READY FRAME FOR SENDING FROM GW2DLMS - LEN:%d||\n", last_byte+1);
-	for(int v=0; v<last_byte+1; v++)
-	{
-		printf("0x%x-", HDLC_STRUCT->TX[v]);
-	}
-	printf("\n-----------------------------------------------------------------\n");
+//	printf("\n-----------------------------------------------------------------\n");
+//	printf("||PREPARED RECEIVE READY FRAME FOR SENDING FROM GW2DLMS - LEN:%d||\n", last_byte+1);
+//	for(int v=0; v<last_byte+1; v++)
+//	{
+//		printf("0x%x-", HDLC_STRUCT->TX[v]);
+//	}
+//	printf("\n-----------------------------------------------------------------\n");
 
 	return (last_byte+1);
 }
@@ -1020,13 +1026,13 @@ int8_t GW2HDLC_DISC_Generator (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)		//Genera
 	uint16_t 	dst_add_phy 	= 0	;
 	uint16_t 	Frame_Format	= 0	;
 
-	printf("\n-----------------------------------------------------------------\n");
-	printf("||RECEIVED FRAM FOR GENERATING DISC FRAME - LEN:%d||\n", GW_STRUCT->RX_Count);
-	for(int v=0; v<last_byte+1; v++)
-	{
-		printf("0x%x-", GW_STRUCT->RX[v]);
-	}
-	printf("\n-----------------------------------------------------------------\n");
+//	printf("\n-----------------------------------------------------------------\n");
+//	printf("||RECEIVED FRAM FOR GENERATING DISC FRAME - LEN:%d||\n", GW_STRUCT->RX_Count);
+//	for(int v=0; v<last_byte+1; v++)
+//	{
+//		printf("0x%x-", GW_STRUCT->RX[v]);
+//	}
+//	printf("\n-----------------------------------------------------------------\n");
 
 
 	memset(APDU, 0, sizeof(APDU));
@@ -1103,13 +1109,13 @@ int8_t GW2HDLC_DISC_Generator (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)		//Genera
 
 	memcpy(HDLC_STRUCT->TX, MAC_frame, last_byte+1);
 
-	printf("\n-----------------------------------------------------------------\n");
+//	printf("\n-----------------------------------------------------------------\n");
 	printf("||PREPARED DISC FRAME FOR SENDING GW2HDLC - LEN:%d||\n", last_byte+1);
-	for(int v=0; v<last_byte+1; v++)
-	{
-		printf("0x%x-", HDLC_STRUCT->TX[v]);
-	}
-	printf("\n-----------------------------------------------------------------\n");
+//	for(int v=0; v<last_byte+1; v++)
+//	{
+//		printf("0x%x-", HDLC_STRUCT->TX[v]);
+//	}
+//	printf("\n-----------------------------------------------------------------\n");
 
 	return (last_byte+1);
 }
@@ -1124,8 +1130,8 @@ uint8_t HDLC_Send_DISC (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)		//Generating DI
 	if(DISC_Gen_Ret>0)
 	{
 		HDLC_STRUCT->TX_Count 	= DISC_Gen_Ret;
-		Control_Byte_Struct.RRR = 0;
-		Control_Byte_Struct.SSS = 0;
+//		Control_Byte_Struct.RRR = 0;
+//		Control_Byte_Struct.SSS = 0;
 	}
 
 	return DISC_Gen_Ret;
