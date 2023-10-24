@@ -32,7 +32,62 @@ uint16_t Last_Byte_Buffer_Meter2GW 	= 0				;
  ***********************************************************************************************/
 void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 {
+	TEMP tmp;
+	memset(&tmp, 0, sizeof(TEMP));
+
 	GW_Run_Init(GW_STRUCT, HDLC_STRUCT);
+
+	while(1)
+	{
+		switch(GW_State)
+		{
+
+			case WAIT_FOR_GET_FRAME:
+
+
+
+				break;
+
+			case SNRM_REQ:
+
+				break;
+
+			case SNRM_RES:
+
+				break;
+
+			case INFO_FRAME:
+
+				break;
+
+			case RESPONSE:
+
+				break;
+
+			case SEGMENT:
+
+				break;
+
+			case RESPONSE_FOR_MDM:
+
+				break;
+
+			case DISC_REQ:
+
+				break;
+
+			case DISC_RES:
+
+				break;
+
+			default:
+
+				break;
+
+
+		}
+	}
+
 
 	while(1)
 	{
@@ -75,9 +130,11 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 
 //					printf("*****GW_size:%d - GW_State:%d - GW_STRUCT->RX[13]:%d\n", GW_size, GW_State, GW_STRUCT->RX[13]);
 
+					printf("CHECKING DISC\n");
 					if(Check_GW_Frame_Type(GW_STRUCT->RX) == RLRQ_TAG)				//Checking RLRQ frame for generating DISC frame
 					{
 						uint8_t ret_disc = HDLC_Send_DISC(GW_STRUCT, HDLC_STRUCT)	;		//Generating HDLC DISC frame for sending to meter
+
 
 						GW_State = WAITING_FOR_DISC_RESPONSE						;
 						printf("||DISC FRAME SENT - RET:%d||\n", ret_disc)			;
@@ -86,6 +143,8 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 					{
 						GW_State = AARQ_RESPONSE_RECEIVED;
 						int64_t GW_size = Meter2GW_Frame_Convertor (HDLC_STRUCT, GW_STRUCT);		//Converting HDLC response frame to GW frame
+
+						GW_STRUCT->TX_Count = GW_size;
 
 						HDLC_STRUCT	->RX_Count = 0;
 						GW_STRUCT	->RX_Count = 0;
@@ -136,6 +195,8 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 
 					int64_t GW_size = Meter2GW_Frame_Convertor (HDLC_STRUCT, GW_STRUCT);		//Converting HDLC response frame to GW frame
 
+					GW_STRUCT->TX_Count = GW_size;
+
 					HDLC_STRUCT	->RX_Count = 0;
 					GW_STRUCT	->RX_Count = 0;
 
@@ -177,6 +238,9 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 void GW_Run_Init(Buffer* GW_STRUCT,Buffer* HDLC_STRUCT)							//Initializing some variables
 {
 	printf("GW_Run_Init\n");
+	GW_State = WAIT_FOR_GET_FRAME;
+	Control_Byte_Struct.RRR = 0;
+	Control_Byte_Struct.SSS = 0;
 	memset(&Control_Byte_Struct	, 0, sizeof(Control_Byte_Struct));
 }
 
@@ -886,7 +950,7 @@ uint8_t GW2HDLC_SNRM_Generator (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)		//Gener
  ***********************************************************************************************/
 uint8_t Check_GW_Frame_Type (Buffer* GW_STRUCT)				//Checking first APDU byte in GW frame
 {
-	printf("add len:%d , rx_start_apdu:0x%0.2X\n", GW_STRUCT->RX[ADD_LEN_BYTE], GW_STRUCT->RX[HES_PHY_ADD_START_BYTE + GW_STRUCT->RX[ADD_LEN_BYTE]]);
+	printf("add len:%d , rx_start_apdu:0x%x\n", GW_STRUCT->RX[ADD_LEN_BYTE], GW_STRUCT->RX[HES_PHY_ADD_START_BYTE + GW_STRUCT->RX[ADD_LEN_BYTE]]);
 	return GW_STRUCT->RX[HES_PHY_ADD_START_BYTE + GW_STRUCT->RX[ADD_LEN_BYTE]];
 }
 

@@ -261,6 +261,14 @@ struct
 }Control_Byte_Struct;
 
 
+typedef struct
+{
+	char 		GW_RX_tmp	[2048];
+	char 		HDLC_RX_tmp	[2048];
+	uint16_t 	GW_RC_tmp;
+	uint16_t 	GW_TC_tmp;
+}TEMP;
+
 typedef enum {
 	READY_TO_GENERATE_SNRM		=	0,
 	WAITING_FOR_SNRM_RESPONSE	=	1,
@@ -271,6 +279,18 @@ typedef enum {
 	RECEIVE_READY_FOR_SB_MODE	=	6,
 	WAITING_FOR_DISC_RESPONSE	=	7
 
+}GW_STATE_1;
+
+typedef enum {
+	WAIT_FOR_GET_FRAME			= 0	,
+	SNRM_REQ						,
+	SNRM_RES						,
+	INFO_FRAME						,
+	RESPONSE						,
+	SEGMENT							,
+	RESPONSE_FOR_MDM				,
+	DISC_REQ						,
+	DISC_RES
 }GW_STATE;
 
 
