@@ -1458,7 +1458,7 @@ int addEventLogProfileGeneric(dlmsSettings *settings)
 ///////////////////////////////////////////////////////////////////////
 int addAutoConnect()
 {
-    // gxByteBuffer *str;
+//     gxByteBuffer *str;
     // gxtime *start, *end;
     const unsigned char ln[6] = {0, 0, 2, 1, 0, 255};
     INIT_OBJECT(autoConnect, DLMS_OBJECT_TYPE_AUTO_CONNECT, ln);
@@ -1473,9 +1473,12 @@ int addAutoConnect()
     // time_init(end, -1, -1, -1, 6, 0, 0, -1, -1);
     // arr_push(&autoConnect.callingWindow, key_init(start, end));
     // str = (gxByteBuffer *)malloc(sizeof(gxByteBuffer));
-    // bb_init(str);
-    // bb_addString(str, "Gurux");
-    // arr_push(&autoConnect.destinations, str);
+//     bb_init(str);
+
+//     bb_addString(&autoConnect.destinations, "109.125.142.200:30146");
+//     printf("<<<<<<<<<<<<<<<<autoConnect.destinations : %s\n", autoConnect.destinations.data);
+
+//     arr_push(&autoConnect.destinations, str);
     return 0;
 }
 

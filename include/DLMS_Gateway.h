@@ -321,5 +321,6 @@ uint8_t 		GW2HDLC_Poll_For_Remained_Data 	(Buffer* GW_STRUCT, Buffer* HDLC_STRUC
 int 			Meter2GW_Frame_Convertor 		(Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_STR_TD* Control_Byte_Struct)			;
 uint8_t 		Control_Byte 					(uint8_t RRR, uint8_t SSS, FRAME_TYPE frame_type)										;
 static uint16_t countCRC						(char* Buff, uint32_t index, uint32_t count)											;
+void Print_GW_State (void);
 
 #endif /* DLMS_GATEWAY_H_ */

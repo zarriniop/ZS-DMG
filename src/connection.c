@@ -43,6 +43,7 @@ extern gxData 		imei		;
 extern gxData 		deviceid6	;
 extern connection 	lnWrapper , lniec , rs485;
 extern gxTcpUdpSetup udpSetup;
+extern gxAutoConnect autoConnect;
 
 //Initialize connection buffers.
 void con_initializeBuffers(connection * connection, int size)
@@ -349,11 +350,11 @@ void Socket_Send_Thread(void* pVoid)
 		    	}
 		    	printf("\n");
 		    	printf("*******************************\n");
+		    	con->buffer.TX_Count = 0;
 			}
-			printf("send to server %d = %s\n",con->buffer.TX_Count, &con->buffer.TX);
-			con->buffer.TX_Count = 0;
+
         }
-        else if(con->serversocket.Status.Connected == true && con->buffer.TX_Count>0)
+        if(con->serversocket.Status.Connected == true && con->buffer.TX_Count>0)
         {
 			if (send(con->serversocket.Accept_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
 			{
@@ -361,8 +362,18 @@ void Socket_Send_Thread(void* pVoid)
 				svr_reset(&con->settings);
 				con->serversocket.Status.Connected = false;
 			}
-			printf("send to client %d = %s\n",con->buffer.TX_Count, &con->buffer.TX);
-			con->buffer.TX_Count = 0;
+			else
+			{
+				printf("*******************************\n");
+				printf("TCP SERVER - SEND:%d\n", con->buffer.TX_Count);
+				for (int m=0; m<con->buffer.TX_Count; m++)
+				{
+					printf("%.2X-",con->buffer.TX[m]);
+				}
+				printf("\n");
+				printf("*******************************\n");
+				con->buffer.TX_Count = 0;
+			}
         }
         usleep(1000);
     }
@@ -391,11 +402,13 @@ int Socket_Connection_Start(connection* con)
     con->socket.Status.Opened 			= true	;
     con->serversocket.Status.Connected 	= false	;
 
-    con->socket.Parameters.PORT = 30002;
+    con->socket.Parameters.PORT = 30146;
 //    sprintf(con->socket.Parameters.IP, "10.21.1.96");
     sprintf(con->socket.Parameters.IP, "109.125.142.200");
 //    sprintf(con->socket.Parameters.IP, "192.168.1.134");
     con->serversocket.server_port = udpSetup.port;
+
+    printf(">>>>>>>>>>>>>>>>>>>autoConnect.destinations : %s\n", autoConnect.destinations.data);
 
     ret = pthread_create(&con->receiverThread, 		NULL, Socket_Receive_Thread	, (void*)con);
     ret = pthread_create(&con->sendThread, 			NULL, Socket_Send_Thread	, (void*)con);
@@ -524,9 +537,9 @@ int Socket_Server(connection* con)
 }
 
 
-void Socket_Listen_Thread(connection* con)
+void Socket_Listen_Thread(void* pVoid)
 {
-//    connection* con = (connection*)pVoid;
+    connection* con = (connection*)pVoid;
     struct sockaddr_in add;
     int ret;
     char tmp[2048];
@@ -604,7 +617,6 @@ void Socket_Listen_Thread(connection* con)
 
     				memcpy(con->buffer.RX, tmp, ret);
     				con->buffer.RX_Count = ret;
-    				printf("^^^^^^ SRV-RX:%d\n", con->buffer.RX_Count);
     			}
     			else
     			{
@@ -623,8 +635,6 @@ void Socket_Listen_Thread(connection* con)
     //				 printf("######### Delay in svr_handleRequest2=  %d\r\n",diff);
 
     			}
-
-    			con->buffer.RX_Count = 0;
 
     			if (reply.size != 0)
     			{

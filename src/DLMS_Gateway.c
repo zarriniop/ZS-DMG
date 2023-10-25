@@ -11,6 +11,7 @@
  *	Variables	*
  ****************/
 uint8_t 				GW_State 				= READY_TO_GENERATE_SNRM;
+uint8_t					GW_State_tmp			= 1000;
 uint32_t 				Timer 					= 0;
 int8_t 					Handle_GW_Frame_Ret 	= 0;
 
@@ -26,7 +27,14 @@ uint8_t Control_Byte_Remained_Data 	= 0x51			;
 uint8_t Buffer_Data_Meter2GW_Frame_Convertor[8152]	;
 uint16_t Last_Byte_Buffer_Meter2GW 	= 0				;
 
-
+void Print_GW_State (void)
+{
+	if(GW_State != GW_State_tmp)
+	{
+		printf("-------->>>>>>>>> GW State:%d <<<<<<<<<-------\n", GW_State);
+		GW_State_tmp = GW_State;
+	}
+}
 /***********************************************************************************************
  * Gateway Runnig Function - Managing and converting GW2HDLC and HDLC2GW
  ***********************************************************************************************/
@@ -42,6 +50,7 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 
 	while(1)
 	{
+		Print_GW_State();
 		switch(GW_State)
 		{
 
@@ -177,9 +186,13 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 
 				if(ret > 0)
 				{
-					GW_STRUCT->TX_Count = ret;
+//					GW_STRUCT->TX_Count = ret;
 					GW_State = WAIT_FOR_GET_FRAME;
 				}
+//				else
+//				{
+//					GW_State = WAIT_FOR_GET_FRAME;
+//				}
 
 				break;
 
