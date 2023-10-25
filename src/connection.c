@@ -391,7 +391,7 @@ int Socket_Connection_Start(connection* con)
     con->socket.Status.Opened 			= true	;
     con->serversocket.Status.Connected 	= false	;
 
-    con->socket.Parameters.PORT = 30146;
+    con->socket.Parameters.PORT = 30002;
 //    sprintf(con->socket.Parameters.IP, "10.21.1.96");
     sprintf(con->socket.Parameters.IP, "109.125.142.200");
 //    sprintf(con->socket.Parameters.IP, "192.168.1.134");
@@ -400,7 +400,7 @@ int Socket_Connection_Start(connection* con)
     ret = pthread_create(&con->receiverThread, 		NULL, Socket_Receive_Thread	, (void*)con);
     ret = pthread_create(&con->sendThread, 			NULL, Socket_Send_Thread	, (void*)con);
     ret = pthread_create(&con->managerThread, 		NULL, Socket_Manage_Thread	, (void*)con);
-//    ret = pthread_create(&con->serverstart, 		NULL, Socket_Server			, (void*)con);
+    ret = pthread_create(&con->serverstart, 		NULL, Socket_Server			, (void*)con);
     return ret;
 }
 
@@ -604,6 +604,7 @@ void Socket_Listen_Thread(connection* con)
 
     				memcpy(con->buffer.RX, tmp, ret);
     				con->buffer.RX_Count = ret;
+    				printf("^^^^^^ SRV-RX:%d\n", con->buffer.RX_Count);
     			}
     			else
     			{
@@ -871,7 +872,7 @@ void* RS485_Send_Thread(void* pVoid)
 //            ret = Ql_UART_Write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
 
             baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
-            delay_us = ((con->buffer.TX_Count * 10000)/baudRate);
+            delay_us = ((con->buffer.TX_Count * 12000)/baudRate);
 //            printf("RS485 Send : %d\n", con->buffer.TX_Count);
         	printf("*******************************\n");
         	printf("RS485-SND:%d\n", con->buffer.TX_Count);

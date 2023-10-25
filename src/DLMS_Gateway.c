@@ -178,6 +178,7 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 				if(ret > 0)
 				{
 					GW_STRUCT->TX_Count = ret;
+					GW_State = WAIT_FOR_GET_FRAME;
 				}
 
 				break;
@@ -369,7 +370,7 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, CTRL_BY
 	uint16_t 	dst_add_phy 	= 0	;
 	uint16_t 	Frame_Format	= 0	;
 
-	uint8_t		HCS_Count		= 0	;
+	uint16_t	HCS_Count		= 0	;
 	uint16_t	FCS_Count		= 0	;
 
 
@@ -771,6 +772,7 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 								Last_Byte_Buffer_Meter2GW = 0;
 
 								return HES_Frame_Size_for_Last_Segment;
+//								return 1;
 							}
 							else if(Segment_bit == SINGLE_FRAME_IN_SEGMENTATION)
 							{
@@ -782,11 +784,16 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 //								}
 //								printf("\n--------------------------------------------------------\n");
 
+								GW_STRUCT->TX_Count = HES_Frame_Size;
+
 								memset(Buffer_Data_Meter2GW_Frame_Convertor, 0, sizeof(Buffer_Data_Meter2GW_Frame_Convertor));
 								Last_Byte_Buffer_Meter2GW = 0;
+
+								return HES_Frame_Size;
+//								return 2;
 							}
 
-							return HES_Frame_Size;
+							return 0;
 						}
 						else
 						{
