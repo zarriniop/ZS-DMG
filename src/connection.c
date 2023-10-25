@@ -319,7 +319,7 @@ void Socket_Receive_Thread(void* pVoid)
 				}
 			}
         }
-        usleep(10000);
+        usleep(1000);
     }
 }
 
@@ -886,7 +886,7 @@ void* RS485_Send_Thread(void* pVoid)
 
             system("echo 0 > /sys/class/leds/DIR_485/brightness");
         }
-        sleep(1);
+        usleep(1000);
 //        usleep(10000);
     }
     return NULL;

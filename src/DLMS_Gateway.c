@@ -544,8 +544,8 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 //	}
 //	printf("\n--------------------------------------------------------\n");
 
-	uint8_t		last_byte					= 0;
-	uint8_t		last_byte_for_last_segment	= 0;
+	uint16_t	last_byte					= 0;
+	uint16_t	last_byte_for_last_segment	= 0;
 	uint16_t	Phy_Add						= 0;
 	uint16_t	Log_Add						= 0;
 	uint16_t	HDLC_rec_data_size			= 0;
@@ -758,7 +758,7 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 
 //								memcpy(GW_STRUCT->TX, HES_Frame, sizeof(HES_Frame));
 								memcpy(GW_STRUCT->TX, HES_Frame, HES_Frame_Size_for_Last_Segment);
-
+								GW_STRUCT->TX_Count = HES_Frame_Size_for_Last_Segment;
 //								printf("--------------------------------------------------------\n");
 //								printf("Meter2GW_Frame_Convertor-Converted_SB:%d\n", Last_Byte_Buffer_Meter2GW);
 //								for(int i=0; i<Last_Byte_Buffer_Meter2GW+1; i++)
@@ -790,7 +790,7 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 						}
 						else
 						{
-							printf("Meter2GW_Frame_Convertor: Error - FCS is wrong. \n");
+							printf("Meter2GW_Frame_Convertor: Error - FCS is wrong 0x%.2X. \n", FCS_Cal);
 							return -5;
 						}
 					}
