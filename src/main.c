@@ -33,7 +33,8 @@ pthread_t SVR_Monitor;
 /********************************************|
 |*				  Functions					*|
 |********************************************/
-
+//salam
+//Hey
 /***********************************************/
 /********** HAJIAN - Servers_Start ***********/
 /***********************************************/
@@ -127,7 +128,7 @@ int main(int argc, char* argv[])
     LTE_Manager_Start();
 
     pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
-
+    //addkfj
     while (1)
     {
     	sleep(1);

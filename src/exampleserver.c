@@ -107,7 +107,7 @@ static gxIecHdlcSetup hdlcelectricalrs485port;
 
 static gxData securityreceiveframecounterbroadcastkey;
 
-static gxData ldn, id1, id2;
+static gxData ldn;
 static gxData eventCode;
 static gxData unixTime;
 static gxData invocationCounter;
@@ -146,7 +146,7 @@ static gxActionSchedule actionScheduleDisconnectOpen;
 static gxActionSchedule actionScheduleDisconnectClose;
 static gxActionSchedule imagetransferactivationSchedule;
 
-static gxPushSetup pushSetup;
+gxPushSetup pushSetup;
 static gxDisconnectControl disconnectControl;
 static gxProfileGeneric loadProfile;
 static gxProfileGeneric standardeventlog;
@@ -1265,13 +1265,15 @@ int addTcpUdpSetup()
     // Add Tcp/Udp setup. Default Logical Name is 0.0.25.0.0.255.
     const unsigned char ln[6] = {0, 0, 25, 0, 0, 255};
     INIT_OBJECT(udpSetup, DLMS_OBJECT_TYPE_TCP_UDP_SETUP, ln);
-    udpSetup.port = 4059;
+    udpSetup.port = atoi(Settings.ListenPORT);
+    printf("ListenPORT = %d\n",atoi(Settings.ListenPORT));
     udpSetup.ipSetup = &ip4Setup;
     udpSetup.maximumSimultaneousConnections = 5;
     udpSetup.maximumSegmentSize = 1280;
     udpSetup.inactivityTimeout = 180;
     return 0;
 }
+
 
 ///////////////////////////////////////////////////////////////////////
 // Add profile generic (historical data) object.
@@ -1458,13 +1460,13 @@ int addEventLogProfileGeneric(dlmsSettings *settings)
 ///////////////////////////////////////////////////////////////////////
 int addAutoConnect()
 {
-//     gxByteBuffer *str;
+     gxByteBuffer *str;
     // gxtime *start, *end;
     const unsigned char ln[6] = {0, 0, 2, 1, 0, 255};
     INIT_OBJECT(autoConnect, DLMS_OBJECT_TYPE_AUTO_CONNECT, ln);
     autoConnect.mode = DLMS_AUTO_CONNECT_MODE_PERMANENTLY_CONNECT;
-    autoConnect.repetitions = 0;
-    autoConnect.repetitionDelay = 0;
+    autoConnect.repetitions = 0 ;
+    autoConnect.repetitionDelay = 0 ;
     //this comment is ok
     // Calling is allowed between 1am to 6am.
     // start = (gxtime *)malloc(sizeof(gxtime));
@@ -1472,15 +1474,22 @@ int addAutoConnect()
     // end = (gxtime *)malloc(sizeof(gxtime));
     // time_init(end, -1, -1, -1, 6, 0, 0, -1, -1);
     // arr_push(&autoConnect.callingWindow, key_init(start, end));
-    // str = (gxByteBuffer *)malloc(sizeof(gxByteBuffer));
-//     bb_init(str);
 
-//     bb_addString(&autoConnect.destinations, "109.125.142.200:30146");
-//     printf("<<<<<<<<<<<<<<<<autoConnect.destinations : %s\n", autoConnect.destinations.data);
 
-//     arr_push(&autoConnect.destinations, str);
+     str = (gxByteBuffer *)malloc(sizeof(gxByteBuffer));
+     bb_init(str);
+     char str1[100];
+     memset(str1,0,sizeof(str1));
+     sprintf(str1,"%s:%s",Settings.IP,Settings.PORT);
+     printf("IP:PORT = %s\n",str1);
+     bb_addString(str, str1);
+     arr_push(&autoConnect.destinations, str);
+
     return 0;
 }
+
+
+
 
 ///////////////////////////////////////////////////////////////////////
 // Add Activity Calendar object.
@@ -2006,23 +2015,30 @@ int addPppSetup()
 ///////////////////////////////////////////////////////////////////////
 int addGprsSetup()
 {
-    int ret;
-    const unsigned char ln[6] = {0, 0, 25, 4, 0, 255};
-    if ((ret = INIT_OBJECT(gprsSetup, DLMS_OBJECT_TYPE_GPRS_SETUP, ln)) == 0)
-    {
-//         BB_ATTACH(gprsSetup.apn, APN, 0);
-         ret = bb_addString(&gprsSetup.apn, "mtnirancell");
-         gprsSetup.pinCode = 16;
-         gprsSetup.defaultQualityOfService.delay = 1;
-         gprsSetup.defaultQualityOfService.meanThroughput = 10;
-         gprsSetup.defaultQualityOfService.peakThroughput = 100;
 
-         gprsSetup.requestedQualityOfService.delay = 1;
-         gprsSetup.requestedQualityOfService.meanThroughput = 10;
-         gprsSetup.requestedQualityOfService.peakThroughput = 100;
-    }
-    return ret;
+	int ret;
+	//     static unsigned char APN[15];
+	const unsigned char ln[6] = {0, 0, 25, 4, 0, 255};
+	if ((ret = INIT_OBJECT(gprsSetup, DLMS_OBJECT_TYPE_GPRS_SETUP, ln)) == 0)
+	{
+	//	 BB_ATTACH(gprsSetup.apn, APN, 0);
+		 ret = bb_addString(&gprsSetup.apn, Settings.APN);
+		 printf("APN = %s\n",Settings.APN);
+		// gprsSetup.pinCode = 16;
+		// gprsSetup.defaultQualityOfService.delay = 1;
+		// gprsSetup.defaultQualityOfService.meanThroughput = 10;
+		// gprsSetup.defaultQualityOfService.peakThroughput = 100;
+
+			 gprsSetup.requestedQualityOfService.delay = 1;
+			 gprsSetup.requestedQualityOfService.meanThroughput = 10;
+			 gprsSetup.requestedQualityOfService.peakThroughput = 100;
+	}
+	return ret;
 }
+
+
+
+
 ///////////////////////////////////////////////////////////////////////
 // Add push setup object. (On Connectivity)
 ///////////////////////////////////////////////////////////////////////
@@ -2148,6 +2164,7 @@ int svr_InitObjects(
 {
     char buff[17];
     int ret;
+    Read_Settings(&Settings);
     OA_ATTACH(settings->base.objects, ALL_OBJECTS);
     ///////////////////////////////////////////////////////////////////////
     // Add Logical Device Name. 123456 is meter serial number.
@@ -2163,20 +2180,6 @@ int svr_InitObjects(
         const unsigned char ln[6] = {0, 0, 42, 0, 0, 255};
         INIT_OBJECT(ldn, DLMS_OBJECT_TYPE_DATA, ln);
         // var_addBytes(&ldn.value, (unsigned char *)buff, 16);
-    }
-
-    // Electricity ID 1
-    {
-        const unsigned char ln[6] = {1, 1, 0, 0, 0, 255};
-        INIT_OBJECT(id1, DLMS_OBJECT_TYPE_DATA, ln);
-        var_setString(&id1.value, buff, 16);
-    }
-
-    // Electricity ID 2.
-    {
-        const unsigned char ln[6] = {1, 1, 0, 0, 1, 255};
-        INIT_OBJECT(id2, DLMS_OBJECT_TYPE_DATA, ln);
-        var_setUInt32(&id2.value, SERIAL_NUMBER);
     }
 
     // active firmware id 2
@@ -2197,14 +2200,15 @@ int svr_InitObjects(
         // var_setString(&activefirmwaresignature2.value, buf, 49);
     }
 
-    // Device ID 1
 
+    // Device ID 1
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 0, 255};
         INIT_OBJECT(deviceid1, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[8];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid1.value, buf, 8);
+        char buf[8];
+        printf("SerialNumber333 = %s\n",Settings.SerialNumber);
+        sprintf(buf,"%s",Settings.SerialNumber);
+        var_setString(&deviceid1.value, buf, 8);
     }
 
     // Device ID 2
@@ -2253,13 +2257,14 @@ int svr_InitObjects(
     }
 
     // Device ID 7
-    {
-        const unsigned char ln[6] = {1, 0, 0, 0, 0, 255};
-        INIT_OBJECT(deviceid7, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[14];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid7.value, buf, 14);
-    }
+   {
+       const unsigned char ln[6] = {1, 0, 0, 0, 0, 255};
+       INIT_OBJECT(deviceid7, DLMS_OBJECT_TYPE_DATA, ln);
+        char buf[15];
+        sprintf(buf, "%s31%s%s",Settings.manufactureID,Settings.ProductYear,Settings.SerialNumber);
+        printf("buf = %s\n",buf);
+        var_setString(&deviceid7.value, buf, 15);
+   }
 
     // Error Register
     {
@@ -4411,3 +4416,90 @@ void svr_getDataType(
     gxValueEventCollection *args)
 {
 }
+
+
+
+
+
+
+void Read_Settings(SETTINGS *settings)
+{
+	char buffer[1000],data[10][100];
+	memset(buffer,0,sizeof(buffer));
+	for(int i=0;i<10;i++)
+	{
+		memset(data[i],0,sizeof(data[i]));
+	}
+    int fd = open(SETTINGS_PATH, O_RDONLY);
+    if (fd == -1) {
+        perror("Error opening file");
+    }
+    // Read data from the file
+    ssize_t bytes_read = read(fd, buffer, sizeof(buffer));
+    close(fd);
+    int ptr=0,cnt=0;
+    char tmp[50];
+    for(int i=0 ; i<bytes_read ; i++)
+    {
+    	if(buffer[i]=='\n')
+    	{
+    		memcpy(data[cnt],buffer+ptr,i-ptr);
+    		ptr=i+1;
+    		cnt++;
+    		memset(tmp,0,sizeof(tmp));
+    		switch(cnt)
+    		{
+    		case 1 :
+    		{
+    			memset(settings->SerialNumber,0,sizeof(settings->SerialNumber));
+    			strcpy(settings->SerialNumber,data[0]+13);
+    			printf("SerialNumber = %s\n",settings->SerialNumber);
+    			break;
+    		}
+    		case 2 :
+    		{
+    			memset(settings->ProductYear,0,sizeof(settings->ProductYear));
+    			strcpy(settings->ProductYear,data[1]+12);
+    			printf("ProductYear = %s\n",settings->ProductYear);
+    			break;
+    		}
+    		case 3 :
+    		{
+    			memset(settings->manufactureID,0,sizeof(settings->manufactureID));
+    			strcpy(settings->manufactureID,data[2]+14);
+    			printf("manufactureID = %s\n",settings->manufactureID);
+    			break;
+    		}
+    		case 4 :
+    		{
+    			memset(settings->IP,0,sizeof(settings->IP));
+    			strcpy(settings->IP,data[3]+3);
+    			printf("IP = %s\n",settings->IP);
+    			break;
+    		}
+    		case 5 :
+    		{
+    			memset(settings->PORT,0,sizeof(settings->PORT));
+    			strcpy(settings->PORT,data[4]+5);
+    			printf("PORT = %s\n",settings->PORT);
+    			break;
+    		}
+    		case 6 :
+    		{
+    			memset(settings->ListenPORT,0,sizeof(settings->ListenPORT));
+    			strcpy(settings->ListenPORT,data[5]+11);
+    			printf("ListenPORT = %s\n",settings->ListenPORT);
+    			break;
+    		}
+    		case 7 :
+    		{
+    			memset(settings->APN,0,sizeof(settings->APN));
+    			strcpy(settings->APN,data[6]+4);
+    			printf("APN = %s\n",settings->APN);
+    			break;
+    		}
+    		}
+    	}
+    }
+}
+
