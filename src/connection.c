@@ -276,12 +276,12 @@ void Socket_Receive_Thread(void* pVoid)
 			{
 				if (con->trace > GX_TRACE_LEVEL_WARNING)
 				{
-					printf("\r\nTCP CLIENT - RCV %d:\t", ret);
+					unsigned char tcp_client_rx[2048] = {0};
 					for (pos = 0; pos != ret; ++pos)
 					{
-						printf("%.2X ", tmp[pos]);
+						sprintf(tcp_client_rx[pos], "%.2X ", tmp[pos]);
 					}
-					printf("\r\n");
+					report(CLIENT, RX, tcp_client_rx);
 				}
 
 	//			appendLog(0, &bb);
@@ -304,12 +304,12 @@ void Socket_Receive_Thread(void* pVoid)
 				{
 					if (con->trace > GX_TRACE_LEVEL_WARNING)
 					{
-						printf("\r\nTX %u:\t", (unsigned int)reply.size);
+						unsigned char tcp_client_tx[2048] = {0};
 						for (pos = 0; pos != reply.size; ++pos)
 						{
-							printf("%.2X ", reply.data[pos]);
+							sprintf(tcp_client_tx[pos], "%.2X ", reply.data[pos]);
 						}
-						printf("\r\n");
+						report(CLIENT, TX, tcp_client_tx);
 					}
 	//				appendLog(1, &reply);
 
@@ -342,14 +342,13 @@ void Socket_Send_Thread(void* pVoid)
 			}
 			else
 			{
-		    	printf("*******************************\n");
-		    	printf("TCP CLIENT - SEND:%d\n", con->buffer.TX_Count);
+				unsigned char tcp_client_tx[2048] = {0};
 		    	for (int m=0; m<con->buffer.TX_Count; m++)
 		    	{
-		    		printf("%.2X-",con->buffer.TX[m]);
+		    		sprintf(tcp_client_tx[m], "%.2X ",con->buffer.TX[m]);
 		    	}
-		    	printf("\n");
-		    	printf("*******************************\n");
+		    	report(CLIENT, TX, tcp_client_tx);
+
 		    	con->buffer.TX_Count = 0;
 			}
 
@@ -364,14 +363,13 @@ void Socket_Send_Thread(void* pVoid)
 			}
 			else
 			{
-				printf("*******************************\n");
-				printf("TCP SERVER - SEND:%d\n", con->buffer.TX_Count);
+				unsigned char tcp_svr_tx[2048] = {0};
 				for (int m=0; m<con->buffer.TX_Count; m++)
 				{
-					printf("%.2X-",con->buffer.TX[m]);
+					sprintf(tcp_svr_tx[m], "%.2X ",con->buffer.TX[m]);
 				}
-				printf("\n");
-				printf("*******************************\n");
+				report(SERVER, TX, tcp_svr_tx);
+
 				con->buffer.TX_Count = 0;
 			}
         }
@@ -383,6 +381,7 @@ void Socket_Send_Thread(void* pVoid)
 //Initialize connection settings.
 int Socket_Connection_Start(connection* con)
 {
+	gxByteBuffer* tmp_bb		;
     struct sockaddr_in add = { 0 };
     int ret;
     //Reply wait time is 5 seconds.
@@ -402,15 +401,11 @@ int Socket_Connection_Start(connection* con)
     con->socket.Status.Opened 			= true	;
     con->serversocket.Status.Connected 	= false	;
 
-    gxByteBuffer* tmp_bb;
-    arr_getByIndex(&autoConnect.destinations, 0, (void**)&tmp_bb);
-    char *str1= bb_toString(tmp_bb);
-
-    sprintf(con->socket.Parameters.IP, strtok(str1,":"))	;
-    con->socket.Parameters.PORT 	= atoi(strtok(NULL,":"));
-    con->serversocket.server_port 	= udpSetup.port			;
-
-    printf(" <<<<>>>>> IP= %s - PORT: %d - LISTEN PORT:%d \n",con->socket.Parameters.IP, con->socket.Parameters.PORT, con->serversocket.server_port);
+    arr_getByIndex(&autoConnect.destinations, 0, (void**)&tmp_bb)		;
+//    char *IP_Port= bb_toString(tmp_bb)								;
+    sprintf(con->socket.Parameters.IP, strtok(bb_toString(tmp_bb),":"))	;		//converting server port-ip type to string, IP:PORT
+    con->socket.Parameters.PORT 	= atoi(strtok(NULL,":"))			;
+    con->serversocket.server_port 	= udpSetup.port						;
 
     ret = pthread_create(&con->receiverThread, 		NULL, Socket_Receive_Thread	, (void*)con);
     ret = pthread_create(&con->sendThread, 			NULL, Socket_Send_Thread	, (void*)con);
@@ -426,37 +421,26 @@ void Socket_get_open(connection* con)
 	{
 		Socket_get_close(con);
 		con->socket.Status.Opened=false;
-
-//		report("sds","RS232 --> TCP-Client:Socket",n,"--> CONNECTION_CLOSE!!");
-//		printf("TCP-Client:Socket--> CONNECTION_CLOSE!!\n");
 																	//===============( Create Socket )=========================
-//		if(ClientSocket.Socket_create(n)==OK)
 		if(Socket_create(con) == 1)
 		{
-//			report("sds","RS232 --> TCP-Client:Socket",n,"--> CREATE_OK!");
-//			printf("TCP-Client:Socket--> CREATE_OK!\n");
-//			report("sds","RS232 --> TCP-Client:Socket",n,"--> Connecting .....!");
-			printf("TCP-Client:Socket--> Connecting .....\n");
-
+			report(CLIENT, CONNECTION,"OPEN");
 		}
 
 	}
 																	//===============( Connect to Server )=========================
 
-//	printf("----------server add:%s\n", con->socket.Serv_addr.sin_addr);
 	if(connect(con->socket.Socket_fd, (struct sockaddr *)&con->socket.Serv_addr, sizeof(con->socket.Serv_addr)) == 0)
 	{
 		con->socket.Status.Connected=true;
 		con->socket.Status.Opened=true;
 
-//		report("sds","RS232 --> TCP-Client:Socket",n,"--> Connected !");
-		printf("TCP-Client:Socket--> Connected\n");
-
+		report(CLIENT, CONNECTION,"CONNECTED");
 	}
 	else
 	{
 		con->socket.Status.Connected=false;
-
+		report(CLIENT, CONNECTION,"CLOSE");
 	}
 
 }
@@ -576,8 +560,7 @@ void Socket_Listen_Thread(void* pVoid)
                 //Notify error.
             }
             con->serversocket.Status.Connected = true;
-            // printf("client = %s\n",client.sin_addr);
-            // printf("len = %s\n",len);
+            report(SERVER, CONNECTION, "CONNECTED");
 
 //            info = inet_ntoa(add.sin_addr);
 //            bb_set(&senderInfo, (unsigned char*)info, (unsigned short)strlen(info));
@@ -604,11 +587,12 @@ void Socket_Listen_Thread(void* pVoid)
 
     			if (con->trace > GX_TRACE_LEVEL_WARNING)
     			{
-    				printf("\r\nRX %d:\t", ret);
+    				unsigned char tcp_svr_rx[2048] = {0};
     				for (pos = 0; pos != ret; ++pos)
     				{
-    					printf("%.2X ", tmp[pos]);
+    					sprintf(tcp_svr_rx[pos], "%.2X ", tmp[pos]);
     				}
+    				report(SERVER, RX, tcp_svr_rx);
     				printf("\r\n");
     			}
 
@@ -642,12 +626,13 @@ void Socket_Listen_Thread(void* pVoid)
     			{
     				if (con->trace > GX_TRACE_LEVEL_WARNING)
     				{
+    					unsigned char svr_tx_tmp[2048] = {0};
     					printf("\r\nTX %u:\t", (unsigned int)reply.size);
     					for (pos = 0; pos != reply.size; ++pos)
     					{
-    						printf("%.2X ", reply.data[pos]);
+    						sprintf(svr_tx_tmp[pos], "%.2X ", reply.data[pos]);
     					}
-    					printf("\r\n");
+    					report(SERVER, RX, svr_tx_tmp);
     				}
     //				appendLog(1, &reply);
 
@@ -658,6 +643,7 @@ void Socket_Listen_Thread(void* pVoid)
     			}
     //            svr_reset(&con->settings);
             }
+            report(SERVER, CONNECTION, "DISCONNECTED");
             svr_reset(&con->settings);
         }
     }
@@ -668,7 +654,6 @@ void Socket_Listen_Thread(void* pVoid)
 
 int	Socket_get_close(connection* con)
 {
-//	printf("before close\n");
 	int sh=shutdown(con->socket.Socket_fd, SHUT_RDWR);
 	int cl=close(con->socket.Socket_fd);
 
@@ -676,6 +661,7 @@ int	Socket_get_close(connection* con)
 	con->socket.Socket_fd=0;
 	con->socket.Status.Connected=false;
 	con->socket.Status.Opened=false;
+	report(CLIENT, CONNECTION, "CLOSE");
 	return 1;
 }
 
@@ -853,14 +839,12 @@ void* RS485_Receive_Thread(void* pVoid)
     	bytesRead = read(con->comPort, &con->buffer.RX, 1024);
     	con->buffer.RX_Count = bytesRead;
 
-    	printf("*******************************\n");
-    	printf("RS485-RCV:%d\n", con->buffer.RX_Count);
+    	unsigned char rs_rx_tmp_info[2048] = {0};
     	for (int m=0; m<con->buffer.RX_Count; m++)
     	{
-    		printf("%.2X-",con->buffer.RX[m]);
+    		sprintf(rs_rx_tmp_info[m] ,"%.2X ",con->buffer.RX[m]);
     	}
-    	printf("\n");
-    	printf("*******************************\n");
+    	report(RS485, RX, rs_rx_tmp_info);
 
     	usleep(1000);
     }
@@ -886,15 +870,16 @@ void* RS485_Send_Thread(void* pVoid)
             baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
             delay_us = ((con->buffer.TX_Count * 12000)/baudRate);
 //            printf("RS485 Send : %d\n", con->buffer.TX_Count);
-        	printf("*******************************\n");
-        	printf("RS485-SND:%d\n", con->buffer.TX_Count);
+
+            unsigned char rs_tx_tmp_info[2048] = {0};
         	for (int m=0; m<con->buffer.TX_Count; m++)
         	{
-        		printf("%.2X-",con->buffer.TX[m]);
+        		sprintf(rs_tx_tmp_info[m] ,"%.2X " ,con->buffer.TX[m]);
         	}
-        	printf("\n");
-        	printf("*******************************\n");
+        	report(RS485, RX, rs_tx_tmp_info);
+
             con->buffer.TX_Count = 0 ;
+
             usleep(delay_us*1000);
 
             system("echo 0 > /sys/class/leds/DIR_485/brightness");
@@ -937,15 +922,17 @@ int RS485_Serial_Start(connection* con, char *file)
     int ret;
     if ((ret = com_initializeSerialPort(con, file, 0)) != 0)
     {
+    	report(RS485, CONNECTION, "CLOSE");
         return ret;
     }
     
+    report(RS485, CONNECTION, "OPEN");
     con->buffer.RX_Count = 0 ;
     con->buffer.TX_Count = 0 ;
     con->buffer.Timeout_ms = 5000;
-    ret = pthread_create(&con->receiverThread, NULL, RS485_Receive_Thread, (void*)con);
-    ret = pthread_create(&con->sendThread, NULL, RS485_Send_Thread, (void*)con);
-    ret = pthread_create(&con->managerThread, NULL, GW_Start, (void*)con);
+    ret = pthread_create(&con->receiverThread, 	NULL, RS485_Receive_Thread, (void*)con);
+    ret = pthread_create(&con->sendThread, 		NULL, RS485_Send_Thread, 	(void*)con);
+    ret = pthread_create(&con->managerThread, 	NULL, GW_Start, 			(void*)con);
     return ret;
 }
 
@@ -1159,16 +1146,15 @@ void WAN_Connection (void)
 	memset(&Sig_Strg_Info,0,sizeof(QL_NW_SIGNAL_STRENGTH_INFO_T));
 
 	APN_Param_Struct.op = START_A_DATA_CALL							;
-	APN_Param_Struct.apn = &gprsSetup.apn.data						;
-	sprintf(APN_Param_Struct.apn, "mtnirancell")					;
-//	printf("<= WAN Connection - APN:%s =>\n", APN_Param_Struct.apn)	;
+	APN_Param_Struct.apn= bb_toString(&gprsSetup.apn)				;
+	printf("<= WAN Connection - APN:%s =>\n", APN_Param_Struct.apn)	;
 
 	APN_Param_Struct.profile_idx 	= 1		;
 	APN_Param_Struct.ip_type		= IPV4V6;
 
 
 	int ret = ql_wan_setapn(APN_Param_Struct.profile_idx, APN_Param_Struct.ip_type, APN_Param_Struct.apn, &APN_Param_Struct.userName, &APN_Param_Struct.password, auth);
-	if(ret!=0) printf("!ERROR! ql_wan_setapn - ret:%d", ret);
+	if(ret!=0) printf("!ERROR! ql_wan_setapn - ret:%d\n", ret);
 
 	int 	ip_type_get 	= 0	;
     char 	apn_get[128]	={0};
@@ -1176,7 +1162,7 @@ void WAN_Connection (void)
     char 	password_get[64]={0};
 
     ret = ql_wan_getapn(APN_Param_Struct.profile_idx, &ip_type_get, apn_get, sizeof(apn_get), userName_get, sizeof(userName_get), password_get, sizeof(password_get));
-	if(ret!=0) printf("!ERROR! ql_wan_getapn - ret:%d", ret);
+	if(ret!=0) printf("!ERROR! ql_wan_getapn - ret:%d\n", ret);
 //	else
 //	{
 //		printf("<= APN SET:%s =>\n", apn_get);
@@ -1236,7 +1222,7 @@ void WAN_Connection (void)
 
 				ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
 				if(ret!=0)
-					printf("!ERROR! ql_wan_start - ret:%d", ret);
+					printf("!ERROR! ql_wan_start - ret:%d\n", ret);
 //				else
 //					printf("<= WAN STARTED! nw_cb=%d =>\n", nw_cb);
 			}

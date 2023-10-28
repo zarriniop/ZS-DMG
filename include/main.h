@@ -70,12 +70,32 @@ typedef struct
     uint32_t	Timeout_ms;
 } Buffer;
 
+
+typedef enum
+{
+	RS485 	= 0,
+	SERVER	= 1,
+	CLIENT	= 2
+}REPORT_INTERFACE;
+
+
+typedef enum
+{
+	RX 			= 0,
+	TX			= 1,
+	CONNECTION	= 2
+}REPORT_MESSAGE;
+
 /***********************
  * FUNCTION PROTOTYPES *
  ***********************/
 int Servers_Start(int trace);
 
 void Servers_Monitor (void);
+
+int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Information);
+
+const char * get_time(void);
 
 
 

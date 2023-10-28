@@ -105,6 +105,56 @@ void Servers_Monitor (void)
     con_close(&lniec);
 }
 
+/****************************************/
+/********** Get time Function ***********/
+/****************************************/
+const char * get_time(void)
+{
+    static char time_buf[128];
+    struct timeval  tv;
+    time_t time;
+    suseconds_t millitm;
+    struct tm *ti;
+
+    gettimeofday (&tv, NULL);
+
+    time= tv.tv_sec;
+    millitm = (tv.tv_usec + 500) / 1000;
+
+    if (millitm == 1000) {
+        ++time;
+        millitm = 0;
+    }
+
+    ti = localtime(&time);
+    sprintf(time_buf, "%02d-%02d_%02d:%02d:%02d:%03d", ti->tm_mon+1, ti->tm_mday, ti->tm_hour, ti->tm_min, ti->tm_sec, (int)millitm);
+    return time_buf;
+}
+
+/**************************************/
+/********** Report Function ***********/
+/**************************************/
+int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Information)
+{
+	int 		ret;
+	char		cmd[400] = {0};
+	char		log[200] = {0};
+	const char	*interface 	[] = {"RS485", "Server", "Client"}	;
+	const char	*message 	[] = {"RX", "TX", "Connection"}		;
+	char		*Time_Tag;
+
+	memset(cmd, 0, sizeof(cmd));
+
+	Time_Tag = get_time();
+
+	sprintf(log, "[%s] (%s): %s = %s", Time_Tag, interface[Interface], message[Message], Information);
+	sprintf(cmd, "echo \"%s\" >> /root/log.txt", log);
+	ret = system(cmd);
+	ret = printf("%s\n",log);
+
+	return ret;
+}
+
 /************************************/
 /********** Main Function ***********/
 /************************************/
@@ -128,12 +178,22 @@ int main(int argc, char* argv[])
     LTE_Manager_Start();
 
     pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
-    //addkfj
+
     while (1)
     {
     	sleep(1);
     }
     return 0;
 }
+
+
+
+
+
+
+
+
+
+
 
 
