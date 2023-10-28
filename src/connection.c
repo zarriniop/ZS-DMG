@@ -402,13 +402,15 @@ int Socket_Connection_Start(connection* con)
     con->socket.Status.Opened 			= true	;
     con->serversocket.Status.Connected 	= false	;
 
-    con->socket.Parameters.PORT = 30146;
-//    sprintf(con->socket.Parameters.IP, "10.21.1.96");
-    sprintf(con->socket.Parameters.IP, "109.125.142.200");
-//    sprintf(con->socket.Parameters.IP, "192.168.1.134");
-    con->serversocket.server_port = udpSetup.port;
+    gxByteBuffer* tmp_bb;
+    arr_getByIndex(&autoConnect.destinations, 0, (void**)&tmp_bb);
+    char *str1= bb_toString(tmp_bb);
 
-    printf(">>>>>>>>>>>>>>>>>>>autoConnect.destinations : %s\n", autoConnect.destinations.data);
+    sprintf(con->socket.Parameters.IP, strtok(str1,":"))	;
+    con->socket.Parameters.PORT 	= atoi(strtok(NULL,":"));
+    con->serversocket.server_port 	= udpSetup.port			;
+
+    printf(" <<<<>>>>> IP= %s - PORT: %d - LISTEN PORT:%d \n",con->socket.Parameters.IP, con->socket.Parameters.PORT, con->serversocket.server_port);
 
     ret = pthread_create(&con->receiverThread, 		NULL, Socket_Receive_Thread	, (void*)con);
     ret = pthread_create(&con->sendThread, 			NULL, Socket_Send_Thread	, (void*)con);
