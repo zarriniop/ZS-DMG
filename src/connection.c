@@ -266,13 +266,15 @@ void Socket_Receive_Thread(void* pVoid)
 //        	 if ((ret = recv(con->socket.Socket_fd, (char*) bb.data + bb.size, bb.capacity - bb.size, 0)) == -1)
 
         	ret = recv(con->socket.Socket_fd, tmp, 2048, 0);
-        	if(ret <= 0)
+
+			if(ret <= 0)
         	{
+        		printf(">>>>>>>>RET_RCV:%d - errno:%d \n", ret, errno);
 				//Notify error.
 				svr_reset(&con->settings);
 				con->socket.Status.Connected = false;
         	}
-        	else
+			else
 			{
 				if (con->trace > GX_TRACE_LEVEL_WARNING)
 				{
@@ -290,7 +292,7 @@ void Socket_Receive_Thread(void* pVoid)
 				{
 					memcpy(con->buffer.RX, tmp, ret);
 					con->buffer.RX_Count += ret;
-					printf("Checking 0xE6 - rx:%d\n", con->buffer.RX_Count);
+//					printf("Checking 0xE6 - rx:%d\n", con->buffer.RX_Count);
 				}
 				else
 				{
@@ -426,14 +428,13 @@ void Socket_get_open(connection* con)
 		{
 			report(CLIENT, CONNECTION,"OPEN");
 		}
-
 	}
 																	//===============( Connect to Server )=========================
 
 	if(connect(con->socket.Socket_fd, (struct sockaddr *)&con->socket.Serv_addr, sizeof(con->socket.Serv_addr)) == 0)
 	{
-		con->socket.Status.Connected=true;
-		con->socket.Status.Opened=true;
+		con->socket.Status.Connected	=true;
+		con->socket.Status.Opened		=true;
 
 		report(CLIENT, CONNECTION,"CONNECTED");
 	}
@@ -545,7 +546,7 @@ void Socket_Listen_Thread(void* pVoid)
         bb_clear(&senderInfo);
         con->serversocket.Accept_fd = accept(con->serversocket.Socket_fd, (struct sockaddr*) &client, &len);
 
-        printf("socket of client = %d\n",con->serversocket.Accept_fd);
+//        printf("socket of client = %d\n",con->serversocket.Accept_fd);
         // printf("client = %s\n",client.sin_addr);
         // printf("len = %s\n",len);
 
@@ -581,6 +582,7 @@ void Socket_Listen_Thread(void* pVoid)
                     close(con->serversocket.Accept_fd);
                     con->serversocket.Accept_fd = -1;
                     con->serversocket.Status.Connected = false;
+                    report(SERVER, CONNECTION, "CLOSE");
                     break;
     			}
 
@@ -593,7 +595,6 @@ void Socket_Listen_Thread(void* pVoid)
     					sprintf(tcp_svr_rx[pos], "%.2X ", tmp[pos]);
     				}
     				report(SERVER, RX, tcp_svr_rx);
-    				printf("\r\n");
     			}
 
     //			appendLog(0, &bb);
@@ -627,7 +628,6 @@ void Socket_Listen_Thread(void* pVoid)
     				if (con->trace > GX_TRACE_LEVEL_WARNING)
     				{
     					unsigned char svr_tx_tmp[2048] = {0};
-    					printf("\r\nTX %u:\t", (unsigned int)reply.size);
     					for (pos = 0; pos != reply.size; ++pos)
     					{
     						sprintf(svr_tx_tmp[pos], "%.2X ", reply.data[pos]);
@@ -976,62 +976,6 @@ int con_close(
     return 0;
 }
 
-// void report(char *format, ... )
-// {
-// 	va_list args;
-// 	int i=0,count=0;
-// 	char ss[100],str[400];
-// 	va_start( args, format );
-
-// 	int		d;
-// 	float   f;
-// 	char   *s;
-
-// 	memset(str,0,sizeof(str));
-
-// 	for( i = 0; format[i] != '\0'; ++i )
-// 	{
-// 		switch( format[i] )
-// 		{
-// 	         case 'd':
-// 	        	d=va_arg(args, int );
-// 	            sprintf(ss,"%d\0",d);
-// 	         break;
-
-// 	         case 'f':
-// 	        	 f=va_arg(args, double );
-// 	             sprintf(ss,"%f\0",f);
-// 	         break;
-
-
-// 	         case 's':
-// 	        	 s=va_arg(args, char *);
-// 	             sprintf(ss,"%s\0",s);
-// 	         break;
-
-// 	         default:
-// 	         break;
-// 	      }
-
-// 			memcpy(str+count,ss,strlen(ss));
-// 			count=strlen(str);
-
-// 	}
-
-
-// 	va_end( args );
-
-
-// #if DEBUG_MODE
-// 	printf("((%s)) %s\n",get_time(),str);
-// #else
-// 	char str1[500];
-// 	memset(str1,0,sizeof(str1));
-// 	sprintf(str1,"logger -t \"=======(  ZS-LRM200  )=======\" \"%s\" ",str);
-// 	std::system(str1);
-// #endif
-// }
-
 
 void Initialize (void)
 {
@@ -1147,6 +1091,7 @@ void WAN_Connection (void)
 
 	APN_Param_Struct.op = START_A_DATA_CALL							;
 	APN_Param_Struct.apn= bb_toString(&gprsSetup.apn)				;
+	sprintf(APN_Param_Struct.apn, "Khzedcapn");
 	printf("<= WAN Connection - APN:%s =>\n", APN_Param_Struct.apn)	;
 
 	APN_Param_Struct.profile_idx 	= 1		;
@@ -1163,10 +1108,10 @@ void WAN_Connection (void)
 
     ret = ql_wan_getapn(APN_Param_Struct.profile_idx, &ip_type_get, apn_get, sizeof(apn_get), userName_get, sizeof(userName_get), password_get, sizeof(password_get));
 	if(ret!=0) printf("!ERROR! ql_wan_getapn - ret:%d\n", ret);
-//	else
-//	{
-//		printf("<= APN SET:%s =>\n", apn_get);
-//	}
+	else
+	{
+		printf("<= APN SET:%s =>\n", apn_get);
+	}
 
 
 	ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);

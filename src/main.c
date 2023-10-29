@@ -137,8 +137,8 @@ const char * get_time(void)
 int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Information)
 {
 	int 		ret;
-	char		cmd[400] = {0};
-	char		log[200] = {0};
+	char		cmd[2048] = {0};
+	char		log[2048] = {0};
 	const char	*interface 	[] = {"RS485", "Server", "Client"}	;
 	const char	*message 	[] = {"RX", "TX", "Connection"}		;
 	char		*Time_Tag;
