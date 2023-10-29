@@ -149,8 +149,27 @@ int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Informatio
 
 	sprintf(log, "[%s] (%s): %s = %s", Time_Tag, interface[Interface], message[Message], Information);
 	sprintf(cmd, "echo \"%s\" >> /root/log.txt", log);
-	ret = system(cmd);
+	ret = system("ls");
 	ret = printf("%s\n",log);
+
+//	FILE* f = fopen("trace.txt", "a");
+//    if (f != NULL)
+//    {
+//        char* tmp = bb_toHexString(reply);
+//        if (tmp != NULL)
+//        {
+//            if (send)
+//            {
+//                fprintf(f, "TX: %s\r\n", tmp);
+//            }
+//            else
+//            {
+//                fprintf(f, "RX: %s\r\n", tmp);
+//            }
+//            free(tmp);
+//        }
+//        fclose(f);
+//    }
 
 	return ret;
 }

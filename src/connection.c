@@ -1091,7 +1091,6 @@ void WAN_Connection (void)
 
 	APN_Param_Struct.op = START_A_DATA_CALL							;
 	APN_Param_Struct.apn= bb_toString(&gprsSetup.apn)				;
-	sprintf(APN_Param_Struct.apn, "Khzedcapn");
 	printf("<= WAN Connection - APN:%s =>\n", APN_Param_Struct.apn)	;
 
 	APN_Param_Struct.profile_idx 	= 1		;
