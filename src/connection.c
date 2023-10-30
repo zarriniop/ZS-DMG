@@ -269,7 +269,6 @@ void Socket_Receive_Thread(void* pVoid)
 
 			if(ret <= 0)
         	{
-        		printf(">>>>>>>>RET_RCV:%d - errno:%d \n", ret, errno);
 				//Notify error.
 				svr_reset(&con->settings);
 				con->socket.Status.Connected = false;
@@ -278,10 +277,10 @@ void Socket_Receive_Thread(void* pVoid)
 			{
 				if (con->trace > GX_TRACE_LEVEL_WARNING)
 				{
-					unsigned char tcp_client_rx[2048] = {0};
+					unsigned char tcp_client_rx[4096] = {0};
 					for (pos = 0; pos != ret; ++pos)
 					{
-						sprintf(tcp_client_rx[pos], "%.2X ", tmp[pos]);
+						sprintf(tcp_client_rx + strlen(tcp_client_rx), "%.2X ", tmp[pos]);
 					}
 					report(CLIENT, RX, tcp_client_rx);
 				}
@@ -306,10 +305,10 @@ void Socket_Receive_Thread(void* pVoid)
 				{
 					if (con->trace > GX_TRACE_LEVEL_WARNING)
 					{
-						unsigned char tcp_client_tx[2048] = {0};
+						unsigned char tcp_client_tx[4096] = {0};
 						for (pos = 0; pos != reply.size; ++pos)
 						{
-							sprintf(tcp_client_tx[pos], "%.2X ", reply.data[pos]);
+							sprintf(tcp_client_tx + strlen(tcp_client_tx), "%.2X ", reply.data[pos]);
 						}
 						report(CLIENT, TX, tcp_client_tx);
 					}
@@ -344,10 +343,10 @@ void Socket_Send_Thread(void* pVoid)
 			}
 			else
 			{
-				unsigned char tcp_client_tx[2048] = {0};
+				unsigned char tcp_client_tx[4096] = {0};
 		    	for (int m=0; m<con->buffer.TX_Count; m++)
 		    	{
-		    		sprintf(tcp_client_tx[m], "%.2X ",con->buffer.TX[m]);
+		    		sprintf(tcp_client_tx + strlen(tcp_client_tx), "%.2X ",con->buffer.TX[m]);
 		    	}
 		    	report(CLIENT, TX, tcp_client_tx);
 
@@ -365,10 +364,10 @@ void Socket_Send_Thread(void* pVoid)
 			}
 			else
 			{
-				unsigned char tcp_svr_tx[2048] = {0};
+				unsigned char tcp_svr_tx[4096] = {0};
 				for (int m=0; m<con->buffer.TX_Count; m++)
 				{
-					sprintf(tcp_svr_tx[m], "%.2X ",con->buffer.TX[m]);
+					sprintf(tcp_svr_tx + strlen(tcp_svr_tx), "%.2X ",con->buffer.TX[m]);
 				}
 				report(SERVER, TX, tcp_svr_tx);
 
@@ -589,10 +588,10 @@ void Socket_Listen_Thread(void* pVoid)
 
     			if (con->trace > GX_TRACE_LEVEL_WARNING)
     			{
-    				unsigned char tcp_svr_rx[2048] = {0};
+    				unsigned char tcp_svr_rx[4096] = {0};
     				for (pos = 0; pos != ret; ++pos)
     				{
-    					sprintf(tcp_svr_rx[pos], "%.2X ", tmp[pos]);
+    					sprintf(tcp_svr_rx + strlen(tcp_svr_rx), "%.2X ", tmp[pos]);
     				}
     				report(SERVER, RX, tcp_svr_rx);
     			}
@@ -627,12 +626,12 @@ void Socket_Listen_Thread(void* pVoid)
     			{
     				if (con->trace > GX_TRACE_LEVEL_WARNING)
     				{
-    					unsigned char svr_tx_tmp[2048] = {0};
+    					unsigned char svr_tx_tmp[4096] = {0};
     					for (pos = 0; pos != reply.size; ++pos)
     					{
-    						sprintf(svr_tx_tmp[pos], "%.2X ", reply.data[pos]);
+    						sprintf(svr_tx_tmp + strlen(svr_tx_tmp), "%.2X ", reply.data[pos]);
     					}
-    					report(SERVER, RX, svr_tx_tmp);
+    					report(SERVER, TX, svr_tx_tmp);
     				}
     //				appendLog(1, &reply);
 
@@ -839,10 +838,10 @@ void* RS485_Receive_Thread(void* pVoid)
     	bytesRead = read(con->comPort, &con->buffer.RX, 1024);
     	con->buffer.RX_Count = bytesRead;
 
-    	unsigned char rs_rx_tmp_info[2048] = {0};
+    	unsigned char rs_rx_tmp_info[4096] = {0};
     	for (int m=0; m<con->buffer.RX_Count; m++)
     	{
-    		sprintf(rs_rx_tmp_info[m] ,"%.2X ",con->buffer.RX[m]);
+    		sprintf(rs_rx_tmp_info + strlen(rs_rx_tmp_info) ,"%.2X ",con->buffer.RX[m]);
     	}
     	report(RS485, RX, rs_rx_tmp_info);
 
@@ -871,12 +870,12 @@ void* RS485_Send_Thread(void* pVoid)
             delay_us = ((con->buffer.TX_Count * 12000)/baudRate);
 //            printf("RS485 Send : %d\n", con->buffer.TX_Count);
 
-            unsigned char rs_tx_tmp_info[2048] = {0};
+            unsigned char rs_tx_tmp_info[4096] = {0};
         	for (int m=0; m<con->buffer.TX_Count; m++)
         	{
-        		sprintf(rs_tx_tmp_info[m] ,"%.2X " ,con->buffer.TX[m]);
+        		sprintf(rs_tx_tmp_info + strlen(rs_tx_tmp_info) ,"%.2X " ,con->buffer.TX[m]);
         	}
-        	report(RS485, RX, rs_tx_tmp_info);
+        	report(RS485, TX, rs_tx_tmp_info);
 
             con->buffer.TX_Count = 0 ;
 
@@ -1091,7 +1090,7 @@ void WAN_Connection (void)
 
 	APN_Param_Struct.op = START_A_DATA_CALL							;
 	APN_Param_Struct.apn= bb_toString(&gprsSetup.apn)				;
-	printf("<= WAN Connection - APN:%s =>\n", APN_Param_Struct.apn)	;
+//	printf("<= WAN Connection - APN:%s =>\n", APN_Param_Struct.apn)	;
 
 	APN_Param_Struct.profile_idx 	= 1		;
 	APN_Param_Struct.ip_type		= IPV4V6;
@@ -1107,10 +1106,10 @@ void WAN_Connection (void)
 
     ret = ql_wan_getapn(APN_Param_Struct.profile_idx, &ip_type_get, apn_get, sizeof(apn_get), userName_get, sizeof(userName_get), password_get, sizeof(password_get));
 	if(ret!=0) printf("!ERROR! ql_wan_getapn - ret:%d\n", ret);
-	else
-	{
-		printf("<= APN SET:%s =>\n", apn_get);
-	}
+//	else
+//	{
+//		printf("<= APN SET:%s =>\n", apn_get);
+//	}
 
 
 	ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);

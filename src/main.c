@@ -137,39 +137,28 @@ const char * get_time(void)
 int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Information)
 {
 	int 		ret;
-	char		cmd[2048] = {0};
-	char		log[2048] = {0};
+//	char		cmd[2048] = {0};
+	char		log[4096] = {0};
 	const char	*interface 	[] = {"RS485", "Server", "Client"}	;
 	const char	*message 	[] = {"RX", "TX", "Connection"}		;
 	char		*Time_Tag;
 
-	memset(cmd, 0, sizeof(cmd));
+//	memset(cmd, 0, sizeof(cmd));
 
 	Time_Tag = get_time();
 
 	sprintf(log, "[%s] (%s): %s = %s", Time_Tag, interface[Interface], message[Message], Information);
-	sprintf(cmd, "echo \"%s\" >> /root/log.txt", log);
-	ret = system("ls");
 	ret = printf("%s\n",log);
 
-//	FILE* f = fopen("trace.txt", "a");
-//    if (f != NULL)
-//    {
-//        char* tmp = bb_toHexString(reply);
-//        if (tmp != NULL)
-//        {
-//            if (send)
-//            {
-//                fprintf(f, "TX: %s\r\n", tmp);
-//            }
-//            else
-//            {
-//                fprintf(f, "RX: %s\r\n", tmp);
-//            }
-//            free(tmp);
-//        }
-//        fclose(f);
-//    }
+	//	sprintf(cmd, "echo \"%s\" >> /root/log.txt", log);
+	//	ret = system("ls");
+
+	FILE* f = fopen("log.txt", "a");
+    if (f != NULL)
+    {
+    	fprintf(f, "%s\r\n", log);
+    	fclose(f);
+    }
 
 	return ret;
 }
@@ -192,15 +181,52 @@ int main(int argc, char* argv[])
     FILE* f = fopen(TRACEFILE, "w");
     fclose(f);
 
+    /**************************/
+    int ret = 0;
+    ret = Ql_GPIO_Uninit(PINNAME_GPIO5);
+    printf("1>>>>>>LED:%d\n", ret);
+//    ret = Ql_GPIO_Base_Init(PINNAME_GPIO5);
+//    printf("2>>>>>>LED:%d\n", ret);
+    ret = Ql_GPIO_Init(PINNAME_GPIO5, PINDIRECTION_OUT, PINLEVEL_HIGH, PINPULLSEL_PULLDOWN);
+    ret = Ql_GPIO_Init(PINNAME_GPIO4, PINDIRECTION_OUT, PINLEVEL_HIGH, PINPULLSEL_PULLDOWN);
+    ret = Ql_GPIO_Init(PINNAME_GPIO2, PINDIRECTION_OUT, PINLEVEL_HIGH, PINPULLSEL_PULLDOWN);
+    printf("3>>>>>>LED:%d\n", ret);
+
+    Ql_GPIO_SetDirection(PINNAME_GPIO5, PINDIRECTION_OUT);
+
+    if (ret != 0) {
+        printf(">>>>>>>>Error initializing GPIO: %s\n", strerror(errno));
+    }
+
+    ret = Ql_GPIO_SetLevel(PINNAME_GPIO5, PINLEVEL_HIGH);
+    printf("4>>>>>>LED:%d\n", ret);
+    /*************************/
+
     Servers_Start(GX_TRACE_LEVEL_INFO);
 
     LTE_Manager_Start();
 
     pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
 
+    ret = 157;
     while (1)
     {
-    	sleep(1);
+    	sleep(3);
+
+    	if(ret==892)
+    	{
+    		ret = 157;
+        	Ql_GPIO_SetLevel(PINNAME_GPIO5, 0);
+        	Ql_GPIO_SetLevel(PINNAME_GPIO4, 0);
+        	Ql_GPIO_SetLevel(PINNAME_GPIO2, 0);
+    	}
+    	else
+    	{
+    		ret = 892;
+        	Ql_GPIO_SetLevel(PINNAME_GPIO5, 1);
+        	Ql_GPIO_SetLevel(PINNAME_GPIO4, 1);
+        	Ql_GPIO_SetLevel(PINNAME_GPIO2, 1);
+    	}
     }
     return 0;
 }

@@ -50,7 +50,7 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 
 	while(1)
 	{
-		Print_GW_State();
+//		Print_GW_State();
 		switch(GW_State)
 		{
 
