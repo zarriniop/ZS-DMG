@@ -181,89 +181,15 @@ int main(int argc, char* argv[])
     FILE* f = fopen(TRACEFILE, "w");
     fclose(f);
 
-    /**************************/
-    int ret = 0;
-    ret = Ql_GPIO_Uninit(PINNAME_GPIO5);
-    printf("1>>>>>>LED:%d\n", ret);
-    ret = Ql_GPIO_Uninit(PINNAME_GPIO4);
-    printf("1>>>>>>LED:%d\n", ret);
-    ret = Ql_GPIO_Uninit(PINNAME_GPIO2);
-    printf("1>>>>>>LED:%d\n", ret);
+    Servers_Start(GX_TRACE_LEVEL_INFO);
 
-    ret = Ql_GPIO_Base_Init(PINNAME_GPIO5);
-    printf("2>>>>>>LED:%d\n", ret);
-	ret = Ql_GPIO_Base_Init(PINNAME_GPIO4);
-	printf("2>>>>>>LED:%d\n", ret);
-	ret = Ql_GPIO_Base_Init(PINNAME_GPIO2);
-	printf("2>>>>>>LED:%d\n", ret);
+    LTE_Manager_Start();
 
-    ret = Ql_GPIO_Init(PINNAME_GPIO5, PINDIRECTION_OUT, PINLEVEL_HIGH, PINPULLSEL_DISABLE);
-    printf("3>>>>>>LED:%d\n", ret);
-    ret = Ql_GPIO_Init(PINNAME_GPIO4, PINDIRECTION_OUT, PINLEVEL_HIGH, PINPULLSEL_DISABLE);
-    printf("3>>>>>>LED:%d\n", ret);
-    ret = Ql_GPIO_Init(PINNAME_GPIO2, PINDIRECTION_OUT, PINLEVEL_HIGH, PINPULLSEL_DISABLE);
-    printf("3>>>>>>LED:%d\n", ret);
+    pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
 
-    ret = Ql_GPIO_Init(PINNAME_GPIO1, PINDIRECTION_OUT, PINLEVEL_HIGH, PINPULLSEL_DISABLE);
-    ret = Ql_GPIO_Init(PINNAME_GPIO3, PINDIRECTION_OUT, PINLEVEL_HIGH, PINPULLSEL_DISABLE);
-    ret = Ql_GPIO_Init(PINNAME_GPIO6, PINDIRECTION_OUT, PINLEVEL_HIGH, PINPULLSEL_DISABLE);
-
-	ret = Ql_GPIO_SetDirection(PINNAME_GPIO5, PINDIRECTION_OUT);
-	printf("4>>>>>>LED:%d\n", ret);
-	ret = Ql_GPIO_SetDirection(PINNAME_GPIO4, PINDIRECTION_OUT);
-	printf("4>>>>>>LED:%d\n", ret);
-	ret = Ql_GPIO_SetDirection(PINNAME_GPIO2, PINDIRECTION_OUT);
-	printf("4>>>>>>LED:%d\n", ret);
-
-
-    ret = Ql_GPIO_Uninit(PINNAME_MAIN_CTS);
-    printf("1>>>>>>LED:%d\n", ret);
-
-    ret = Ql_GPIO_Base_Init(PINNAME_MAIN_CTS);
-    printf("2>>>>>>LED:%d\n", ret);
-
-    ret = Ql_GPIO_Init(PINNAME_MAIN_CTS, PINDIRECTION_OUT, PINLEVEL_HIGH, PINPULLSEL_DISABLE);
-    printf("3>>>>>>LED:%d\n", ret);
-
-	ret = Ql_GPIO_SetDirection(PINNAME_MAIN_CTS, PINDIRECTION_OUT);
-	printf("4>>>>>>LED:%d\n", ret);
-
-
-//    ret = Ql_GPIO_SetLevel(PINNAME_GPIO5, PINLEVEL_HIGH);
-//    printf("4>>>>>>LED:%d\n", ret);
-    /*************************/
-
-//    Servers_Start(GX_TRACE_LEVEL_INFO);
-
-//    LTE_Manager_Start();
-
-//    pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
-
-//    ret = 157;
     while (1)
     {
-    	if(ret == 0)
-    	{
-    		ret = Ql_GPIO_SetLevel(PINNAME_GPIO5, PINLEVEL_HIGH);
-    		ret = Ql_GPIO_SetLevel(PINNAME_GPIO4, PINLEVEL_HIGH);
-    		ret = Ql_GPIO_SetLevel(PINNAME_GPIO2, PINLEVEL_HIGH);
-    	}
-    	else
-    	{
-    		ret = Ql_GPIO_SetLevel(PINNAME_GPIO5, PINLEVEL_LOW);
-    		ret = Ql_GPIO_SetLevel(PINNAME_GPIO4, PINLEVEL_LOW);
-    		ret = Ql_GPIO_SetLevel(PINNAME_GPIO2, PINLEVEL_LOW);
-    	}
-
     	sleep(3);
-
-    	ret = Ql_GPIO_GetLevel(PINNAME_GPIO5);
-    	printf("Get5:%d\n", ret);
-    	ret = Ql_GPIO_GetLevel(PINNAME_GPIO4);
-    	printf("Get4:%d\n", ret);
-    	ret = Ql_GPIO_GetLevel(PINNAME_GPIO2);
-    	printf("Get2:%d\n", ret);
-
     }
     return 0;
 }

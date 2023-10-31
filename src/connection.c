@@ -1135,6 +1135,23 @@ void WAN_Connection (void)
 
 //				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
 
+				if		(NW_Cell_Info.lte_info_valid == 1)
+				{
+					uint8_t blink_no = 6;
+				}
+				else if(NW_Cell_Info.umts_info_valid == 1)
+				{
+					uint8_t blink_no = 4;
+				}
+				else if(NW_Cell_Info.gsm_info_valid == 1)
+				{
+					uint8_t blink_no = 2;
+				}
+				else
+				{
+
+				}
+
 //				printf("<= data_call_info v4: {\n    profile_idx:%d,\n    ip_type:%d,\n    state:%d,\n    ip:%s,\n    name:%s,\n    gateway:%s,\n    pri_dns:%s,\n    sec_dns:%s\n} =>\n",
 //					payload.profile_idx, payload.ip_type, payload.v4.state, payload.v4.addr.ip, payload.v4.addr.name, payload.v4.addr.gateway,
 //					payload.v4.addr.pri_dns, payload.v4.addr.sec_dns);
