@@ -242,20 +242,27 @@ int main(int argc, char* argv[])
 //    ret = 157;
     while (1)
     {
-//		ret = Ql_GPIO_SetLevel(PINNAME_GPIO5, PINLEVEL_HIGH);
-//		ret = Ql_GPIO_SetLevel(PINNAME_GPIO4, PINLEVEL_HIGH);
-//		ret = Ql_GPIO_SetLevel(PINNAME_GPIO2, PINLEVEL_HIGH);
-
-		ret = Ql_GPIO_SetLevel(PINNAME_MAIN_CTS, PINLEVEL_HIGH);
+    	if(ret == 0)
+    	{
+    		ret = Ql_GPIO_SetLevel(PINNAME_GPIO5, PINLEVEL_HIGH);
+    		ret = Ql_GPIO_SetLevel(PINNAME_GPIO4, PINLEVEL_HIGH);
+    		ret = Ql_GPIO_SetLevel(PINNAME_GPIO2, PINLEVEL_HIGH);
+    	}
+    	else
+    	{
+    		ret = Ql_GPIO_SetLevel(PINNAME_GPIO5, PINLEVEL_LOW);
+    		ret = Ql_GPIO_SetLevel(PINNAME_GPIO4, PINLEVEL_LOW);
+    		ret = Ql_GPIO_SetLevel(PINNAME_GPIO2, PINLEVEL_LOW);
+    	}
 
     	sleep(3);
 
-//    	ret = Ql_GPIO_GetLevel(PINNAME_GPIO5);
-//    	printf("Get5:%d\n", ret);
-//    	ret = Ql_GPIO_GetLevel(PINNAME_GPIO4);
-//    	printf("Get4:%d\n", ret);
-//    	ret = Ql_GPIO_GetLevel(PINNAME_GPIO2);
-//    	printf("Get2:%d\n", ret);
+    	ret = Ql_GPIO_GetLevel(PINNAME_GPIO5);
+    	printf("Get5:%d\n", ret);
+    	ret = Ql_GPIO_GetLevel(PINNAME_GPIO4);
+    	printf("Get4:%d\n", ret);
+    	ret = Ql_GPIO_GetLevel(PINNAME_GPIO2);
+    	printf("Get2:%d\n", ret);
 
     }
     return 0;
