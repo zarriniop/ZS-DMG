@@ -166,9 +166,14 @@ int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Informatio
 
 void LED_Init (void)
 {
-//	int ret = 0;
-//	ret = system(ONESHOT_TRIG_LED_DATA)	;
-//	ret = system(ONESHOT_TRIG_LED_485)	;
+	int ret = 0;
+	ret = system(ONESHOT_TRIG_LED_DATA)	;
+	ret = system(ONESHOT_TRIG_LED_485)	;
+	ret = system(PATTERN_TRIG_LED_NET)	;
+	ret = system(LED_DATA_OFFDLY)		;
+	ret = system(LED_485_OFFDLY)		;
+	ret = system(LED_DATA_ONDLY)		;
+	ret = system(LED_485_ONDLY)			;
 }
 
 
@@ -189,6 +194,8 @@ int main(int argc, char* argv[])
     strcat(TRACEFILE, "/trace.txt");
     FILE* f = fopen(TRACEFILE, "w");
     fclose(f);
+
+    LED_Init();
 
     Servers_Start(GX_TRACE_LEVEL_INFO);
 

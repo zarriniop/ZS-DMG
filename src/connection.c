@@ -275,7 +275,7 @@ void Socket_Receive_Thread(void* pVoid)
 				con->socket.Status.Connected = false;
         	}
 			else
-			{
+			{	system(LED_DATA_SHOT);
 				if (con->trace > GX_TRACE_LEVEL_WARNING)
 				{
 					unsigned char tcp_client_rx[4096] = {0};
@@ -344,6 +344,7 @@ void Socket_Send_Thread(void* pVoid)
 			}
 			else
 			{
+				system(LED_DATA_SHOT);
 				unsigned char tcp_client_tx[4096] = {0};
 		    	for (int m=0; m<con->buffer.TX_Count; m++)
 		    	{
@@ -365,6 +366,7 @@ void Socket_Send_Thread(void* pVoid)
 			}
 			else
 			{
+				system(LED_DATA_SHOT);
 				unsigned char tcp_svr_tx[4096] = {0};
 				for (int m=0; m<con->buffer.TX_Count; m++)
 				{
@@ -586,6 +588,7 @@ void Socket_Listen_Thread(void* pVoid)
                     break;
     			}
 
+    			system(LED_DATA_SHOT);
 
     			if (con->trace > GX_TRACE_LEVEL_WARNING)
     			{
@@ -836,8 +839,11 @@ void* RS485_Receive_Thread(void* pVoid)
     	}
     	*/
 
-    	bytesRead = read(con->comPort, &con->buffer.RX, 1024);
+
+    	bytesRead = read(con->comPort, &con->buffer.RX, 1024);			//BLOCKING MODE
     	con->buffer.RX_Count = bytesRead;
+
+    	system(LED_485_SHOT);
 
     	unsigned char rs_rx_tmp_info[4096] = {0};
     	for (int m=0; m<con->buffer.RX_Count; m++)
@@ -865,6 +871,7 @@ void* RS485_Send_Thread(void* pVoid)
         {
         	system("echo 1 > /sys/class/leds/DIR_485/brightness");
             ret = write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
+            system(LED_485_SHOT);
 //            ret = Ql_UART_Write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
 
             baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
@@ -1086,7 +1093,6 @@ void WAN_Connection (void)
 	QL_NW_SIGNAL_STRENGTH_INFO_T 	Sig_Strg_Info	;
 	QL_NW_ERROR_CODE 				Ret_Cell_Info	;
 	QL_NW_CELL_INFO_T				NW_Cell_Info	;
-	uint8_t 						blink_no	= 0	;
 
 	memset(&Sig_Strg_Info,0,sizeof(QL_NW_SIGNAL_STRENGTH_INFO_T));
 
@@ -1137,27 +1143,15 @@ void WAN_Connection (void)
 
 //				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
 
-//				if		(NW_Cell_Info.lte_info_valid == 1)
-//					blink_no = 6;
-//
-//				else if(NW_Cell_Info.umts_info_valid == 1)
-//					blink_no = 4;
-//
-//				else if(NW_Cell_Info.gsm_info_valid == 1)
-//					blink_no = 2;
-//
-//				while(blink_no > 0)
-//				{
-//					if(blink_no%2 == 0)
-//						system("echo 1 > /sys/devices/platform/leds/leds/LED3/brightness");
-//
-//					else
-//						system("echo 0 > /sys/devices/platform/leds/leds/LED3/brightness");
-//
-//					usleep(100000);
-//
-//					blink_no --;
-//				}
+				if		(NW_Cell_Info.lte_info_valid == 1)
+					system(PAT_3T_LED_NET);
+
+				else if(NW_Cell_Info.umts_info_valid == 1)
+					system(PAT_2T_LED_NET);
+
+				else if(NW_Cell_Info.gsm_info_valid == 1)
+					system(PAT_1T_LED_NET);
+
 
 
 //				printf("<= data_call_info v4: {\n    profile_idx:%d,\n    ip_type:%d,\n    state:%d,\n    ip:%s,\n    name:%s,\n    gateway:%s,\n    pri_dns:%s,\n    sec_dns:%s\n} =>\n",

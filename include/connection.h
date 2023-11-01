@@ -41,6 +41,12 @@ extern "C" {
 
 extern gxPushSetup pushSetup;
 
+#define LED_DATA_SHOT	"echo 1 > /sys/devices/platform/leds/leds/LED1/shot"
+#define LED_485_SHOT	"echo 1 > /sys/devices/platform/leds/leds/LED2/shot"
+#define PAT_1T_LED_NET	"echo 1 100 0 20000 > /sys/devices/platform/leds/leds/LED3/pattern"
+#define PAT_2T_LED_NET	"echo 1 100 0 200 1 100 0 20000 > /sys/devices/platform/leds/leds/LED3/pattern"
+#define PAT_3T_LED_NET	"echo 1 100 0 200 1 100 0 200 1 100 0 20000 > /sys/devices/platform/leds/leds/LED3/pattern"
+
 
 static uint32_t Boudrate[]={ 300 , 600 , 1200 , 2400 , 4800 , 9600 , 19200 , 38400 , 57600 , 115200 };
 
