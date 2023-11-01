@@ -316,11 +316,11 @@ int8_t 			GW2HDLC_DISC_Generator 			(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)				
 uint8_t 		HDLC_Send_DISC 					(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)						;
 int8_t 			Check_GW_Frame_Valid 			(Buffer* GW_STRUCT)												;
 uint8_t 		Check_GW_Frame_Type 			(Buffer* GW_STRUCT)												;
-int16_t 		GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, CTRL_BYTE_STR_TD* Control_Byte_Struct);
-uint8_t 		GW2HDLC_Poll_For_Remained_Data 	(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, uint8_t Control_Byte)	;
+int16_t 		GW2HDLC_Frame_Convertor 		(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, CTRL_BYTE_STR_TD* Control_Byte_Struct)			;
+uint8_t 		GW2HDLC_Poll_For_Remained_Data 	(Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, uint8_t Control_Byte)							;
 int 			Meter2GW_Frame_Convertor 		(Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_STR_TD* Control_Byte_Struct)			;
 uint8_t 		Control_Byte 					(uint8_t RRR, uint8_t SSS, FRAME_TYPE frame_type)										;
 static uint16_t countCRC						(char* Buff, uint32_t index, uint32_t count)											;
-void Print_GW_State (void);
+void 			Print_GW_State 					(void)			;
 
 #endif /* DLMS_GATEWAY_H_ */

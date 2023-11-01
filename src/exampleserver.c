@@ -48,7 +48,7 @@
 
 GX_TRACE_LEVEL trace = GX_TRACE_LEVEL_OFF;
 
-const static char *FLAG_ID = "grx";
+const static char *FLAG_ID = "ZSS";
 // Serialization version is increased every time when structure of serialized data is changed.
 const static uint16_t SERIALIZATION_VERSION = 2;
 
@@ -2206,7 +2206,6 @@ int svr_InitObjects(
         const unsigned char ln[6] = {0, 0, 96, 1, 0, 255};
         INIT_OBJECT(deviceid1, DLMS_OBJECT_TYPE_DATA, ln);
         char buf[8];
-        printf("SerialNumber333 = %s\n",Settings.SerialNumber);
         sprintf(buf,"%s",Settings.SerialNumber);
         var_setString(&deviceid1.value, buf, 8);
     }
@@ -2485,6 +2484,8 @@ int IEC_start(connection *con, char *file)
     
     //Set flag id.
     memcpy(con->settings.flagId, FLAG_ID, 3);
+    memcpy(con->settings.base.cipher.authenticationKey.data	,Settings.AuthKey, 	16);
+    memcpy(con->settings.base.cipher.blockCipherKey.data	,Settings.UniEncKey,16);
 
     con->settings.hdlc = &hdlc;
     con->settings.localPortSetup = &localPortSetup;
@@ -2545,6 +2546,8 @@ int TCP_start(connection *con)
     }
 
 	con->settings.wrapper = &udpSetup;
+    memcpy(con->settings.base.cipher.authenticationKey.data	,Settings.AuthKey, 	16);
+    memcpy(con->settings.base.cipher.blockCipherKey.data	,Settings.UniEncKey,16);
 
     ///////////////////////////////////////////////////////////////////////
     // Server must initialize after all objects are added.
@@ -4424,9 +4427,9 @@ void svr_getDataType(
 
 void Read_Settings(SETTINGS *settings)
 {
-	char buffer[1000],data[10][100];
+	char buffer[1000],data[20][100], temp[100];
 	memset(buffer,0,sizeof(buffer));
-	for(int i=0;i<10;i++)
+	for(int i=0;i<20;i++)
 	{
 		memset(data[i],0,sizeof(data[i]));
 	}
@@ -4449,55 +4452,156 @@ void Read_Settings(SETTINGS *settings)
     		memset(tmp,0,sizeof(tmp));
     		switch(cnt)
     		{
-    		case 1 :
-    		{
-    			memset(settings->SerialNumber,0,sizeof(settings->SerialNumber));
-    			strcpy(settings->SerialNumber,data[0]+13);
-    			printf("SerialNumber = %s\n",settings->SerialNumber);
-    			break;
-    		}
-    		case 2 :
-    		{
-    			memset(settings->ProductYear,0,sizeof(settings->ProductYear));
-    			strcpy(settings->ProductYear,data[1]+12);
-    			printf("ProductYear = %s\n",settings->ProductYear);
-    			break;
-    		}
-    		case 3 :
-    		{
-    			memset(settings->manufactureID,0,sizeof(settings->manufactureID));
-    			strcpy(settings->manufactureID,data[2]+14);
-    			printf("manufactureID = %s\n",settings->manufactureID);
-    			break;
-    		}
-    		case 4 :
-    		{
-    			memset(settings->IP,0,sizeof(settings->IP));
-    			strcpy(settings->IP,data[3]+3);
-    			printf("IP = %s\n",settings->IP);
-    			break;
-    		}
-    		case 5 :
-    		{
-    			memset(settings->PORT,0,sizeof(settings->PORT));
-    			strcpy(settings->PORT,data[4]+5);
-    			printf("PORT = %s\n",settings->PORT);
-    			break;
-    		}
-    		case 6 :
-    		{
-    			memset(settings->ListenPORT,0,sizeof(settings->ListenPORT));
-    			strcpy(settings->ListenPORT,data[5]+11);
-    			printf("ListenPORT = %s\n",settings->ListenPORT);
-    			break;
-    		}
-    		case 7 :
-    		{
-    			memset(settings->APN,0,sizeof(settings->APN));
-    			strcpy(settings->APN,data[6]+4);
-    			printf("APN = %s\n",settings->APN);
-    			break;
-    		}
+				case 1 :
+				{
+					memset(settings->SerialNumber,0,sizeof(settings->SerialNumber));
+					strcpy(settings->SerialNumber,data[0]+13);
+//					printf("SerialNumber = %s\n",settings->SerialNumber);
+					break;
+				}
+				case 2 :
+				{
+					memset(settings->ProductYear,0,sizeof(settings->ProductYear));
+					strcpy(settings->ProductYear,data[1]+12);
+//					printf("ProductYear = %s\n",settings->ProductYear);
+					break;
+				}
+				case 3 :
+				{
+					memset(settings->manufactureID,0,sizeof(settings->manufactureID));
+					strcpy(settings->manufactureID,data[2]+14);
+//					printf("manufactureID = %s\n",settings->manufactureID);
+					break;
+				}
+				case 4 :
+				{
+					memset(settings->IP,0,sizeof(settings->IP));
+					strcpy(settings->IP,data[3]+3);
+//					printf("IP = %s\n",settings->IP);
+					break;
+				}
+				case 5 :
+				{
+					memset(settings->PORT,0,sizeof(settings->PORT));
+					strcpy(settings->PORT,data[4]+5);
+//					printf("PORT = %s\n",settings->PORT);
+					break;
+				}
+				case 6 :
+				{
+					memset(settings->ListenPORT,0,sizeof(settings->ListenPORT));
+					strcpy(settings->ListenPORT,data[5]+11);
+//					printf("ListenPORT = %s\n",settings->ListenPORT);
+					break;
+				}
+				case 7 :
+				{
+					memset(settings->APN,0,sizeof(settings->APN));
+					strcpy(settings->APN,data[6]+4);
+//					printf("APN = %s\n",settings->APN);
+					break;
+				}
+				case 8 :
+				{
+					int i;
+					memset(temp, 0, sizeof(temp));
+					memset(settings->AuthKey,0,sizeof(settings->AuthKey));
+					strcpy(temp, data[7]+8);
+
+					for (int i=0; i < 16; i++)
+					{
+				        sscanf((temp) + (2*i), "%2hhx", &settings->AuthKey[i]);
+				    }
+
+//				    printf("AuthKey - Original string: %s\n", temp);
+//				    printf("AuthKey - Hexadecimal value: ");
+//				    for (i = 0; i < 16; i++)
+//				    {
+//				        printf("%02X", settings->AuthKey[i]);
+//				    }
+//				    printf("\n");
+
+					break;
+				}
+				case 9 :
+				{
+					int i;
+					memset(temp, 0, sizeof(temp));
+					memset(settings->BroadEncKey,0,sizeof(settings->BroadEncKey));
+					strcpy(temp, data[8]+12);
+
+					for (int i=0; i < 16; i++)
+					{
+				        sscanf((temp) + (2*i), "%2hhx", &settings->BroadEncKey[i]);
+				    }
+
+//				    printf("BroadEncKey - Original string: %s\n", temp);
+//				    printf("BroadEncKey - Hexadecimal value: ");
+//				    for (i = 0; i < 16; i++)
+//				    {
+//				        printf("%02X", settings->BroadEncKey[i]);
+//				    }
+//				    printf("\n");
+
+					break;
+				}
+				case 10 :
+				{
+					int i;
+					memset(temp, 0, sizeof(temp));
+					memset(settings->UniEncKey,0,sizeof(settings->UniEncKey));
+					strcpy(temp, data[9]+10);
+
+					for (int i=0; i < 16; i++)
+					{
+				        sscanf((temp) + (2*i), "%2hhx", &settings->UniEncKey[i]);
+				    }
+
+//				    printf("UniEncKey - Original string: %s\n", temp);
+//				    printf("UniEncKey - Hexadecimal value: ");
+//				    for (i = 0; i < 16; i++)
+//				    {
+//				        printf("%02X", settings->UniEncKey[i]);
+//				    }
+//				    printf("\n");
+
+					break;
+				}
+				case 11 :
+				{
+					int i;
+					memset(temp, 0, sizeof(temp));
+					memset(settings->KEK,0,sizeof(settings->KEK));
+					strcpy(temp, data[10]+4);
+
+					for (int i=0; i < 16; i++)
+					{
+				        sscanf((temp) + (2*i), "%2hhx", &settings->KEK[i]);
+				    }
+
+//				    printf("KEK - Original string: %s\n", temp);
+//				    printf("KEK - Hexadecimal value: ");
+//				    for (i = 0; i < 16; i++)
+//				    {
+//				        printf("%02X", settings->KEK[i]);
+//				    }
+//				    printf("\n");
+
+					break;
+				}
+				case 12:
+				{
+					memset(settings->LLSPass,0,sizeof(settings->LLSPass));
+					strcpy(settings->LLSPass,data[11]+8);
+//					printf("LLSPass = %s\n",settings->LLSPass);
+					break;
+				}
+				default :
+				{
+//					printf("");
+					break;
+				}
+
     		}
     	}
     }

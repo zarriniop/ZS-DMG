@@ -33,6 +33,11 @@ typedef struct
 	char PORT[7];
 	char ListenPORT[7];
 	char APN[22];
+	char AuthKey[16];
+	char BroadEncKey[16];
+	char UniEncKey[16];
+	char KEK[16];
+	char LLSPass[10];
 }SETTINGS;
 SETTINGS Settings;
 

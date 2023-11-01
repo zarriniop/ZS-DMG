@@ -33,8 +33,7 @@ pthread_t SVR_Monitor;
 /********************************************|
 |*				  Functions					*|
 |********************************************/
-//salam
-//Hey
+
 /***********************************************/
 /********** HAJIAN - Servers_Start ***********/
 /***********************************************/
@@ -46,7 +45,8 @@ int Servers_Start(int trace)
     svr_init(&lnWrapper.settings, 1, DLMS_INTERFACE_TYPE_WRAPPER, WRAPPER_BUFFER_SIZE, PDU_BUFFER_SIZE, ln47frameBuff, WRAPPER_BUFFER_SIZE, ln47pduBuff, PDU_BUFFER_SIZE);
 
     //We have several server that are using same objects. Just copy them.
-    unsigned char KEK[16] = { 0x31,0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31 };
+    unsigned char KEK[16] = {0};
+    memcpy(KEK, Settings.KEK, 16);
     BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK));
     svr_InitObjects(&lnWrapper.settings);
 
@@ -66,10 +66,10 @@ int Servers_Start(int trace)
     }
 
     //Start server
-    // if ((ret = IEC_start(&lniec, "/dev/ttyUSB0")) != 0)
-    // {
-    //     return ret;
-    // }
+     if ((ret = IEC_start(&lniec, "/dev/ttyS1")) != 0)
+     {
+         return ret;
+     }
 
 
     if((ret = rs485_start(&rs485, RS485_SERIAL_FD)) != 0 )

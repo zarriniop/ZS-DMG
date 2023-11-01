@@ -424,6 +424,7 @@ void Socket_get_open(connection* con)
 	if(con->socket.Status.Opened == true)							//===============( Close Connection )======================
 	{
 		Socket_get_close(con);
+		report(CLIENT, CONNECTION,"CLOSE");
 		con->socket.Status.Opened=false;
 																	//===============( Create Socket )=========================
 		if(Socket_create(con) == 1)
@@ -443,7 +444,6 @@ void Socket_get_open(connection* con)
 	else
 	{
 		con->socket.Status.Connected=false;
-		report(CLIENT, CONNECTION,"CLOSE");
 	}
 
 }
@@ -779,7 +779,7 @@ void* IEC_Serial_Thread(void* pVoid)
                         uint16_t baudRate = 300 << (int)con->settings.localPortSetup->defaultBaudrate;
                         printf("%s %d", "Disconnected with optical probe. The new baudrate is:", baudRate);
 //                        com_updateSerialportSettings(con,1, 300);
-                        Quectel_Update_Serial_Port_Settings(con,1, 300);
+                        Quectel_Update_Serial_Port_Settings(con,1, baudRate);
                     }
                 }
                 bb_clear(&reply);
@@ -1141,7 +1141,7 @@ void WAN_Connection (void)
 				Ret_Signal 		= ql_nw_get_signal_strength (&Sig_Strg_Info);
 				Ret_Cell_Info 	= ql_nw_get_cell_info		(&NW_Cell_Info)	;
 
-//				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
+				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
 
 				if		(NW_Cell_Info.lte_info_valid == 1)
 					system(PAT_3T_LED_NET);
