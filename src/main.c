@@ -164,10 +164,12 @@ int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Informatio
 }
 
 
-//void LED_Init (void)
-//{
-//	system
-//}
+void LED_Init (void)
+{
+//	int ret = 0;
+//	ret = system(ONESHOT_TRIG_LED_DATA)	;
+//	ret = system(ONESHOT_TRIG_LED_485)	;
+}
 
 
 /************************************/

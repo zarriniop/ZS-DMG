@@ -1137,27 +1137,27 @@ void WAN_Connection (void)
 
 //				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
 
-				if		(NW_Cell_Info.lte_info_valid == 1)
-					blink_no = 6;
-
-				else if(NW_Cell_Info.umts_info_valid == 1)
-					blink_no = 4;
-
-				else if(NW_Cell_Info.gsm_info_valid == 1)
-					blink_no = 2;
-
-				while(blink_no > 0)
-				{
-					if(blink_no%2 == 0)
-						system("echo 1 > /sys/devices/platform/leds/leds/LED3/brightness");
-
-					else
-						system("echo 0 > /sys/devices/platform/leds/leds/LED3/brightness");
-
-					usleep(100000);
-
-					blink_no --;
-				}
+//				if		(NW_Cell_Info.lte_info_valid == 1)
+//					blink_no = 6;
+//
+//				else if(NW_Cell_Info.umts_info_valid == 1)
+//					blink_no = 4;
+//
+//				else if(NW_Cell_Info.gsm_info_valid == 1)
+//					blink_no = 2;
+//
+//				while(blink_no > 0)
+//				{
+//					if(blink_no%2 == 0)
+//						system("echo 1 > /sys/devices/platform/leds/leds/LED3/brightness");
+//
+//					else
+//						system("echo 0 > /sys/devices/platform/leds/leds/LED3/brightness");
+//
+//					usleep(100000);
+//
+//					blink_no --;
+//				}
 
 
 //				printf("<= data_call_info v4: {\n    profile_idx:%d,\n    ip_type:%d,\n    state:%d,\n    ip:%s,\n    name:%s,\n    gateway:%s,\n    pri_dns:%s,\n    sec_dns:%s\n} =>\n",

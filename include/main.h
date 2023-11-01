@@ -58,12 +58,12 @@
 //#define OPTIC_SERIAL_FD 		"/dev/ttyS2"
 #define RS485_SERIAL_FD 		"/dev/ttyS2"
 
-#define	ONESHOT_TRIG_LED_DATA	"echo oneshot > /sys/devices/platform/leds/leds/LED1/trigger"
-#define	ONESHOT_TRIG_LED_485	"echo oneshot > /sys/devices/platform/leds/leds/LED2/trigger"
-#define LED_DATA_OFFDLY			"echo 50 > /sys/devices/platform/leds/leds/LED1/delay_off"
-#define LED_485_OFFDLY			"echo 50 > /sys/devices/platform/leds/leds/LED2/delay_off"
-#define LED_DATA_ONDLY			"echo 100 > /sys/devices/platform/leds/leds/LED1/delay_on"
-#define LED_485_ONDLY			"echo 100 > /sys/devices/platform/leds/leds/LED2/delay_on"
+//#define	ONESHOT_TRIG_LED_DATA	"echo oneshot > /sys/devices/platform/leds/leds/LED1/trigger"
+//#define	ONESHOT_TRIG_LED_485	"echo oneshot > /sys/devices/platform/leds/leds/LED2/trigger"
+//#define LED_DATA_OFFDLY			"echo 50 > /sys/devices/platform/leds/leds/LED1/delay_off"
+//#define LED_485_OFFDLY			"echo 50 > /sys/devices/platform/leds/leds/LED2/delay_off"
+//#define LED_DATA_ONDLY			"echo 100 > /sys/devices/platform/leds/leds/LED1/delay_on"
+//#define LED_485_ONDLY			"echo 100 > /sys/devices/platform/leds/leds/LED2/delay_on"
 
 /*************************
  * TYPEDEFS & STRUCTURES *
@@ -103,6 +103,8 @@ void Servers_Monitor (void);
 int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Information);
 
 const char * get_time(void);
+
+void LED_Init (void);
 
 
 
