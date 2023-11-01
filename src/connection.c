@@ -36,6 +36,7 @@
 #include <fcntl.h> // File control definitions
 #include <errno.h> // Error number definitions
 
+
 pthread_t Wan_Connection_pthread_var;
 
 extern gxGPRSSetup 	gprsSetup	;
@@ -1085,6 +1086,7 @@ void WAN_Connection (void)
 	QL_NW_SIGNAL_STRENGTH_INFO_T 	Sig_Strg_Info	;
 	QL_NW_ERROR_CODE 				Ret_Cell_Info	;
 	QL_NW_CELL_INFO_T				NW_Cell_Info	;
+	uint8_t 						blink_no	= 0	;
 
 	memset(&Sig_Strg_Info,0,sizeof(QL_NW_SIGNAL_STRENGTH_INFO_T));
 
@@ -1136,21 +1138,27 @@ void WAN_Connection (void)
 //				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
 
 				if		(NW_Cell_Info.lte_info_valid == 1)
-				{
-					uint8_t blink_no = 6;
-				}
-				else if(NW_Cell_Info.umts_info_valid == 1)
-				{
-					uint8_t blink_no = 4;
-				}
-				else if(NW_Cell_Info.gsm_info_valid == 1)
-				{
-					uint8_t blink_no = 2;
-				}
-				else
-				{
+					blink_no = 6;
 
+				else if(NW_Cell_Info.umts_info_valid == 1)
+					blink_no = 4;
+
+				else if(NW_Cell_Info.gsm_info_valid == 1)
+					blink_no = 2;
+
+				while(blink_no > 0)
+				{
+					if(blink_no%2 == 0)
+						system("echo 1 > /sys/devices/platform/leds/leds/LED3/brightness");
+
+					else
+						system("echo 0 > /sys/devices/platform/leds/leds/LED3/brightness");
+
+					usleep(100000);
+
+					blink_no --;
 				}
+
 
 //				printf("<= data_call_info v4: {\n    profile_idx:%d,\n    ip_type:%d,\n    state:%d,\n    ip:%s,\n    name:%s,\n    gateway:%s,\n    pri_dns:%s,\n    sec_dns:%s\n} =>\n",
 //					payload.profile_idx, payload.ip_type, payload.v4.state, payload.v4.addr.ip, payload.v4.addr.name, payload.v4.addr.gateway,

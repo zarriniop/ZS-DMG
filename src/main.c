@@ -163,6 +163,13 @@ int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Informatio
 	return ret;
 }
 
+
+//void LED_Init (void)
+//{
+//	system
+//}
+
+
 /************************************/
 /********** Main Function ***********/
 /************************************/
@@ -189,7 +196,7 @@ int main(int argc, char* argv[])
 
     while (1)
     {
-    	sleep(3);
+    	sleep(1);
     }
     return 0;
 }
