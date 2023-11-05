@@ -66,7 +66,7 @@ int Servers_Start(int trace)
     }
 
     //Start server
-     if ((ret = IEC_start(&lniec, "/dev/ttyS1")) != 0)
+     if ((ret = IEC_start(&lniec, OPTIC_SERIAL_FD)) != 0)
      {
          return ret;
      }
@@ -153,7 +153,7 @@ int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Informatio
 	//	sprintf(cmd, "echo \"%s\" >> /root/log.txt", log);
 	//	ret = system("ls");
 
-	FILE* f = fopen("log.txt", "a");
+	FILE* f = fopen("/root/log.txt", "a");
     if (f != NULL)
     {
     	fprintf(f, "%s\r\n", log);
@@ -201,11 +201,11 @@ int main(int argc, char* argv[])
 
     LTE_Manager_Start();
 
-    pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
+//    pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
 
     while (1)
     {
-    	sleep(1);
+    	sleep(10);
     }
     return 0;
 }

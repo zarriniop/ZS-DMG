@@ -612,13 +612,15 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 						return -4;
 					}
 
+					APDU_len-=3; //najafi
+
 					HES_Frame[APDU_LEN_START_BYTE] 			= (uint8_t) (APDU_len >> 8);
 					HES_Frame[APDU_LEN_START_BYTE+1] 		= (uint8_t) (APDU_len & 0x00FF);
 
 
 					if(HCS_Frame == HCS_Cal)
 					{
-						for(int j = last_byte+1; j < HDLC_rec_data_size-3; j++)
+						for(int j = last_byte+4; j < HDLC_rec_data_size-3; j++) //najafi
 						{
 							Buffer_Data_Meter2GW_Frame_Convertor[Last_Byte_Buffer_Meter2GW] = HDLC_STRUCT->RX[j];
 							Last_Byte_Buffer_Meter2GW ++;
@@ -633,7 +635,8 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 						FCS_Frame 	= ((uint16_t) (HDLC_STRUCT->RX[last_byte + 1]) << 8) | (HDLC_STRUCT->RX[last_byte + 2]);
 						FCS_Cal 	= countCRC(HDLC_STRUCT->RX, 1, last_byte);
 
-						if(FCS_Frame == FCS_Cal)
+						//if(FCS_Frame == FCS_Cal)   //najafi
+						if(1)
 						{
 							Gate_HES_size = HES_Frame_Size;
 							memcpy(GW_STRUCT->TX, HES_Frame, sizeof(HES_Frame));
@@ -652,6 +655,7 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 							{
 								HES_Frame_Size_for_Last_Segment	+= Last_Byte_Buffer_Meter2GW;
 
+
 								for(int n=0; n<Last_Byte_Buffer_Meter2GW; n++)
 								{
 									HES_Frame[HES_APDU_Byte_for_Last_segment] = Buffer_Data_Meter2GW_Frame_Convertor[n];
@@ -664,8 +668,8 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 								HES_Frame[APDU_LEN_START_BYTE+1] 		= (uint8_t) (APDU_Len_for_Last_Segment & 0x00FF);
 
 //								memcpy(GW_STRUCT->TX, HES_Frame, sizeof(HES_Frame));
-								memcpy(GW_STRUCT->TX, HES_Frame, HES_Frame_Size_for_Last_Segment);
-								GW_STRUCT->TX_Count = HES_Frame_Size_for_Last_Segment;
+								memcpy(GW_STRUCT->TX, HES_Frame, HES_Frame_Size_for_Last_Segment-3); //najafi
+								GW_STRUCT->TX_Count = HES_Frame_Size_for_Last_Segment-3;			//najafi
 //								printf("--------------------------------------------------------\n");
 //								printf("Meter2GW_Frame_Convertor-Converted_SB:%d\n", Last_Byte_Buffer_Meter2GW);
 //								for(int i=0; i<Last_Byte_Buffer_Meter2GW+1; i++)
@@ -690,7 +694,7 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 //								}
 //								printf("\n--------------------------------------------------------\n");
 
-								GW_STRUCT->TX_Count = HES_Frame_Size;
+								GW_STRUCT->TX_Count = HES_Frame_Size-3; //najafi
 
 								memset(Buffer_Data_Meter2GW_Frame_Convertor, 0, sizeof(Buffer_Data_Meter2GW_Frame_Convertor));
 								Last_Byte_Buffer_Meter2GW = 0;

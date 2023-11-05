@@ -36,7 +36,6 @@
 #include <fcntl.h> // File control definitions
 #include <errno.h> // Error number definitions
 
-
 pthread_t Wan_Connection_pthread_var;
 
 extern gxGPRSSetup 	gprsSetup	;
@@ -45,6 +44,7 @@ extern gxData 		deviceid6	;
 extern connection 	lnWrapper , lniec , rs485;
 extern gxTcpUdpSetup udpSetup;
 extern gxAutoConnect autoConnect;
+extern gxPushSetup	 pushSetup;
 
 //Initialize connection buffers.
 void con_initializeBuffers(connection * connection, int size)
@@ -440,6 +440,8 @@ void Socket_get_open(connection* con)
 		con->socket.Status.Opened		=true;
 
 		report(CLIENT, CONNECTION,"CONNECTED");
+
+		sendPush(&con->settings.base, &pushSetup);
 	}
 	else
 	{
@@ -841,9 +843,6 @@ void* RS485_Receive_Thread(void* pVoid)
 
 
     	bytesRead = read(con->comPort, &con->buffer.RX, 1024);			//BLOCKING MODE
-    	con->buffer.RX_Count = bytesRead;
-
-    	system(LED_485_SHOT);
 
     	unsigned char rs_rx_tmp_info[4096] = {0};
     	for (int m=0; m<con->buffer.RX_Count; m++)
@@ -851,6 +850,11 @@ void* RS485_Receive_Thread(void* pVoid)
     		sprintf(rs_rx_tmp_info + strlen(rs_rx_tmp_info) ,"%.2X ",con->buffer.RX[m]);
     	}
     	report(RS485, RX, rs_rx_tmp_info);
+
+    	system(LED_485_SHOT);
+    	printf("###### cnt =%d\r\n",bytesRead);
+
+    	con->buffer.RX_Count = bytesRead;
 
     	usleep(1000);
     }
@@ -947,6 +951,7 @@ int RS485_Serial_Start(connection* con, char *file)
 void GW_Start (void* pVoid)
 {
 	connection* con = (connection*)pVoid;
+	rs485.buffer.Timeout_ms=5000;
 	GW_Run(&lnWrapper.buffer , &rs485.buffer);
 }
 
@@ -1193,7 +1198,7 @@ void WAN_Connection (void)
 		{
 			printf("!ERROR! ql_get_data_call_info - ret:%d", ret);
 		}
-		sleep(2);
+		sleep(1);
 	}
 }
 

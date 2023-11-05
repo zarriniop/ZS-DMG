@@ -376,7 +376,7 @@ int saveSecurity(
     dlmsSettings *settings)
 {
     int ret = 0;
-    const char *fileName = "security.raw";
+    const char *fileName = "/usr/bin/ZS-DMG/security.raw";
     // Save keys to own block in EEPROM.
 #if _MSC_VER > 1400
     FILE *f = NULL;
@@ -418,7 +418,7 @@ int saveSecurity(
 int saveSettings()
 {
     int ret = 0;
-    const char *fileName = "settings.raw";
+    const char *fileName = "/usr/bin/ZS-DMG/settings.raw";
     // Save keys to own block in EEPROM.
 #if _MSC_VER > 1400
     FILE *f = NULL;
@@ -2080,7 +2080,7 @@ int addPushSetup()
 /////////////////////////////////////////////////////////////////////////////
 int loadSecurity(dlmsSettings *settings)
 {
-    const char *fileName = "security.raw";
+    const char *fileName = "/usr/bin/ZS-DMG/security.raw";
     int ret = 0;
     // Update keys.
 #if _MSC_VER > 1400
@@ -2127,7 +2127,7 @@ int loadSecurity(dlmsSettings *settings)
 /////////////////////////////////////////////////////////////////////////////
 int loadSettings(dlmsSettings *settings)
 {
-    const char *fileName = "settings.raw";
+    const char *fileName = "/usr/bin/ZS-DMG/settings.raw";
     int ret = 0;
     // Update keys.
 #if _MSC_VER > 1400
@@ -2165,6 +2165,7 @@ int svr_InitObjects(
     char buff[17];
     int ret;
     Read_Settings(&Settings);
+    SERIAL_NUMBER = atoi(Settings.SerialNumber);
     OA_ATTACH(settings->base.objects, ALL_OBJECTS);
     ///////////////////////////////////////////////////////////////////////
     // Add Logical Device Name. 123456 is meter serial number.
@@ -2539,7 +2540,7 @@ int rs485_start(connection *con, char *file)
 int TCP_start(connection *con)
 {
     int ret;
-    con->settings.pushClientAddress = 64;
+    con->settings.pushClientAddress = 102;
     if ((ret = Socket_Connection_Start(con)) != 0)
     {
         return ret;
@@ -3199,7 +3200,7 @@ void svr_preAction(
         else if (e->target == BASE(scriptTableGlobalMeterReset) && e->index == 1)
         {
             // Initialize data size so default values are used on next connection.
-            const char *fileName = "settings.raw";
+            const char *fileName = "/usr/bin/ZS-DMG/settings.raw";
 
             FILE *f = fopen(fileName, "wb");
             if (f != NULL)
@@ -3252,7 +3253,7 @@ void svr_preAction(
             e->handled = 1;
             FILE *f;
             gxImageTransfer *i = (gxImageTransfer *)e->target;
-            const char *imageFile = "image.raw";
+            const char *imageFile = "/usr/bin/ZS-DMG/image.raw";
             // Image name and size to transfer
             if (e->index == 1)
             {
