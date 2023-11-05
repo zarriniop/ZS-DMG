@@ -709,7 +709,7 @@ int Socket_create(connection* con)								//===============( Create client )====
 void* IEC_Serial_Thread(void* pVoid)
 {
     int ret;
-    unsigned char data[1024];
+    unsigned char data;
     unsigned char first = 1;
     uint16_t pos;
     int bytesRead;
@@ -720,7 +720,7 @@ void* IEC_Serial_Thread(void* pVoid)
 
     while (1)
     {
-        bytesRead = read(con->comPort, &data, 1024);
+        bytesRead = read(con->comPort, &data, 1);
         if (bytesRead < 1)
         {
             //If there is no data on the read buffer.
@@ -731,7 +731,6 @@ void* IEC_Serial_Thread(void* pVoid)
         }
         else
         {
-        	sr_initialize(&sr, &data, bytesRead, &reply);
             if (con->trace > GX_TRACE_LEVEL_WARNING)
             {
                 if (first)
@@ -739,14 +738,13 @@ void* IEC_Serial_Thread(void* pVoid)
                     printf("\nRX:\t");
                     first = 0;
                 }
-//                printf("%.2X ", data);\
+                printf("%.2X ", data);\
 
 //            	unsigned char optical_rx_tmp_info[4096] = {0};
-            	for (int m=0; m<bytesRead; m++)
-            	{
-            		printf("%.2X ",data[m]);
-            	}
-            	printf("\n");
+//            	for (int m=0; m<con->buffer.RX_Count; m++)
+//            	{
+//            		sprintf(optical_rx_tmp_info + strlen(optical_rx_tmp_info) ,"%.2X ",con->buffer.RX[m]);
+//            	}
 //            	report(OPTICAL, RX, optical_rx_tmp_info);
 //
 //                unsigned char optical_rx_tmp_info			;
