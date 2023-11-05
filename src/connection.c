@@ -738,7 +738,18 @@ void* IEC_Serial_Thread(void* pVoid)
                     printf("\nRX:\t");
                     first = 0;
                 }
-                printf("%.2X ", data);
+                printf("%.2X ", data);\
+
+//            	unsigned char optical_rx_tmp_info[4096] = {0};
+//            	for (int m=0; m<con->buffer.RX_Count; m++)
+//            	{
+//            		sprintf(optical_rx_tmp_info + strlen(optical_rx_tmp_info) ,"%.2X ",con->buffer.RX[m]);
+//            	}
+//            	report(OPTICAL, RX, optical_rx_tmp_info);
+//
+//                unsigned char optical_rx_tmp_info			;
+//                sprintf(optical_rx_tmp_info ,"%.2X ",data)	;
+//                report(OPTICAL, RX, optical_rx_tmp_info)	;
             }
 
 
@@ -757,6 +768,17 @@ void* IEC_Serial_Thread(void* pVoid)
                         printf("%.2X ", reply.data[pos]);
                     }
                     printf("\n");
+
+//                	unsigned char optical_tx_tmp_info[4096] = {0};
+//                	for (int m=0; m<con->buffer.TX_Count; m++)
+//                	{
+//                		sprintf(optical_tx_tmp_info + strlen(optical_tx_tmp_info) ,"%.2X ",con->buffer.RX[m]);
+//                	}
+//                	report(OPTICAL, TX, optical_tx_tmp_info);
+
+//                    unsigned char optical_tx_tmp_info			;
+//                    sprintf(optical_tx_tmp_info ,"%.2X ",data)	;
+//                    report(OPTICAL, TX, optical_tx_tmp_info)	;
                 }
                 ret = write(con->comPort, reply.data, reply.size);
                 if (ret != reply.size)
@@ -768,6 +790,7 @@ void* IEC_Serial_Thread(void* pVoid)
                     if (con->settings.base.connected == DLMS_CONNECTION_STATE_IEC)
                     {
                         /*Change baud rate settings if optical probe is used.*/
+//                    	report(OPTICAL, CONNECTION, "CONNECTED WITH OPTICAL PROBE");
                         printf("%s %d", "Connected with optical probe. The new baudrate is:", sr.newBaudRate);
 //                        com_updateSerialportSettings(con,0, sr.newBaudRate);
                         Quectel_Update_Serial_Port_Settings(con,0, sr.newBaudRate);
@@ -779,6 +802,7 @@ void* IEC_Serial_Thread(void* pVoid)
 
                         usleep(100000);
                         uint16_t baudRate = 300 << (int)con->settings.localPortSetup->defaultBaudrate;
+//                        report(OPTICAL, CONNECTION, "DISCONNECTED WITH OPTICAL PROBE");
                         printf("%s %d", "Disconnected with optical probe. The new baudrate is:", baudRate);
 //                        com_updateSerialportSettings(con,1, 300);
                         Quectel_Update_Serial_Port_Settings(con,1, baudRate);
@@ -921,6 +945,7 @@ int IEC_Serial_Start(connection* con, char *file)
         return ret;
     }
     ret = pthread_create(&con->receiverThread, NULL, IEC_Serial_Thread, (void*)con);
+    report(OPTICAL, CONNECTION, "CONNECTED");
     return ret;
 }
 

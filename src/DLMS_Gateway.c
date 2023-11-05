@@ -582,7 +582,7 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 						printf("Meter2GW_Frame_Convertor: Error - Source Address is wrong. \n");
 						return -3;
 					}
-					uint16_t HES_APDU_Byte = ADD_LEN_BYTE + HES_Frame[ADD_LEN_BYTE] + 1;
+					uint16_t HES_APDU_Byte = ADD_LEN_BYTE + HES_Frame[ADD_LEN_BYTE] + 1;	//determining APDU start byte in MDM's frame
 					uint16_t HES_APDU_Byte_for_Last_segment = HES_APDU_Byte;
 
 					last_byte = i;
@@ -594,7 +594,7 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 
 					uint16_t HCS_Frame 				= 0	;
 					uint16_t HCS_Cal 				= 0	;
-					HCS_Frame 						= ((uint16_t) (HDLC_STRUCT->RX[last_byte+2]) << 8) | (HDLC_STRUCT->RX[last_byte+3]);
+					HCS_Frame 						= ((uint16_t) (HDLC_STRUCT->RX[last_byte+2]) << 8) | (HDLC_STRUCT->RX[last_byte+3]); //HCS in meter's frame
 					HCS_Cal 						= countCRC(HDLC_STRUCT->RX, 1, last_byte + 1);
 					last_byte 						= last_byte +3; 						//len(CRC)+len(ControlByte)
 					last_byte_for_last_segment 		= last_byte;

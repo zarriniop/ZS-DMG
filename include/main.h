@@ -82,7 +82,8 @@ typedef enum
 {
 	RS485 	= 0,
 	SERVER	= 1,
-	CLIENT	= 2
+	CLIENT	= 2,
+	OPTICAL	= 3
 }REPORT_INTERFACE;
 
 

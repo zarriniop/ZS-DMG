@@ -53,6 +53,8 @@ int Servers_Start(int trace)
     DLMS_INTERFACE_TYPE interfaceType;
     if(lnWrapper.settings.localPortSetup->defaultMode==0) interfaceType=DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E;
     else interfaceType = DLMS_INTERFACE_TYPE_HDLC;
+//    interfaceType = DLMS_INTERFACE_TYPE_HDLC;
+
 
     //Initialize DLMS settings.
     svr_init(&lniec.settings, 1, interfaceType, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, lnframeBuff, HDLC_HEADER_SIZE + HDLC_BUFFER_SIZE, lnpduBuff, PDU_BUFFER_SIZE);
@@ -139,7 +141,7 @@ int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Informatio
 	int 		ret;
 //	char		cmd[2048] = {0};
 	char		log[4096] = {0};
-	const char	*interface 	[] = {"RS485", "Server", "Client"}	;
+	const char	*interface 	[] = {"RS485", "Server", "Client", "Optical"}	;
 	const char	*message 	[] = {"RX", "TX", "Connection"}		;
 	char		*Time_Tag;
 
