@@ -138,31 +138,31 @@ const char * get_time(void)
 /**************************************/
 int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Information)
 {
-	int 		ret;
-//	char		cmd[2048] = {0};
-	char		log[4096] = {0};
-	const char	*interface 	[] = {"RS485", "Server", "Client", "Optical"}	;
-	const char	*message 	[] = {"RX", "TX", "Connection"}		;
-	char		*Time_Tag;
-
-//	memset(cmd, 0, sizeof(cmd));
-
-	Time_Tag = get_time();
-
-	sprintf(log, "[%s] (%s): %s = %s", Time_Tag, interface[Interface], message[Message], Information);
-	ret = printf("%s\n",log);
-
-	//	sprintf(cmd, "echo \"%s\" >> /root/log.txt", log);
-	//	ret = system("ls");
-
-	FILE* f = fopen("/root/log.txt", "a");
-    if (f != NULL)
-    {
-    	fprintf(f, "%s\r\n", log);
-    	fclose(f);
-    }
-
-	return ret;
+//	int 		ret;
+////	char		cmd[2048] = {0};
+//	char		log[4096] = {0};
+//	const char	*interface 	[] = {"RS485", "Server", "Client", "Optical"}	;
+//	const char	*message 	[] = {"RX", "TX", "Connection"}		;
+//	char		*Time_Tag;
+//
+////	memset(cmd, 0, sizeof(cmd));
+//
+//	Time_Tag = get_time();
+//
+//	sprintf(log, "[%s] (%s): %s = %s", Time_Tag, interface[Interface], message[Message], Information);
+//	ret = printf("%s\n",log);
+//
+//	//	sprintf(cmd, "echo \"%s\" >> /root/log.txt", log);
+//	//	ret = system("ls");
+//
+//	FILE* f = fopen("/root/log.txt", "a");
+//    if (f != NULL)
+//    {
+//    	fprintf(f, "%s\r\n", log);
+//    	fclose(f);
+//    }
+//
+//	return ret;
 }
 
 

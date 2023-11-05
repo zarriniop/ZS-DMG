@@ -1213,15 +1213,15 @@ void WAN_Connection (void)
 				WAN_Init();
 
 				ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
-				if(ret!=0)
-					printf("!ERROR! ql_wan_start - ret:%d\n", ret);
+//				if(ret!=0)
+//					printf("!ERROR! ql_wan_start - ret:%d\n", ret);
 //				else
 //					printf("<= WAN STARTED! nw_cb=%d =>\n", nw_cb);
 			}
 		}
 		else
 		{
-			printf("!ERROR! ql_get_data_call_info - ret:%d", ret);
+//			printf("!ERROR! ql_get_data_call_info - ret:%d", ret);
 		}
 		sleep(1);
 	}
