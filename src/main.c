@@ -26,6 +26,8 @@ unsigned char ln47pduBuff	[PDU_BUFFER_SIZE]						;
 connection lnWrapper , lniec , rs485;
 
 pthread_t SVR_Monitor;
+
+extern DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str;
 /********************
  *	pthread Param	*
  ********************/
@@ -138,31 +140,32 @@ const char * get_time(void)
 /**************************************/
 int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Information)
 {
-//	int 		ret;
-////	char		cmd[2048] = {0};
-//	char		log[4096] = {0};
-//	const char	*interface 	[] = {"RS485", "Server", "Client", "Optical"}	;
-//	const char	*message 	[] = {"RX", "TX", "Connection"}		;
-//	char		*Time_Tag;
-//
-////	memset(cmd, 0, sizeof(cmd));
-//
-//	Time_Tag = get_time();
-//
-//	sprintf(log, "[%s] (%s): %s = %s", Time_Tag, interface[Interface], message[Message], Information);
-//	ret = printf("%s\n",log);
-//
-//	//	sprintf(cmd, "echo \"%s\" >> /root/log.txt", log);
-//	//	ret = system("ls");
-//
-//	FILE* f = fopen("/root/log.txt", "a");
-//    if (f != NULL)
-//    {
-//    	fprintf(f, "%s\r\n", log);
-//    	fclose(f);
-//    }
-//
-//	return ret;
+	int 		ret;
+//	char		cmd[2048] = {0};
+	char		log[4096] = {0};
+	const char	*interface 	[] = {"RS485", "Server", "Client", "Optical", "Start App"}	;
+	const char	*message 	[] = {"RX", "TX", "Connection", "Start"}		;
+	char		*Time_Tag;
+
+//	memset(cmd, 0, sizeof(cmd));
+
+	Time_Tag = get_time();
+
+	sprintf(log, "[%s] (%s): %s = %s", Time_Tag, interface[Interface], message[Message], Information);
+
+	ret = printf("%s\n",log);
+
+	//	sprintf(cmd, "echo \"%s\" >> /root/log.txt", log);
+	//	ret = system("ls");
+
+	FILE* f = fopen("/root/log.txt", "a");
+    if (f != NULL)
+    {
+    	fprintf(f, "%s\r\n", log);
+    	fclose(f);
+    }
+
+	return ret;
 }
 
 
@@ -184,6 +187,7 @@ void LED_Init (void)
 /************************************/
 int main(int argc, char* argv[])
 {
+	report(START_APP, START, "**********************************");
     strcpy(DATAFILE, argv[0]);
 
     char* p = strrchr(DATAFILE, '/');
@@ -207,6 +211,18 @@ int main(int argc, char* argv[])
 
     while (1)
     {
+    	DS1307_Get_Time(&DS1307_Str);
+
+		printf("<= DS1307 - I2C Day_W:%d - %d.%d.%d - %d:%d:%d - 12-H:%d =>\n",
+				DS1307_Str.day		,
+				DS1307_Str.date		,
+				DS1307_Str.month	,
+				DS1307_Str.year		,
+				DS1307_Str.hour		,
+				DS1307_Str.minute	,
+				DS1307_Str.second	,
+				DS1307_Str.H_12		); //Little endian
+
     	sleep(10);
     }
     return 0;

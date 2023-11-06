@@ -36,7 +36,8 @@
 #include <fcntl.h> // File control definitions
 #include <errno.h> // Error number definitions
 
-pthread_t Wan_Connection_pthread_var;
+pthread_t 					Wan_Connection_pthread_var;
+DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str;
 
 extern gxGPRSSetup 	gprsSetup	;
 extern gxData 		imei		;
@@ -709,7 +710,7 @@ int Socket_create(connection* con)								//===============( Create client )====
 void* IEC_Serial_Thread(void* pVoid)
 {
     int ret;
-    unsigned char data;
+    unsigned char data[1024];
     unsigned char first = 1;
     uint16_t pos;
     int bytesRead;
@@ -720,7 +721,7 @@ void* IEC_Serial_Thread(void* pVoid)
 
     while (1)
     {
-        bytesRead = read(con->comPort, &data, 1);
+        bytesRead = read(con->comPort, &data, 1024);
         if (bytesRead < 1)
         {
             //If there is no data on the read buffer.
@@ -731,25 +732,23 @@ void* IEC_Serial_Thread(void* pVoid)
         }
         else
         {
+        	sr.dataSize = bytesRead;
             if (con->trace > GX_TRACE_LEVEL_WARNING)
             {
                 if (first)
                 {
-                    printf("\nRX:\t");
+//                    printf("\nRX:\t");
                     first = 0;
                 }
-                printf("%.2X ", data);\
+//                printf("%.2X ", data);\
 
-//            	unsigned char optical_rx_tmp_info[4096] = {0};
-//            	for (int m=0; m<con->buffer.RX_Count; m++)
-//            	{
-//            		sprintf(optical_rx_tmp_info + strlen(optical_rx_tmp_info) ,"%.2X ",con->buffer.RX[m]);
-//            	}
-//            	report(OPTICAL, RX, optical_rx_tmp_info);
-//
-//                unsigned char optical_rx_tmp_info			;
-//                sprintf(optical_rx_tmp_info ,"%.2X ",data)	;
-//                report(OPTICAL, RX, optical_rx_tmp_info)	;
+            	unsigned char optical_rx_tmp_info[4096] = {0};
+            	for (int m=0; m<bytesRead; m++)
+            	{
+            		sprintf(optical_rx_tmp_info + strlen(optical_rx_tmp_info) ,"%.2X ",data[m]);
+            	}
+            	printf("\n");
+            	report(OPTICAL, RX, optical_rx_tmp_info);
             }
 
 
@@ -762,36 +761,27 @@ void* IEC_Serial_Thread(void* pVoid)
                 first = 1;
                 if (con->trace > GX_TRACE_LEVEL_WARNING)
                 {
-                    printf("\nTX\t");
+                	unsigned char optical_tx_tmp_info[4096] = {0};
                     for (pos = 0; pos != reply.size; ++pos)
                     {
-                        printf("%.2X ", reply.data[pos]);
+                        sprintf(optical_tx_tmp_info + strlen(optical_tx_tmp_info), "%.2X ", reply.data[pos]);
                     }
-                    printf("\n");
-
-//                	unsigned char optical_tx_tmp_info[4096] = {0};
-//                	for (int m=0; m<con->buffer.TX_Count; m++)
-//                	{
-//                		sprintf(optical_tx_tmp_info + strlen(optical_tx_tmp_info) ,"%.2X ",con->buffer.RX[m]);
-//                	}
-//                	report(OPTICAL, TX, optical_tx_tmp_info);
-
-//                    unsigned char optical_tx_tmp_info			;
-//                    sprintf(optical_tx_tmp_info ,"%.2X ",data)	;
-//                    report(OPTICAL, TX, optical_tx_tmp_info)	;
+                    report(OPTICAL, TX, optical_tx_tmp_info);
                 }
                 ret = write(con->comPort, reply.data, reply.size);
+
                 if (ret != reply.size)
                 {
                     printf("Write failed\n");
                 }
+
                 if (con->settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E && sr.newBaudRate != 0)
                 {
                     if (con->settings.base.connected == DLMS_CONNECTION_STATE_IEC)
                     {
                         /*Change baud rate settings if optical probe is used.*/
-//                    	report(OPTICAL, CONNECTION, "CONNECTED WITH OPTICAL PROBE");
-                        printf("%s %d", "Connected with optical probe. The new baudrate is:", sr.newBaudRate);
+                    	report(OPTICAL, CONNECTION, "CONNECTED WITH OPTICAL PROBE");
+//                        printf("%s %d", "Connected with optical probe. The new baudrate is:", sr.newBaudRate);
 //                        com_updateSerialportSettings(con,0, sr.newBaudRate);
                         Quectel_Update_Serial_Port_Settings(con,0, sr.newBaudRate);
                     }
@@ -802,8 +792,8 @@ void* IEC_Serial_Thread(void* pVoid)
 
                         usleep(100000);
                         uint16_t baudRate = 300 << (int)con->settings.localPortSetup->defaultBaudrate;
-//                        report(OPTICAL, CONNECTION, "DISCONNECTED WITH OPTICAL PROBE");
-                        printf("%s %d", "Disconnected with optical probe. The new baudrate is:", baudRate);
+                        report(OPTICAL, CONNECTION, "DISCONNECTED WITH OPTICAL PROBE");
+//                        printf("%s %d", "Disconnected with optical probe. The new baudrate is:", baudRate);
 //                        com_updateSerialportSettings(con,1, 300);
                         Quectel_Update_Serial_Port_Settings(con,1, baudRate);
                     }
@@ -876,7 +866,7 @@ void* RS485_Receive_Thread(void* pVoid)
     	report(RS485, RX, rs_rx_tmp_info);
 
     	system(LED_485_SHOT);
-    	printf("###### cnt =%d\r\n",bytesRead);
+//    	printf("###### cnt =%d\r\n",bytesRead);
 
     	con->buffer.RX_Count = bytesRead;
 
@@ -945,7 +935,7 @@ int IEC_Serial_Start(connection* con, char *file)
         return ret;
     }
     ret = pthread_create(&con->receiverThread, NULL, IEC_Serial_Thread, (void*)con);
-    report(OPTICAL, CONNECTION, "CONNECTED");
+    report(OPTICAL, CONNECTION, "OPEN");
     return ret;
 }
 
@@ -1020,6 +1010,8 @@ void Initialize (void)
 	Sim_Init	()	;
 	NW_Init		()	;
 	WAN_Init	()	;
+//	I2C_Init	()	;
+
 }
 
 
@@ -1171,7 +1163,7 @@ void WAN_Connection (void)
 				Ret_Signal 		= ql_nw_get_signal_strength (&Sig_Strg_Info);
 				Ret_Cell_Info 	= ql_nw_get_cell_info		(&NW_Cell_Info)	;
 
-//				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
+				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
 
 				if		(NW_Cell_Info.lte_info_valid == 1)
 					system(PAT_3T_LED_NET);
@@ -1349,5 +1341,59 @@ int closeServer(int* s)
     return 0;
 }
 
+
+void I2C_Init (void)
+{
+	DS1307_Str.I2C_fd = Ql_I2C_Init(I2C_DEV);
+
+	if(DS1307_Str.I2C_fd<0)
+		printf("!!!ERROR!!! Ql_I2C_Init:%d", DS1307_Str.I2C_fd);
+	else
+		printf("<= !!!SUCCESS!!! I2C Init SUCCESS - ret = %d =>\n", DS1307_Str.I2C_fd);
+
+//	DS1307_Str.year = 22;
+//	DS1307_Str.month = 12;
+//	DS1307_Str.date = 6;
+//	DS1307_Str.day = 3;
+//	DS1307_Str.hour = 9;
+//	DS1307_Str.minute = 29;
+//	DS1307_Str.second = 0;
+//	DS1307_Str.H_12 = 0;
+//	DS1307_Set_Time(DS1307_Str);
+}
+
+
+//int DS1307_Set_Time (uint8_t year, uint8_t month, uint8_t date, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, bool H_12)
+int DS1307_Set_Time (DS1307_I2C_STRUCT_TYPEDEF DS1307_Time)
+{
+	uint8_t time[7]={0,0,0,0,0,0,0};
+
+	time[6] = ((DS1307_Time.year/10)<<4)	| (DS1307_Time.year%10)		;
+	time[5] = ((DS1307_Time.month/10)<<4)	| (DS1307_Time.month%10)	;
+	time[4] = ((DS1307_Time.date/10)<<4)	| (DS1307_Time.date%10)		;
+	time[3] = (DS1307_Time.day & 0x07)									;
+	time[2] = ((DS1307_Time.hour/10)<<4)	| (DS1307_Time.hour%10)		| (DS1307_Time.H_12*0x64)	;
+	time[1] = ((DS1307_Time.minute/10)<<4)	| (DS1307_Time.minute%10)	;
+	time[0] = ((DS1307_Time.second/10)<<4)	| (DS1307_Time.second%10)	;
+
+	return Ql_I2C_Write(DS1307_Time.I2C_fd, DS1307_I2C_SLAVE_ADDR, 0, time, 7);
+}
+
+
+void DS1307_Get_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
+{
+	uint8_t time[7];
+
+    Ql_I2C_Read(DS1307_Str.I2C_fd, DS1307_I2C_SLAVE_ADDR, 0, time, 7);
+
+    DS1307_Time->year 	= (((time[6]>>4)&0x0F)*10) + (time[6]&0x0F)	;
+    DS1307_Time->month 	= (((time[5]>>4)&0x01)*10) + (time[5]&0x0F)	;
+    DS1307_Time->date 	= (((time[4]>>4)&0x03)*10) + (time[4]&0x0F)	;
+    DS1307_Time->day 	= (time[3]&0x07)							;
+    DS1307_Time->H_12 	= (time[2]&0x64)							;
+    DS1307_Time->hour 	= (((time[2]>>4)&0x03)*10) + (time[2]&0x0F)	;
+    DS1307_Time->minute = (((time[1]>>4)&0x07)*10) + (time[1]&0x0F)	;
+    DS1307_Time->second = (((time[0]>>4)&0x07)*10) + (time[0]&0x0F)	;
+}
 
 

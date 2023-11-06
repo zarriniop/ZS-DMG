@@ -35,6 +35,7 @@
 #include "ql_uart.h"
 #include "ql_i2c.h"
 #include "stdbool.h"
+#include "ql_i2c.h"
 
 /* HAJIAN */
 #define closesocket close
@@ -80,10 +81,11 @@ typedef struct
 
 typedef enum
 {
-	RS485 	= 0,
-	SERVER	= 1,
-	CLIENT	= 2,
-	OPTICAL	= 3
+	RS485 		= 0,
+	SERVER		= 1,
+	CLIENT		= 2,
+	OPTICAL		= 3,
+	START_APP	= 4
 }REPORT_INTERFACE;
 
 
@@ -91,7 +93,8 @@ typedef enum
 {
 	RX 			= 0,
 	TX			= 1,
-	CONNECTION	= 2
+	CONNECTION	= 2,
+	START		= 3
 }REPORT_MESSAGE;
 
 /***********************
