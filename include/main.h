@@ -100,15 +100,6 @@ typedef enum
 /***********************
  * FUNCTION PROTOTYPES *
  ***********************/
-int Servers_Start(int trace);
-
-void Servers_Monitor (void);
-
-int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Information);
-
-const char * get_time(void);
-
-void LED_Init (void);
 
 
 #endif /* MAIN_H_ */

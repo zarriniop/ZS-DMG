@@ -1342,6 +1342,7 @@ int closeServer(int* s)
 
 void DS1307_Init (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
 {
+	memset(DS1307_Time, 0, sizeof(DS1307_I2C_STRUCT_TYPEDEF));
 	DS1307_Time->I2C_fd = Ql_I2C_Init(I2C_DEV);
 
 	if(DS1307_Time->I2C_fd<0)
@@ -1384,15 +1385,16 @@ void DS1307_Get_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
 
 void Set_System_Date_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
 {
-	char System_Date_Time[50] = {0};
+	char System_Date_Time[100] = {0};
 	DS1307_Get_Time(DS1307_Time);
 	sprintf(System_Date_Time, "date -s \"%d-%d-%d %d:%d:%d\"",
-			2000+DS1307_Time->year,
-			DS1307_Time->month	,
-			DS1307_Time->day		,
+			2000+DS1307_Time->year	,
+			DS1307_Time->month		,
+			DS1307_Time->date		,
 			DS1307_Time->hour		,
-			DS1307_Time->minute	,
-			DS1307_Time->second	); //Little endian
+			DS1307_Time->minute		,
+			DS1307_Time->second		); //Little endian
+	printf("%s\n", System_Date_Time);
 	system(System_Date_Time)	;
 }
 

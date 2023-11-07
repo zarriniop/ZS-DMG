@@ -51,7 +51,8 @@ src/main.o: ../src/main.c /home/mhn/DMGProject/ZS-DMG/include/main.h \
  /home/mhn/DMGProject/ZS-DMG/development/include/../../development/include/dlmssettings.h \
  /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_dev.h \
  /home/mhn/DMGProject/ZS-DMG/include/connection.h \
- /home/mhn/DMGProject/ZS-DMG/include/DLMS_Gateway.h
+ /home/mhn/DMGProject/ZS-DMG/include/DLMS_Gateway.h \
+ /home/mhn/DMGProject/ZS-DMG/include/Tools.h
 
 /home/mhn/DMGProject/ZS-DMG/include/main.h:
 
@@ -160,3 +161,5 @@ src/main.o: ../src/main.c /home/mhn/DMGProject/ZS-DMG/include/main.h \
 /home/mhn/DMGProject/ZS-DMG/include/connection.h:
 
 /home/mhn/DMGProject/ZS-DMG/include/DLMS_Gateway.h:
+
+/home/mhn/DMGProject/ZS-DMG/include/Tools.h:
