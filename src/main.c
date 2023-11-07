@@ -25,7 +25,6 @@ int main(int argc, char* argv[])
 
 	File_Init (argv)					;
     DS1307_Init(&DS1307_Str)			;
-
     Set_System_Date_Time(&DS1307_Str)	;
     LED_Init()							;
     Servers_Start(GX_TRACE_LEVEL_INFO)	;
