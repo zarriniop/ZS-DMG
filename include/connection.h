@@ -268,11 +268,13 @@ int connectServer_pushon(char* address, char *port, int* s);
 
 int closeServer(int* s);
 
-void I2C_Init (void);
+void DS1307_Init (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time);
 
 int DS1307_Set_Time (DS1307_I2C_STRUCT_TYPEDEF DS1307_Time);
 
 void DS1307_Get_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time);
+
+void Set_System_Date_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time);
 
 #ifdef  __cplusplus
 }

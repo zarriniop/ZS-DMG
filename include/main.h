@@ -111,6 +111,4 @@ const char * get_time(void);
 void LED_Init (void);
 
 
-
-
 #endif /* MAIN_H_ */

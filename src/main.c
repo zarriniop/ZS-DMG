@@ -26,8 +26,6 @@ unsigned char ln47pduBuff	[PDU_BUFFER_SIZE]						;
 connection lnWrapper , lniec , rs485;
 
 pthread_t SVR_Monitor;
-
-extern DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str;
 /********************
  *	pthread Param	*
  ********************/
@@ -181,15 +179,14 @@ void LED_Init (void)
 	ret = system(LED_485_ONDLY)			;
 }
 
-
 /************************************/
 /********** Main Function ***********/
 /************************************/
 int main(int argc, char* argv[])
 {
 	report(START_APP, START, "**********************************");
+	DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str;
     strcpy(DATAFILE, argv[0]);
-
     char* p = strrchr(DATAFILE, '/');
     *p = '\0';
     strcpy(IMAGEFILE, DATAFILE);
@@ -201,29 +198,28 @@ int main(int argc, char* argv[])
     FILE* f = fopen(TRACEFILE, "w");
     fclose(f);
 
-    LED_Init();
-
-    Servers_Start(GX_TRACE_LEVEL_INFO);
-
-    LTE_Manager_Start();
-
+    DS1307_Init(&DS1307_Str)			;
+//    DS1307_Str.year 	= 23;
+//    DS1307_Str.month 	= 12;
+//    DS1307_Str.date 	= 6;
+//    DS1307_Str.day 	= 3;
+//    DS1307_Str.hour 	= 16;
+//    DS1307_Str.minute = 41;
+//    DS1307_Str.second = 0;
+//    DS1307_Str.H_12 	= 0;
+//    DS1307_Set_Time(DS1307_Str)			;
+    Set_System_Date_Time(&DS1307_Str)	;
+    LED_Init()							;
+    Servers_Start(GX_TRACE_LEVEL_INFO)	;
+    LTE_Manager_Start()					;
 //    pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
 
     while (1)
     {
-    	DS1307_Get_Time(&DS1307_Str);
-
-		printf("<= DS1307 - I2C Day_W:%d - %d.%d.%d - %d:%d:%d - 12-H:%d =>\n",
-				DS1307_Str.day		,
-				DS1307_Str.date		,
-				DS1307_Str.month	,
-				DS1307_Str.year		,
-				DS1307_Str.hour		,
-				DS1307_Str.minute	,
-				DS1307_Str.second	,
-				DS1307_Str.H_12		); //Little endian
-
-    	sleep(10);
+    	printf("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n");
+    	Set_System_Date_Time(&DS1307_Str)	;
+    	sleep(10)							;
+    	system("date")						;
     }
     return 0;
 }

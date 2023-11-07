@@ -37,7 +37,6 @@
 #include <errno.h> // Error number definitions
 
 pthread_t 					Wan_Connection_pthread_var;
-DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str;
 
 extern gxGPRSSetup 	gprsSetup	;
 extern gxData 		imei		;
@@ -1010,7 +1009,6 @@ void Initialize (void)
 	Sim_Init	()	;
 	NW_Init		()	;
 	WAN_Init	()	;
-//	I2C_Init	()	;
 
 }
 
@@ -1342,24 +1340,12 @@ int closeServer(int* s)
 }
 
 
-void I2C_Init (void)
+void DS1307_Init (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
 {
-	DS1307_Str.I2C_fd = Ql_I2C_Init(I2C_DEV);
+	DS1307_Time->I2C_fd = Ql_I2C_Init(I2C_DEV);
 
-	if(DS1307_Str.I2C_fd<0)
-		printf("!!!ERROR!!! Ql_I2C_Init:%d", DS1307_Str.I2C_fd);
-	else
-		printf("<= !!!SUCCESS!!! I2C Init SUCCESS - ret = %d =>\n", DS1307_Str.I2C_fd);
-
-//	DS1307_Str.year = 22;
-//	DS1307_Str.month = 12;
-//	DS1307_Str.date = 6;
-//	DS1307_Str.day = 3;
-//	DS1307_Str.hour = 9;
-//	DS1307_Str.minute = 29;
-//	DS1307_Str.second = 0;
-//	DS1307_Str.H_12 = 0;
-//	DS1307_Set_Time(DS1307_Str);
+	if(DS1307_Time->I2C_fd<0)
+		printf("!!!ERROR!!! Ql_I2C_Init:%d", DS1307_Time->I2C_fd);
 }
 
 
@@ -1384,7 +1370,7 @@ void DS1307_Get_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
 {
 	uint8_t time[7];
 
-    Ql_I2C_Read(DS1307_Str.I2C_fd, DS1307_I2C_SLAVE_ADDR, 0, time, 7);
+    Ql_I2C_Read(DS1307_Time->I2C_fd, DS1307_I2C_SLAVE_ADDR, 0, time, 7);
 
     DS1307_Time->year 	= (((time[6]>>4)&0x0F)*10) + (time[6]&0x0F)	;
     DS1307_Time->month 	= (((time[5]>>4)&0x01)*10) + (time[5]&0x0F)	;
@@ -1394,6 +1380,20 @@ void DS1307_Get_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
     DS1307_Time->hour 	= (((time[2]>>4)&0x03)*10) + (time[2]&0x0F)	;
     DS1307_Time->minute = (((time[1]>>4)&0x07)*10) + (time[1]&0x0F)	;
     DS1307_Time->second = (((time[0]>>4)&0x07)*10) + (time[0]&0x0F)	;
+}
+
+void Set_System_Date_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
+{
+	char System_Date_Time[50] = {0};
+	DS1307_Get_Time(DS1307_Time);
+	sprintf(System_Date_Time, "date -s \"%d-%d-%d %d:%d:%d\"",
+			2000+DS1307_Time->year,
+			DS1307_Time->month	,
+			DS1307_Time->day		,
+			DS1307_Time->hour		,
+			DS1307_Time->minute	,
+			DS1307_Time->second	); //Little endian
+	system(System_Date_Time)	;
 }
 
 
