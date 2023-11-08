@@ -38,13 +38,14 @@
 
 pthread_t 					Wan_Connection_pthread_var;
 
-extern gxGPRSSetup 	gprsSetup	;
-extern gxData 		imei		;
-extern gxData 		deviceid6	;
-extern connection 	lnWrapper , lniec , rs485;
-extern gxTcpUdpSetup udpSetup;
-extern gxAutoConnect autoConnect;
-extern gxPushSetup	 pushSetup;
+extern gxGPRSSetup 		gprsSetup	;
+extern gxData 			imei		;
+extern gxData 			deviceid6	;
+extern connection 		lnWrapper , lniec , rs485;
+extern gxTcpUdpSetup 	udpSetup;
+extern gxAutoConnect 	autoConnect;
+extern gxPushSetup	 	pushSetup;
+extern struct tm 		Sys_Time = {0};
 
 //Initialize connection buffers.
 void con_initializeBuffers(connection * connection, int size)
@@ -1055,7 +1056,7 @@ void ICCID_Get (void)
 	char* ICCID_pointer;
     char iccid[32]={0};
     int ret = ql_sim_get_iccid(iccid,32);
-    var_setString(&deviceid6.value, iccid, 32);
+    var_setString(&deviceid6.value, iccid, strlen(iccid));
 //    printf("ICCID - RET:%d , iccid:%s\n", ret, iccid);
 }
 
@@ -1385,17 +1386,42 @@ void DS1307_Get_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
 
 void Set_System_Date_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
 {
-	char System_Date_Time[100] = {0};
+	char 	System_Date_Time[100] = {0};
+	time_t 	time_for_mktime;
+	struct 	timeval tv_for_settimeofday = {0};
 	DS1307_Get_Time(DS1307_Time);
-	sprintf(System_Date_Time, "date -s \"%d-%d-%d %d:%d:%d\"",
-			2000+DS1307_Time->year	,
-			DS1307_Time->month		,
-			DS1307_Time->date		,
-			DS1307_Time->hour		,
-			DS1307_Time->minute		,
-			DS1307_Time->second		); //Little endian
-	printf("%s\n", System_Date_Time);
-	system(System_Date_Time)	;
+
+//	sprintf(System_Date_Time, "date -s \"%d-%d-%d %d:%d:%d\"",
+//			2000+DS1307_Time->year	,
+//			DS1307_Time->month		,
+//			DS1307_Time->date		,
+//			DS1307_Time->hour		,
+//			DS1307_Time->minute		,
+//			DS1307_Time->second		); //Little endian
+
+//	printf("System_Date_Time = %s\n", System_Date_Time);
+
+
+    Sys_Time.tm_year 	= 100 + DS1307_Time->year 		;	//2000+year(23)-1900
+    Sys_Time.tm_mon 	= DS1307_Time->month 	- 1		;
+    Sys_Time.tm_mday 	= DS1307_Time->date 			;
+    Sys_Time.tm_hour 	= DS1307_Time->hour 			;
+    Sys_Time.tm_min 	= DS1307_Time->minute 			;
+    Sys_Time.tm_sec 	= DS1307_Time->second 			;
+//    printf("Sys_Time=y:%d-m:%d\n", Sys_Time.tm_year, Sys_Time.tm_mon);
+
+//	time_for_mktime = mktime (&Sys_Time);
+//	printf("time_t time = %ld\n", time_for_mktime);
+
+//    tv_for_settimeofday.tv_sec = time_for_mktime; 		// time since the Epoch
+
+    tv_for_settimeofday.tv_sec = mktime (&Sys_Time); 		// time since the Epoch
+
+	int ret_ti = settimeofday(&tv_for_settimeofday, NULL);
+//	printf("ret_ti = %d\n", ret_ti);
+
+//	system("date")	;
+//	system(System_Date_Time)	;
 }
 
 

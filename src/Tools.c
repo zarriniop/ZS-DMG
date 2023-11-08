@@ -147,6 +147,19 @@ int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Informatio
 void LED_Init (void)
 {
 	int ret = 0;
+
+	ret = system(NONE_TRIG_LED_DATA)	;
+	ret = system(NONE_TRIG_LED_485)		;
+	ret = system(NONE_TRIG_LED_NET)		;
+
+	ret = system(LED_DATA_ON_ALWAYS)	;
+	ret = system(LED_485_ON_ALWAYS)		;
+	ret = system(LED_NET_ON_ALWAYS)		;
+	sleep(1);
+	ret = system(LED_DATA_OFF_ALWAYS)	;
+	ret = system(LED_485_OFF_ALWAYS)	;
+	ret = system(LED_NET_OFF_ALWAYS)	;
+
 	ret = system(ONESHOT_TRIG_LED_DATA)	;
 	ret = system(ONESHOT_TRIG_LED_485)	;
 	ret = system(PATTERN_TRIG_LED_NET)	;

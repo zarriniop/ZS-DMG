@@ -2263,7 +2263,7 @@ int svr_InitObjects(
         char buf[15];
         sprintf(buf, "%s31%s%s",Settings.manufactureID,Settings.ProductYear,Settings.SerialNumber);
         printf("buf = %s\n",buf);
-        var_setString(&deviceid7.value, buf, 15);
+        var_setString(&deviceid7.value, buf, 14);
    }
 
     // Error Register

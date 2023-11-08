@@ -50,21 +50,7 @@
  ***********/
 
 /*HAJIAN*/
-#define HDLC_HEADER_SIZE 		17
-#define HDLC_BUFFER_SIZE 		128
-#define PDU_BUFFER_SIZE 		1024
-#define WRAPPER_BUFFER_SIZE 	8 + PDU_BUFFER_SIZE
 
-#define OPTIC_SERIAL_FD 		"/dev/ttyS1"
-#define RS485_SERIAL_FD 		"/dev/ttyS2"
-
-#define	ONESHOT_TRIG_LED_DATA	"echo oneshot > /sys/devices/platform/leds/leds/LED1/trigger"
-#define	ONESHOT_TRIG_LED_485	"echo oneshot > /sys/devices/platform/leds/leds/LED2/trigger"
-#define	PATTERN_TRIG_LED_NET	"echo pattern > /sys/devices/platform/leds/leds/LED3/trigger"
-#define LED_DATA_OFFDLY			"echo 10 > /sys/devices/platform/leds/leds/LED1/delay_off"
-#define LED_485_OFFDLY			"echo 10 > /sys/devices/platform/leds/leds/LED2/delay_off"
-#define LED_DATA_ONDLY			"echo 10 > /sys/devices/platform/leds/leds/LED1/delay_on"
-#define LED_485_ONDLY			"echo 10 > /sys/devices/platform/leds/leds/LED2/delay_on"
 
 /*************************
  * TYPEDEFS & STRUCTURES *
@@ -77,7 +63,6 @@ typedef struct
     uint32_t RX_Count;
     uint32_t	Timeout_ms;
 } Buffer;
-
 
 typedef enum
 {

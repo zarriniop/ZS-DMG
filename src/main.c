@@ -17,16 +17,17 @@
 #include "DLMS_Gateway.h"
 #include "Tools.h"
 
+struct tm 	Sys_Time;
 
 int main(int argc, char* argv[])
 {
 	report(START_APP, START, "**********************************");
-	DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str;
+	DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str	;
 
 	File_Init (argv)					;
+    LED_Init()							;
     DS1307_Init(&DS1307_Str)			;
     Set_System_Date_Time(&DS1307_Str)	;
-    LED_Init()							;
     Servers_Start(GX_TRACE_LEVEL_INFO)	;
     LTE_Manager_Start()					;
 //    pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
@@ -35,6 +36,7 @@ int main(int argc, char* argv[])
     {
     	Set_System_Date_Time(&DS1307_Str)	;
     	sleep(10)							;
+//    	system("date");
     }
     return 0;
 }
