@@ -1386,21 +1386,10 @@ void DS1307_Get_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
 
 void Set_System_Date_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
 {
-	char 	System_Date_Time[100] = {0};
 	time_t 	time_for_mktime;
 	struct 	timeval tv_for_settimeofday = {0};
+
 	DS1307_Get_Time(DS1307_Time);
-
-//	sprintf(System_Date_Time, "date -s \"%d-%d-%d %d:%d:%d\"",
-//			2000+DS1307_Time->year	,
-//			DS1307_Time->month		,
-//			DS1307_Time->date		,
-//			DS1307_Time->hour		,
-//			DS1307_Time->minute		,
-//			DS1307_Time->second		); //Little endian
-
-//	printf("System_Date_Time = %s\n", System_Date_Time);
-
 
     Sys_Time.tm_year 	= 100 + DS1307_Time->year 		;	//2000+year(23)-1900
     Sys_Time.tm_mon 	= DS1307_Time->month 	- 1		;
@@ -1408,20 +1397,9 @@ void Set_System_Date_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
     Sys_Time.tm_hour 	= DS1307_Time->hour 			;
     Sys_Time.tm_min 	= DS1307_Time->minute 			;
     Sys_Time.tm_sec 	= DS1307_Time->second 			;
-//    printf("Sys_Time=y:%d-m:%d\n", Sys_Time.tm_year, Sys_Time.tm_mon);
 
-//	time_for_mktime = mktime (&Sys_Time);
-//	printf("time_t time = %ld\n", time_for_mktime);
-
-//    tv_for_settimeofday.tv_sec = time_for_mktime; 		// time since the Epoch
-
-    tv_for_settimeofday.tv_sec = mktime (&Sys_Time); 		// time since the Epoch
-
-	int ret_ti = settimeofday(&tv_for_settimeofday, NULL);
-//	printf("ret_ti = %d\n", ret_ti);
-
-//	system("date")	;
-//	system(System_Date_Time)	;
+    tv_for_settimeofday.tv_sec = mktime (&Sys_Time)		; 		// time since the Epoch
+	settimeofday(&tv_for_settimeofday, NULL)			;
 }
 
 
