@@ -101,7 +101,8 @@ uint32_t time_elapsed(void)
 // In this example we wait 5 seconds before image is verified or activated.
 time_t imageActionStartTime;
 
-static gxClock clock1;
+//static gxClock clock1;
+gxClock clock1;
 static gxIecHdlcSetup hdlc;
 static gxIecHdlcSetup hdlcelectricalrs485port;
 
@@ -3440,6 +3441,13 @@ void svr_postWrite(
                     ((gxProfileGeneric *)e->target)->profileEntries = maxCount;
                 }
             }
+        }
+        if(e->target->objectType == DLMS_OBJECT_TYPE_CLOCK)
+        {
+        	printf("WE ARE HERE -------------=============************\n");
+        	printf("*****************************************************\n");
+        	printf("clock = y:%d , h:%d\n", clock1.time.value.tm_year, clock1.time.value.tm_hour);
+        	printf("*****************************************************\n");
         }
         if (e->error == 0)
         {

@@ -16,6 +16,7 @@
 #include "connection.h"
 #include "DLMS_Gateway.h"
 #include "Tools.h"
+#include <ql_oe.h>
 
 struct tm 	Sys_Time;
 
@@ -31,6 +32,7 @@ int main(int argc, char* argv[])
     Servers_Start(GX_TRACE_LEVEL_INFO)	;
     LTE_Manager_Start()					;
 //    pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
+
 
     while (1)
     {

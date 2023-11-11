@@ -45,6 +45,7 @@ extern connection 		lnWrapper , lniec , rs485;
 extern gxTcpUdpSetup 	udpSetup;
 extern gxAutoConnect 	autoConnect;
 extern gxPushSetup	 	pushSetup;
+extern gxClock 			clock1;
 extern struct tm 		Sys_Time = {0};
 
 //Initialize connection buffers.
@@ -1162,7 +1163,10 @@ void WAN_Connection (void)
 				Ret_Signal 		= ql_nw_get_signal_strength (&Sig_Strg_Info);
 				Ret_Cell_Info 	= ql_nw_get_cell_info		(&NW_Cell_Info)	;
 
-				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
+				printf("<= IP:%s - PRI_DNS:%s - SEC_DNS:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, payload.v4.addr.pri_dns, payload.v4.addr.sec_dns, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
+
+				ip4Setup.primaryDNSAddress 		= 1;
+				ip4Setup.secondaryDNSAddress 	= 1;
 
 				if		(NW_Cell_Info.lte_info_valid == 1)
 					system(PAT_3T_LED_NET);
