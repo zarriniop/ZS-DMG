@@ -1165,8 +1165,9 @@ void WAN_Connection (void)
 
 				printf("<= IP:%s - PRI_DNS:%s - SEC_DNS:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, payload.v4.addr.pri_dns, payload.v4.addr.sec_dns, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
 
-				ip4Setup.primaryDNSAddress 		= 1;
-				ip4Setup.secondaryDNSAddress 	= 1;
+//				ip4Setup.primaryDNSAddress 		= 1;
+//				ip4Setup.secondaryDNSAddress 	= 1;
+
 
 				if		(NW_Cell_Info.lte_info_valid == 1)
 					system(PAT_3T_LED_NET);
