@@ -276,6 +276,9 @@ void DS1307_Get_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time);
 
 void Set_System_Date_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time);
 
+void DS1307_Time_Date_Correcting (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time);
+
+
 #ifdef  __cplusplus
 }
 #endif

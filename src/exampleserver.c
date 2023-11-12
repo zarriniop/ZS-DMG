@@ -87,6 +87,8 @@ time_t imageActionStartTime = 0;
 gxImageActivateInfo IMAGE_ACTIVATE_INFO[1];
 static gxByteBuffer reply;
 
+extern connection lnWrapper;
+
 uint32_t time_current(void)
 {
     // Get current time somewhere.
@@ -1830,7 +1832,8 @@ int addSapAssignment()
         bb_init(&it->name);
         ret = sprintf(tmp, "%s%.13lu", FLAG_ID, SERIAL_NUMBER);
         bb_addString(&it->name, tmp);
-        it->id = SERIAL_NUMBER % 10000 + 1000;
+//        it->id = SERIAL_NUMBER % 10000 + 1000;
+        it->id = 1;
         ret = arr_push(&sapAssignment.sapAssignmentList, it);
     }
     return ret;
@@ -3444,10 +3447,40 @@ void svr_postWrite(
         }
         if(e->target->objectType == DLMS_OBJECT_TYPE_CLOCK)
         {
-        	printf("WE ARE HERE -------------=============************\n");
-        	printf("*****************************************************\n");
-        	printf("clock = y:%d , h:%d\n", clock1.time.value.tm_year, clock1.time.value.tm_hour);
-        	printf("*****************************************************\n");
+            // printf("In DLMS_OBJECT_TYPE_CLOCK at post write Function\n");
+            struct tm tptr;
+            struct timeval tv;
+            extern DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str;
+
+            printf("clock1.time.value.tm_year = %d\n",clock1.time.value.tm_year);
+            printf("clock1.time.value.tm_mon = %d\n",clock1.time.value.tm_mon);
+            printf("clock1.time.value.tm_mday = %d\n",clock1.time.value.tm_mday);
+            printf("clock1.time.value.tm_hour = %d\n",clock1.time.value.tm_hour);
+            printf("clock1.time.value.tm_min = %d\n",clock1.time.value.tm_min);
+            printf("clock1.time.value.tm_sec = %d\n",clock1.time.value.tm_sec);
+
+            tptr.tm_year = clock1.time.value.tm_year;
+            tptr.tm_mon = clock1.time.value.tm_mon;
+            tptr.tm_mday = clock1.time.value.tm_mday;
+            tptr.tm_hour = clock1.time.value.tm_hour;
+            tptr.tm_min = clock1.time.value.tm_min;
+            tptr.tm_sec = clock1.time.value.tm_sec;
+            tptr.tm_isdst = -1;
+
+            DS1307_Str.year		= clock1.time.value.tm_year - 100;		// 123 - 100 = 23
+            DS1307_Str.month	= clock1.time.value.tm_mon + 1;			// 0-11 => 1-12
+			DS1307_Str.date		= clock1.time.value.tm_mday;
+			DS1307_Str.hour		= clock1.time.value.tm_hour;
+			DS1307_Str.minute	= clock1.time.value.tm_min;
+			DS1307_Str.second	= clock1.time.value.tm_sec;
+			DS1307_Str.H_12		= 0;
+			DS1307_Set_Time(DS1307_Str);
+
+            tv.tv_sec = mktime(&tptr) + 12600;	//12600 seconds = 3.5 hours , Iran's time zone
+            tv.tv_usec = 0;
+            printf("tv.tv_sec = %d\n",tv.tv_sec);
+            ret = settimeofday(&tv, NULL);
+            printf("ret of settimeofday = %d\n",ret);
         }
         if (e->error == 0)
         {
@@ -3575,22 +3608,29 @@ int sendPush(
     host[pos] = '\0';
     sscanf(++p, "%d", &port);
     mes_init(&messages);
-    if ((ret = connectServer(host, port, &s)) == 0)
+//    if ((ret = connectServer(host, port, &s)) == 0)
     {
         if ((ret = notify_generatePushSetupMessages(settings, 0, push, &messages)) == 0)
         {
             for (pos = 0; pos != messages.size; ++pos)
             {
                 bb = messages.data[pos];
-                if ((ret = send(s, (char *)bb->data, bb->size, 0)) == -1)
+//                if ((ret = send(s, (char *)bb->data, bb->size, 0)) == -1)
+
+                /****************/
+                memcpy(lnWrapper.buffer.TX,(char *)bb->data, bb->size);
+                lnWrapper.buffer.TX_Count = bb->size;
+                usleep(500000);
+                /****************/
+
                 {
-                    mes_clear(&messages);
-                    break;
+//                    mes_clear(&messages);
+//                    break;
                 }
             }
         }
 
-        close(s);
+//        close(s);
     }
     mes_clear(&messages);
     free(host);
@@ -3714,6 +3754,7 @@ unsigned char svr_isTarget(
                         {
                             if (arr_getByIndex(&sap->sapAssignmentList, pos, (void **)&it) == 0)
                             {
+                            	printf("#----------------------------------------->>> it->id:%d\n", it->id);
                                     // Check server address with one byte.
                                 if (((serverAddress & 0xFFFFFF00) == 0 && (serverAddress & 0x7F) == it->id) ||
                                     // Check server address with two bytes.

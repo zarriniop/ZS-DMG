@@ -52,7 +52,15 @@ src/main.o: ../src/main.c /home/mhn/DMGProject/ZS-DMG/include/main.h \
  /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_dev.h \
  /home/mhn/DMGProject/ZS-DMG/include/connection.h \
  /home/mhn/DMGProject/ZS-DMG/include/DLMS_Gateway.h \
- /home/mhn/DMGProject/ZS-DMG/include/Tools.h
+ /home/mhn/DMGProject/ZS-DMG/include/Tools.h \
+ /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_oe.h \
+ /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/DSI_ConnectManager.h \
+ /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_log.h \
+ /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_uart.h \
+ /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_spi.h \
+ /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_gpio.h \
+ /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_i2c.h \
+ /home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_sms.h
 
 /home/mhn/DMGProject/ZS-DMG/include/main.h:
 
@@ -163,3 +171,19 @@ src/main.o: ../src/main.c /home/mhn/DMGProject/ZS-DMG/include/main.h \
 /home/mhn/DMGProject/ZS-DMG/include/DLMS_Gateway.h:
 
 /home/mhn/DMGProject/ZS-DMG/include/Tools.h:
+
+/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_oe.h:
+
+/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/DSI_ConnectManager.h:
+
+/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_log.h:
+
+/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_uart.h:
+
+/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_spi.h:
+
+/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_gpio.h:
+
+/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_i2c.h:
+
+/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include/ql_sms.h:

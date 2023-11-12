@@ -47,6 +47,7 @@ extern gxAutoConnect 	autoConnect;
 extern gxPushSetup	 	pushSetup;
 extern gxClock 			clock1;
 extern struct tm 		Sys_Time = {0};
+extern gxIp4Setup ip4Setup			;
 
 //Initialize connection buffers.
 void con_initializeBuffers(connection * connection, int size)
@@ -290,7 +291,7 @@ void Socket_Receive_Thread(void* pVoid)
 
 	//			appendLog(0, &bb);
 
-				if(tmp[8] == 0xE6)
+				if(tmp[8] == 0xE6)					//GW running
 				{
 					memcpy(con->buffer.RX, tmp, ret);
 					con->buffer.RX_Count += ret;
@@ -858,6 +859,8 @@ void* RS485_Receive_Thread(void* pVoid)
 
 
     	bytesRead = read(con->comPort, &con->buffer.RX, 1024);			//BLOCKING MODE
+    	system(LED_485_SHOT);
+    	con->buffer.RX_Count = bytesRead;
 
     	unsigned char rs_rx_tmp_info[4096] = {0};
     	for (int m=0; m<con->buffer.RX_Count; m++)
@@ -866,10 +869,10 @@ void* RS485_Receive_Thread(void* pVoid)
     	}
     	report(RS485, RX, rs_rx_tmp_info);
 
-    	system(LED_485_SHOT);
+
 //    	printf("###### cnt =%d\r\n",bytesRead);
 
-    	con->buffer.RX_Count = bytesRead;
+//    	con->buffer.RX_Count = bytesRead;
 
     	usleep(1000);
     }
@@ -1163,10 +1166,21 @@ void WAN_Connection (void)
 				Ret_Signal 		= ql_nw_get_signal_strength (&Sig_Strg_Info);
 				Ret_Cell_Info 	= ql_nw_get_cell_info		(&NW_Cell_Info)	;
 
-				printf("<= IP:%s - PRI_DNS:%s - SEC_DNS:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, payload.v4.addr.pri_dns, payload.v4.addr.sec_dns, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
+//				printf("<= IP:%s - GW:%s - PRI_DNS:%s - SEC_DNS:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, payload.v4.addr.gateway, payload.v4.addr.pri_dns, payload.v4.addr.sec_dns, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
 
-//				ip4Setup.primaryDNSAddress 		= 1;
-//				ip4Setup.secondaryDNSAddress 	= 1;
+			    struct in_addr addr;
+
+				inet_pton(AF_INET, payload.v4.addr.ip, 			&addr);
+				ip4Setup.ipAddress = ntohl(addr.s_addr);
+
+				inet_pton(AF_INET, payload.v4.addr.gateway, 	&addr);
+				ip4Setup.gatewayIPAddress = ntohl(addr.s_addr);
+
+				inet_pton(AF_INET, payload.v4.addr.pri_dns, 	&addr);
+				ip4Setup.primaryDNSAddress = ntohl(addr.s_addr);
+
+				inet_pton(AF_INET, payload.v4.addr.sec_dns, 	&addr);
+				ip4Setup.secondaryDNSAddress = ntohl(addr.s_addr);
 
 
 				if		(NW_Cell_Info.lte_info_valid == 1)
@@ -1356,7 +1370,6 @@ void DS1307_Init (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
 }
 
 
-//int DS1307_Set_Time (uint8_t year, uint8_t month, uint8_t date, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, bool H_12)
 int DS1307_Set_Time (DS1307_I2C_STRUCT_TYPEDEF DS1307_Time)
 {
 	uint8_t time[7]={0,0,0,0,0,0,0};
@@ -1387,11 +1400,18 @@ void DS1307_Get_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
     DS1307_Time->hour 	= (((time[2]>>4)&0x03)*10) + (time[2]&0x0F)	;
     DS1307_Time->minute = (((time[1]>>4)&0x07)*10) + (time[1]&0x0F)	;
     DS1307_Time->second = (((time[0]>>4)&0x07)*10) + (time[0]&0x0F)	;
+
+    printf("=================== Y.M.D - HH:MM:SS = %d.%d.%d - %d:%d:%d\n",
+    		DS1307_Time->year,
+			DS1307_Time->month,
+			DS1307_Time->date,
+			DS1307_Time->hour,
+			DS1307_Time->minute,
+			DS1307_Time->second);
 }
 
 void Set_System_Date_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
 {
-	time_t 	time_for_mktime;
 	struct 	timeval tv_for_settimeofday = {0};
 
 	DS1307_Get_Time(DS1307_Time);
@@ -1406,5 +1426,31 @@ void Set_System_Date_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
     tv_for_settimeofday.tv_sec = mktime (&Sys_Time)		; 		// time since the Epoch
 	settimeofday(&tv_for_settimeofday, NULL)			;
 }
+
+void DS1307_Time_Date_Correcting (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
+{
+	if(DS1307_Time->month == 12 && DS1307_Time->date > 29)
+	{
+		DS1307_I2C_STRUCT_TYPEDEF DS1307_Time_Cpy;
+		DS1307_Time->month 	= 1;
+		DS1307_Time->date 	= 1;
+		memcpy(&DS1307_Time_Cpy, DS1307_Time, sizeof(DS1307_I2C_STRUCT_TYPEDEF));
+		DS1307_Set_Time(DS1307_Time_Cpy);
+	}
+	else if(DS1307_Time->month > 6 && DS1307_Time->date > 30)
+	{
+		DS1307_I2C_STRUCT_TYPEDEF DS1307_Time_Cpy;
+		DS1307_Time->month ++;
+		DS1307_Time->date = 1;
+		memcpy(&DS1307_Time_Cpy, DS1307_Time, sizeof(DS1307_I2C_STRUCT_TYPEDEF));
+		DS1307_Set_Time(DS1307_Time_Cpy);
+	}
+}
+
+
+
+
+
+
 
 

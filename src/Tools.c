@@ -121,6 +121,8 @@ int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Informatio
 	const char	*interface 	[] = {"RS485", "Server", "Client", "Optical", "Start App"}	;
 	const char	*message 	[] = {"RX", "TX", "Connection", "Start"}		;
 	char		*Time_Tag;
+	struct 		stat st;
+	long int 	size;
 
 //	memset(cmd, 0, sizeof(cmd));
 
@@ -136,7 +138,11 @@ int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Informatio
 	FILE* f = fopen("/root/log.txt", "a");
     if (f != NULL)
     {
+    	stat("/root/log.txt", &st);
     	fprintf(f, "%s\r\n", log);
+        fseek(f, 0L, SEEK_END);
+        size = ftell(f);
+//        printf("The size of the file is %ld bytes.\n", size);
     	fclose(f);
     }
 

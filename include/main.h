@@ -36,6 +36,7 @@
 #include "ql_i2c.h"
 #include "stdbool.h"
 #include "ql_i2c.h"
+#include "sys/stat.h"
 
 /* HAJIAN */
 #define closesocket close
