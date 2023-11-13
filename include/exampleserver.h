@@ -24,6 +24,9 @@
 
 #define  SETTINGS_PATH 	"/root/Settings.txt"
 
+#define SHAHAB_OLD_VERSION	"1"
+#define SHAHAB_NEW_VERSION	"2"
+
 typedef struct
 {
 	char SerialNumber[10];
@@ -38,6 +41,7 @@ typedef struct
 	char UniEncKey[16];
 	char KEK[16];
 	char LLSPass[10];
+	char MDM[5];
 }SETTINGS;
 SETTINGS Settings;
 

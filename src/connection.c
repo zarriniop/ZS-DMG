@@ -278,7 +278,8 @@ void Socket_Receive_Thread(void* pVoid)
 				con->socket.Status.Connected = false;
         	}
 			else
-			{	system(LED_DATA_SHOT);
+			{
+				system(LED_DATA_SHOT);
 				if (con->trace > GX_TRACE_LEVEL_WARNING)
 				{
 					unsigned char tcp_client_rx[4096] = {0};
@@ -299,23 +300,31 @@ void Socket_Receive_Thread(void* pVoid)
 				}
 				else
 				{
+					if (tmp[8] == 0x60)
+					{
+						svr_reset(&con->settings);
+					}
+
+
 					if (svr_handleRequest2(&con->settings, &tmp, ret, &reply) != 0)
 					{
 
 					}
+
+
 				}
 
 				if (reply.size != 0)
 				{
-					if (con->trace > GX_TRACE_LEVEL_WARNING)
-					{
-						unsigned char tcp_client_tx[4096] = {0};
-						for (pos = 0; pos != reply.size; ++pos)
-						{
-							sprintf(tcp_client_tx + strlen(tcp_client_tx), "%.2X ", reply.data[pos]);
-						}
-						report(CLIENT, TX, tcp_client_tx);
-					}
+//					if (con->trace > GX_TRACE_LEVEL_WARNING)
+//					{
+//						unsigned char tcp_client_tx[4096] = {0};
+//						for (pos = 0; pos != reply.size; ++pos)
+//						{
+//							sprintf(tcp_client_tx + strlen(tcp_client_tx), "%.2X ", reply.data[pos]);
+//						}
+//						report(CLIENT, TX, tcp_client_tx);
+//					}
 	//				appendLog(1, &reply);
 
 					memcpy(con->buffer.TX, (const char*)reply.data, reply.size - reply.position);
@@ -336,7 +345,27 @@ void Socket_Send_Thread(void* pVoid)
     connection* con = (connection*)pVoid;
     while (1)
     {
+        if(con->serversocket.Status.Connected == true && con->buffer.TX_Count>0)
+        {
+			if (send(con->serversocket.Accept_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
+			{
+				//If error has occured
+				svr_reset(&con->settings);
+				con->serversocket.Status.Connected = false;
+			}
+			else
+			{
+				system(LED_DATA_SHOT);
+				unsigned char tcp_svr_tx[4096] = {0};
+				for (int m=0; m<con->buffer.TX_Count; m++)
+				{
+					sprintf(tcp_svr_tx + strlen(tcp_svr_tx), "%.2X ",con->buffer.TX[m]);
+				}
+				report(SERVER, TX, tcp_svr_tx);
 
+				con->buffer.TX_Count = 0;
+			}
+        }
         if (con->socket.Status.Connected == true && con->buffer.TX_Count>0)
         {
 			if (send(con->socket.Socket_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
@@ -358,27 +387,6 @@ void Socket_Send_Thread(void* pVoid)
 		    	con->buffer.TX_Count = 0;
 			}
 
-        }
-        if(con->serversocket.Status.Connected == true && con->buffer.TX_Count>0)
-        {
-			if (send(con->serversocket.Accept_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
-			{
-				//If error has occured
-				svr_reset(&con->settings);
-				con->serversocket.Status.Connected = false;
-			}
-			else
-			{
-				system(LED_DATA_SHOT);
-				unsigned char tcp_svr_tx[4096] = {0};
-				for (int m=0; m<con->buffer.TX_Count; m++)
-				{
-					sprintf(tcp_svr_tx + strlen(tcp_svr_tx), "%.2X ",con->buffer.TX[m]);
-				}
-				report(SERVER, TX, tcp_svr_tx);
-
-				con->buffer.TX_Count = 0;
-			}
         }
         usleep(1000);
     }
@@ -857,22 +865,17 @@ void* RS485_Receive_Thread(void* pVoid)
     	}
     	*/
 
-
     	bytesRead = read(con->comPort, &con->buffer.RX, 1024);			//BLOCKING MODE
     	system(LED_485_SHOT);
-    	con->buffer.RX_Count = bytesRead;
 
     	unsigned char rs_rx_tmp_info[4096] = {0};
-    	for (int m=0; m<con->buffer.RX_Count; m++)
+    	for (int m=0; m<bytesRead; m++)
     	{
     		sprintf(rs_rx_tmp_info + strlen(rs_rx_tmp_info) ,"%.2X ",con->buffer.RX[m]);
     	}
     	report(RS485, RX, rs_rx_tmp_info);
 
-
-//    	printf("###### cnt =%d\r\n",bytesRead);
-
-//    	con->buffer.RX_Count = bytesRead;
+    	con->buffer.RX_Count = bytesRead;
 
     	usleep(1000);
     }

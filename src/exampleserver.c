@@ -2051,27 +2051,40 @@ int addPushSetup()
     static unsigned char DESTINATION[20] = {0};
 
     const char dest[] = "127.0.0.1:7000";
-    // gxTarget *co;
+     gxTarget *co;
 
     const unsigned char ln[6] = {0, 0, 25, 9, 0, 255};
     INIT_OBJECT(pushSetup, DLMS_OBJECT_TYPE_PUSH_SETUP, ln);
     bb_addString(&pushSetup.destination, "127.0.0.1:7000");
     // Add push object itself. This is needed to tell structure of data to
     // the Push listener.
-    // co = (gxTarget *)malloc(sizeof(gxTarget));
-    // co->attributeIndex = 2;
-    // co->dataIndex = 0;
-    // arr_push(&pushSetup.pushObjectList, key_init(&pushSetup, co));
-    // // Add logical device name.
-    // co = (gxTarget *)malloc(sizeof(gxTarget));
-    // co->attributeIndex = 2;
-    // co->dataIndex = 0;
-    // arr_push(&pushSetup.pushObjectList, key_init(&ldn, co));
-    // // Add 0.0.25.1.0.255 Ch. 0 IPv4 setup IP address.
-    // co = (gxTarget *)malloc(sizeof(gxTarget));
-    // co->attributeIndex = 3;
-    // co->dataIndex = 0;
-    // arr_push(&pushSetup.pushObjectList, key_init(&ip4Setup, co));
+     co = (gxTarget *)malloc(sizeof(gxTarget));
+     co->attributeIndex = 1;
+     co->dataIndex = 0;
+     arr_push(&pushSetup.pushObjectList, key_init(&pushSetup, co));
+     // Add logical device name.
+     co = (gxTarget *)malloc(sizeof(gxTarget));
+     co->attributeIndex = 1;
+     co->dataIndex = 0;
+     arr_push(&pushSetup.pushObjectList, key_init(&deviceid7, co));
+     // Add 0.0.25.1.0.255 Ch. 0 IPv4 setup IP address.
+     co = (gxTarget *)malloc(sizeof(gxTarget));
+     co->attributeIndex = 2;
+     co->dataIndex = 0;
+     arr_push(&pushSetup.pushObjectList, key_init(&deviceid7, co));
+
+     if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
+     {
+         co = (gxTarget *)malloc(sizeof(gxTarget));
+         co->attributeIndex = 1;
+         co->dataIndex = 0;
+         arr_push(&pushSetup.pushObjectList, key_init(&deviceid6, co));
+
+         co = (gxTarget *)malloc(sizeof(gxTarget));
+         co->attributeIndex = 2;
+         co->dataIndex = 0;
+         arr_push(&pushSetup.pushObjectList, key_init(&deviceid6, co));
+     }
 
     pushSetup.randomisationStartInterval = 0;
     // pushSetup.numberOfRetries = 5;
@@ -3476,7 +3489,7 @@ void svr_postWrite(
 			DS1307_Str.H_12		= 0;
 			DS1307_Set_Time(DS1307_Str);
 
-            tv.tv_sec = mktime(&tptr) + 12600;	//12600 seconds = 3.5 hours , Iran's time zone
+            tv.tv_sec = mktime(&tptr);	//12600 seconds = 3.5 hours , Iran's time zone
             tv.tv_usec = 0;
             printf("tv.tv_sec = %d\n",tv.tv_sec);
             ret = settimeofday(&tv, NULL);
@@ -3754,7 +3767,6 @@ unsigned char svr_isTarget(
                         {
                             if (arr_getByIndex(&sap->sapAssignmentList, pos, (void **)&it) == 0)
                             {
-                            	printf("#----------------------------------------->>> it->id:%d\n", it->id);
                                     // Check server address with one byte.
                                 if (((serverAddress & 0xFFFFFF00) == 0 && (serverAddress & 0x7F) == it->id) ||
                                     // Check server address with two bytes.
@@ -4644,6 +4656,13 @@ void Read_Settings(SETTINGS *settings)
 					memset(settings->LLSPass,0,sizeof(settings->LLSPass));
 					strcpy(settings->LLSPass,data[11]+8);
 //					printf("LLSPass = %s\n",settings->LLSPass);
+					break;
+				}
+				case 13:
+				{
+					memset(settings->MDM,0,sizeof(settings->MDM));
+					strcpy(settings->MDM,data[12]+4);
+//					settings->MDM = data[12][5];
 					break;
 				}
 				default :
