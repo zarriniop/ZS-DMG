@@ -261,6 +261,7 @@ void WAN_Connection (void);
 
 long diff_time_us(struct timeval *start);
 long diff_time_ms(struct timeval *start);
+long diff_time_s (struct timeval *start);
 
 int PushSetup_OnConnectivity();
 

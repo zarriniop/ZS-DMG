@@ -36,7 +36,9 @@
 #include <fcntl.h> // File control definitions
 #include <errno.h> // Error number definitions
 
-pthread_t 					Wan_Connection_pthread_var;
+pthread_t 				Wan_Connection_pthread_var;
+
+struct timeval 			Inctivity_start_timeout;
 
 extern gxGPRSSetup 		gprsSetup	;
 extern gxData 			imei		;
@@ -278,6 +280,7 @@ void Socket_Receive_Thread(void* pVoid)
         	}
 			else
 			{
+				gettimeofday (&Inctivity_start_timeout, NULL);  //Getting system time to check timeout in manager thread
 				system(LED_DATA_SHOT);
 				if (con->trace > GX_TRACE_LEVEL_WARNING)
 				{
@@ -434,11 +437,11 @@ void Socket_get_open(connection* con)
 	if(con->socket.Status.Opened == true)							//===============( Close Connection )======================
 	{
 		Socket_get_close(con);
-		report(CLIENT, CONNECTION,"CLOSE");
 		con->socket.Status.Opened=false;
 																	//===============( Create Socket )=========================
 		if(Socket_create(con) == 1)
 		{
+			gettimeofday (&Inctivity_start_timeout, NULL);  //Getting system time to check timeout in manager thread
 			report(CLIENT, CONNECTION,"OPEN");
 		}
 	}
@@ -471,12 +474,13 @@ int Socket_Manage_Thread (connection* con)
 	while(1)
 	{
 		if(con->socket.Status.Connected == false)
-		{
-//			printf("Socket_get_open\n");
 			Socket_get_open(con);
-		}
 
-		udpSetup.inactivityTimeout
+		else if((diff_time_s(&Inctivity_start_timeout) > udpSetup.inactivityTimeout) && (udpSetup.inactivityTimeout > 0))
+		{
+			printf("++++++++++++++++++++++++ TCP Timeout:%d\n", diff_time_s(&Inctivity_start_timeout));
+			con->socket.Status.Connected = false;
+		}
 
 //		con->socket.Error=0;
 //		con->socket.ErrorLen=sizeof(con->socket.Error);
@@ -602,6 +606,7 @@ void Socket_Listen_Thread(void* pVoid)
                     break;
     			}
 
+    			gettimeofday (&Inctivity_start_timeout, NULL);  //Getting system time to check timeout in manager thread
     			system(LED_DATA_SHOT);
 
     			if (con->trace > GX_TRACE_LEVEL_WARNING)

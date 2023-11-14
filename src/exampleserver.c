@@ -780,6 +780,19 @@ void time_now(
     {
         clock_utcToMeterTime(&clock1, value);
     }
+
+    struct tm value_ZS;
+
+    value->deviation = 0;
+    value->extraInfo = DLMS_DATE_TIME_EXTRA_INFO_NONE;
+	value->skip = DATETIME_SKIPS_NONE;
+	value->status = DLMS_CLOCK_STATUS_OK;
+	value->value.tm_year = 23;
+	value->value.tm_mon = 11;
+	value->value.tm_mday = 17;
+	value->value.tm_hour = 10;
+	value->value.tm_min = 20;
+	value->value.tm_sec = 30;
 }
 
 void println(char *desc, gxByteBuffer *data)
@@ -3498,18 +3511,19 @@ void svr_postWrite(
 //			DS1307_Str.H_12		= 0;
 //			DS1307_Set_Time(DS1307_Str);
 
-//            tv.tv_sec = mktime(&tptr);	//12600 seconds = 3.5 hours , Iran's time zone
 //            printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ TV.SEC = %d\n", tv.tv_sec);
 //            uint32_t TIME10 = time_toUnixTime(&clock1.time);
-            gxtime tm10;
+//                        gxtime tm10;
 //            clock_utcToMeterTime(&clock1, &tm10);
-            uint32_t TIME10 = time_toUnixTime2(&clock1.time);
-            printf("...............................unixTime = %d................\n",TIME10);
+//                        uint32_t TIME10 = time_toUnixTime2(&clock1.time);
+//                        printf("...............................unixTime = %d................\n",TIME10);
 //            printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ TIME10 = %d\n", TIME10);
 //            tv.tv_usec = 0;
-//            printf("tv.tv_sec = %d\n",tv.tv_sec);
-//            ret = settimeofday(&tv, NULL);
-//            printf("ret of settimeofday = %d\n",ret);
+
+            tv.tv_sec = mktime(&tptr);	//12600 seconds = 3.5 hours , Iran's time zone
+            printf("tv.tv_sec = %d\n",tv.tv_sec);
+            ret = settimeofday(&tv, NULL);
+            printf("ret of settimeofday = %d\n",ret);
         }
         if (e->error == 0)
         {

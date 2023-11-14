@@ -46,14 +46,8 @@ int main(int argc, char* argv[])
 
     while (1)
     {
-//    	struct timeval TTTttt;
-//    	sysyem("date");
-//    	gettimeofday (&TTTttt, NULL);
 //    	Set_System_Date_Time(&DS1307_Str)	;
-    	sleep(10)							;
-//    	sysyem("date");
-//    	long tttTTT = diff_time_s(TTTttt);
-//    	printf("tttTTT:%d", tttTTT);
+    	sleep(20)							;
     }
     return 0;
 }
