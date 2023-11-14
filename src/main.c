@@ -18,7 +18,6 @@
 #include "Tools.h"
 #include <ql_oe.h>
 
-struct tm 	Sys_Time;
 DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str	;
 
 int main(int argc, char* argv[])
@@ -39,7 +38,7 @@ int main(int argc, char* argv[])
 //	DS1307_Str.H_12		= 0;
 //	DS1307_Set_Time(DS1307_Str);
 
-    Set_System_Date_Time(&DS1307_Str)	;
+//    Set_System_Date_Time(&DS1307_Str)	;
     Servers_Start(GX_TRACE_LEVEL_INFO)	;
     LTE_Manager_Start()					;
 //    pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
@@ -47,8 +46,14 @@ int main(int argc, char* argv[])
 
     while (1)
     {
+//    	struct timeval TTTttt;
+//    	sysyem("date");
+//    	gettimeofday (&TTTttt, NULL);
 //    	Set_System_Date_Time(&DS1307_Str)	;
     	sleep(10)							;
+//    	sysyem("date");
+//    	long tttTTT = diff_time_s(TTTttt);
+//    	printf("tttTTT:%d", tttTTT);
     }
     return 0;
 }

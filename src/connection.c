@@ -43,11 +43,10 @@ extern gxData 			imei		;
 extern gxData 			deviceid6	;
 extern connection 		lnWrapper , lniec , rs485;
 extern gxTcpUdpSetup 	udpSetup;
-extern gxAutoConnect 	autoConnect;
-extern gxPushSetup	 	pushSetup;
-extern gxClock 			clock1;
-extern struct tm 		Sys_Time = {0};
-extern gxIp4Setup ip4Setup			;
+extern gxAutoConnect 	autoConnect	;
+extern gxPushSetup	 	pushSetup	;
+extern gxIp4Setup 		ip4Setup	;
+extern gxTcpUdpSetup 	udpSetup	;
 
 //Initialize connection buffers.
 void con_initializeBuffers(connection * connection, int size)
@@ -476,6 +475,8 @@ int Socket_Manage_Thread (connection* con)
 //			printf("Socket_get_open\n");
 			Socket_get_open(con);
 		}
+
+		udpSetup.inactivityTimeout
 
 //		con->socket.Error=0;
 //		con->socket.ErrorLen=sizeof(con->socket.Error);
@@ -1267,6 +1268,17 @@ long diff_time_ms(struct timeval *start)
 }
 
 
+long diff_time_s(struct timeval *start)
+{
+	 struct timeval  tv;
+	 long diff=0;
+	 gettimeofday (&tv, NULL);
+	 diff=tv.tv_usec - start->tv_usec;
+	 if(diff < 0) diff += 1000000;
+	 diff = diff/1000000;
+	 diff += ((tv.tv_sec - start->tv_sec));
+	 return diff;
+}
 
 
 int PushSetup_OnConnectivity()
@@ -1415,7 +1427,8 @@ void DS1307_Get_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
 
 void Set_System_Date_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
 {
-	struct 	timeval tv_for_settimeofday = {0};
+	struct timeval	tv_for_settimeofday = {0};
+	struct tm 		Sys_Time 			= {0};
 
 	DS1307_Get_Time(DS1307_Time);
 

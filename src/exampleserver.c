@@ -103,8 +103,8 @@ uint32_t time_elapsed(void)
 // In this example we wait 5 seconds before image is verified or activated.
 time_t imageActionStartTime;
 
-//static gxClock clock1;
-gxClock clock1;
+static gxClock clock1;
+//gxClock clock1;
 static gxIecHdlcSetup hdlc;
 static gxIecHdlcSetup hdlcelectricalrs485port;
 
@@ -3463,7 +3463,7 @@ void svr_postWrite(
             // printf("In DLMS_OBJECT_TYPE_CLOCK at post write Function\n");
             struct tm tptr;
             struct timeval tv;
-            extern DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str;
+//            extern DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str;
 
             printf("clock1.time.value.tm_year = %d\n",clock1.time.value.tm_year);
             printf("clock1.time.value.tm_mon = %d\n",clock1.time.value.tm_mon);
@@ -3471,6 +3471,7 @@ void svr_postWrite(
             printf("clock1.time.value.tm_hour = %d\n",clock1.time.value.tm_hour);
             printf("clock1.time.value.tm_min = %d\n",clock1.time.value.tm_min);
             printf("clock1.time.value.tm_sec = %d\n",clock1.time.value.tm_sec);
+//            printf("=========================================== clock1.TZ = %d\n",clock1.timeZone);
 
             tptr.tm_year = clock1.time.value.tm_year;
             tptr.tm_mon = clock1.time.value.tm_mon;
@@ -3480,20 +3481,35 @@ void svr_postWrite(
             tptr.tm_sec = clock1.time.value.tm_sec;
             tptr.tm_isdst = -1;
 
-            DS1307_Str.year		= clock1.time.value.tm_year - 100;		// 123 - 100 = 23
-            DS1307_Str.month	= clock1.time.value.tm_mon + 1;			// 0-11 => 1-12
-			DS1307_Str.date		= clock1.time.value.tm_mday;
-			DS1307_Str.hour		= clock1.time.value.tm_hour;
-			DS1307_Str.minute	= clock1.time.value.tm_min;
-			DS1307_Str.second	= clock1.time.value.tm_sec;
-			DS1307_Str.H_12		= 0;
-			DS1307_Set_Time(DS1307_Str);
+            printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Y.M.D - HH.MM.SS: %d.%d.%d - %d:%d:%d\n",
+            		tptr.tm_year,
+					tptr.tm_mon,
+					tptr.tm_mday,
+					tptr.tm_hour,
+					tptr.tm_min,
+					tptr.tm_sec);
 
-            tv.tv_sec = mktime(&tptr);	//12600 seconds = 3.5 hours , Iran's time zone
-            tv.tv_usec = 0;
-            printf("tv.tv_sec = %d\n",tv.tv_sec);
-            ret = settimeofday(&tv, NULL);
-            printf("ret of settimeofday = %d\n",ret);
+//            DS1307_Str.year		= clock1.time.value.tm_year - 100;		// 123 - 100 = 23
+//            DS1307_Str.month	= clock1.time.value.tm_mon + 1;			// 0-11 => 1-12
+//			DS1307_Str.date		= clock1.time.value.tm_mday;
+//			DS1307_Str.hour		= clock1.time.value.tm_hour;
+//			DS1307_Str.minute	= clock1.time.value.tm_min;
+//			DS1307_Str.second	= clock1.time.value.tm_sec;
+//			DS1307_Str.H_12		= 0;
+//			DS1307_Set_Time(DS1307_Str);
+
+//            tv.tv_sec = mktime(&tptr);	//12600 seconds = 3.5 hours , Iran's time zone
+//            printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ TV.SEC = %d\n", tv.tv_sec);
+//            uint32_t TIME10 = time_toUnixTime(&clock1.time);
+            gxtime tm10;
+//            clock_utcToMeterTime(&clock1, &tm10);
+            uint32_t TIME10 = time_toUnixTime2(&clock1.time);
+            printf("...............................unixTime = %d................\n",TIME10);
+//            printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ TIME10 = %d\n", TIME10);
+//            tv.tv_usec = 0;
+//            printf("tv.tv_sec = %d\n",tv.tv_sec);
+//            ret = settimeofday(&tv, NULL);
+//            printf("ret of settimeofday = %d\n",ret);
         }
         if (e->error == 0)
         {
