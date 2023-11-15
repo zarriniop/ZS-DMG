@@ -1164,7 +1164,7 @@ void WAN_Connection (void)
 
 		if (ret == 0)
 		{
-			if (payload.v4.state == 1)			//Data call status is Activation
+			if (payload.v4.state == 1)			//Data call status is activated
 			{
 //				if(Flags_Struct.WAN_Struct.WAN_IPv4_Started == DOWN)
 //				{
@@ -1175,7 +1175,16 @@ void WAN_Connection (void)
 				Ret_Signal 		= ql_nw_get_signal_strength (&Sig_Strg_Info);
 				Ret_Cell_Info 	= ql_nw_get_cell_info		(&NW_Cell_Info)	;
 
-//				printf("<= IP:%s - GW:%s - PRI_DNS:%s - SEC_DNS:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, payload.v4.addr.gateway, payload.v4.addr.pri_dns, payload.v4.addr.sec_dns, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
+//				printf("<= IP:%s - GW:%s - PRI_DNS:%s - SEC_DNS:%s - NAME:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n",
+//						payload.v4.addr.ip,
+//						payload.v4.addr.gateway,
+//						payload.v4.addr.pri_dns,
+//						payload.v4.addr.sec_dns,
+//						payload.v4.addr.name,
+//						Sig_Strg_Info.LTE_SignalStrength.rssi,
+//						NW_Cell_Info.gsm_info_valid,
+//						NW_Cell_Info.umts_info_valid,
+//						NW_Cell_Info.lte_info_valid);
 
 			    struct in_addr addr;
 
