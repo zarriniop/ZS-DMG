@@ -46,6 +46,7 @@ extern gxPushSetup pushSetup;
 #define PAT_1T_LED_NET	"echo 1 100 0 20000 > /sys/devices/platform/leds/leds/LED3/pattern"
 #define PAT_2T_LED_NET	"echo 1 100 0 200 1 100 0 20000 > /sys/devices/platform/leds/leds/LED3/pattern"
 #define PAT_3T_LED_NET	"echo 1 100 0 200 1 100 0 200 1 100 0 20000 > /sys/devices/platform/leds/leds/LED3/pattern"
+#define GET_GATEWAY_IP	"uci get network.wan0.gateway"
 
 /*I2C*/
 #define I2C_DEV          		"/dev/i2c-0"

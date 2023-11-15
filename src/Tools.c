@@ -265,4 +265,37 @@ void SH2M (uint16_t *My, uint8_t *Mm, uint8_t *Md,long jy, long jm, long jd){ //
   *Md=out[2];
 }
 
+void exec(const char* cmd,char *resultt,uint32_t time) {
+    uint16_t cnt=0;
+    clock_t clk,t=0;
+    char buffer[1000],count;
+
+	FILE* pipe = popen(cmd, "r");
+	if (!pipe) printf("popen() failed!\n");
+
+	memset(buffer,0,1000);
+	memset(resultt,0,sizeof(resultt));
+	t=time*1000;
+	clk=clock();
+
+	while(clock()-clk<t)
+	{
+		if (fgets(buffer, sizeof(buffer), pipe) != NULL)
+		{
+
+			memcpy(resultt+cnt,buffer,strlen(buffer));
+			cnt+=strlen(buffer);
+			count=0;
+		}
+		else
+		{
+			count++;
+			usleep(100);
+			//if(count>20 && cnt>0) break;
+		}
+
+	}
+	pclose(pipe);
+}
+
 

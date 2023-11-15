@@ -1127,6 +1127,8 @@ void WAN_Connection (void)
 	QL_NW_SIGNAL_STRENGTH_INFO_T 	Sig_Strg_Info	;
 	QL_NW_ERROR_CODE 				Ret_Cell_Info	;
 	QL_NW_CELL_INFO_T				NW_Cell_Info	;
+	struct 	in_addr 				addr			;
+	char 							exc_res[2048]	;
 
 	memset(&Sig_Strg_Info,0,sizeof(QL_NW_SIGNAL_STRENGTH_INFO_T));
 
@@ -1175,9 +1177,11 @@ void WAN_Connection (void)
 				Ret_Signal 		= ql_nw_get_signal_strength (&Sig_Strg_Info);
 				Ret_Cell_Info 	= ql_nw_get_cell_info		(&NW_Cell_Info)	;
 
+				exec(GET_GATEWAY_IP, exc_res, 10);
+
 //				printf("<= IP:%s - GW:%s - PRI_DNS:%s - SEC_DNS:%s - NAME:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n",
 //						payload.v4.addr.ip,
-//						payload.v4.addr.gateway,
+//						exc_res,
 //						payload.v4.addr.pri_dns,
 //						payload.v4.addr.sec_dns,
 //						payload.v4.addr.name,
@@ -1186,12 +1190,10 @@ void WAN_Connection (void)
 //						NW_Cell_Info.umts_info_valid,
 //						NW_Cell_Info.lte_info_valid);
 
-			    struct in_addr addr;
-
 				inet_pton(AF_INET, payload.v4.addr.ip, 			&addr);
 				ip4Setup.ipAddress = ntohl(addr.s_addr);
 
-				inet_pton(AF_INET, payload.v4.addr.gateway, 	&addr);
+				inet_pton(AF_INET, exc_res, 					&addr);
 				ip4Setup.gatewayIPAddress = ntohl(addr.s_addr);
 
 				inet_pton(AF_INET, payload.v4.addr.pri_dns, 	&addr);
