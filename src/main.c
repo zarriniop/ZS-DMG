@@ -27,22 +27,10 @@ int main(int argc, char* argv[])
 	File_Init (argv)					;
     LED_Init()							;
     DS1307_Init(&DS1307_Str)			;
-
-//    DS1307_Str.year		= 20;
-//    DS1307_Str.month	= 2;
-//	DS1307_Str.date		= 4;
-//	DS1307_Str.hour		= 1;
-//	DS1307_Str.minute	= 2;
-//	DS1307_Str.second	= 3;
-//	DS1307_Str.day		= 1;
-//	DS1307_Str.H_12		= 0;
-//	DS1307_Set_Time(DS1307_Str);
-
-//    Set_System_Date_Time(&DS1307_Str)	;
+    Set_System_Date_Time(&DS1307_Str)	;
     Servers_Start(GX_TRACE_LEVEL_INFO)	;
     LTE_Manager_Start()					;
 //    pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
-
 
     while (1)
     {

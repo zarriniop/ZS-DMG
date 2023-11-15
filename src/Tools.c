@@ -10,6 +10,9 @@
 //#include "connection.h"
 //#include "DLMS_Gateway.h"
 
+const unsigned int  g_days_in_month[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+const unsigned int  j_days_in_month[12] = {31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29};
+
 unsigned char lnframeBuff	[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE]	;
 unsigned char lnpduBuff		[PDU_BUFFER_SIZE]						;
 unsigned char ln47frameBuff	[WRAPPER_BUFFER_SIZE]					;
@@ -190,9 +193,76 @@ void File_Init (char* argv[])
     fclose(f);
 }
 
+void M2Sh (uint16_t *j_y, uint8_t *j_m, uint8_t *j_d, uint16_t  g_y, uint8_t  g_m, uint8_t  g_d){ // Miladi To shamsi
+	 unsigned  long gy, gm, gd;
+	 unsigned long jy, jm, jd;
+	 unsigned  long g_day_no, j_day_no;
+	 unsigned long j_np;
+	 unsigned long i;
+
+	 if(g_y<2000 || g_y>2100) g_y=2012;
+	 if(g_m==0   || g_m>12)   g_m=1;
+	 if(g_d==0   || g_d>31)   g_d=1;
+
+	 gy = g_y-1600;
+	 gm = g_m-1;
+	 gd = g_d-1;
+
+	 g_day_no = 365*gy+(gy+3)/4-(gy+99)/100+(gy+399)/400;
+	 for (i=0;i<gm;++i)
+			g_day_no += g_days_in_month[i];
+	 if (gm>1 && ((gy%4==0 && gy%100!=0) || (gy%400==0)))
+			/* leap and after Feb */
+			++g_day_no;
+	 g_day_no += gd;
+
+	 j_day_no = g_day_no-79;
+
+	 j_np = j_day_no / 12053;
+	 j_day_no %= 12053;
+
+	 jy = 979+33*j_np+4*(j_day_no/1461);
+	 j_day_no %= 1461;
+
+	 if (j_day_no >= 366)		{
+			jy += (j_day_no-1)/365;
+			j_day_no = (j_day_no-1)%365;
+	 }
+	 for (i = 0; i < 11 && j_day_no >= j_days_in_month[i]; ++i)
+	 {
+			j_day_no -= j_days_in_month[i];
+	 }
+
+	 jm = i+1;
+	 jd = j_day_no+1;
+	 *j_y = jy;
+	 *j_m = jm;
+	 *j_d = jd;
+}
 
 
-
-
+void SH2M (uint16_t *My, uint8_t *Mm, uint8_t *Md,long jy, long jm, long jd){ // Miladi To shamsi
+	long out[4];
+  jy += 1595;
+  out[2] = -355668 + (365 * jy) + (((int)(jy / 33)) * 8) + ((int)(((jy % 33) + 3) / 4)) + jd + ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
+  out[0] = 400 * ((int)(out[2] / 146097));
+  out[2] %= 146097;
+  if (out[2] > 36524) {
+    out[0] += 100 * ((int)(--out[2] / 36524));
+    out[2] %= 36524;
+    if (out[2] >= 365) out[2]++;
+  }
+  out[0] += 4 * ((int)(out[2] / 1461));
+  out[2] %= 1461;
+  if (out[2] > 365) {
+    out[0] += (int)((out[2] - 1) / 365);
+    out[2] = (out[2] - 1) % 365;
+  }
+  long sal_a[13] = {0, 31, ((out[0]%4 == 0 && out[0]%100 != 0) || (out[0]%400 == 0))?29:28 , 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  for (out[2]++, out[1] = 0; out[1] < 13 && out[2] > sal_a[out[1]]; out[1]++) out[2] -= sal_a[out[1]];
+  *My =out[0];
+	*Mm = out[1];
+  *Md=out[2];
+}
 
 

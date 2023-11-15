@@ -774,25 +774,45 @@ void GXTRACE_LN(const char *str, uint16_t type, unsigned char *ln)
 void time_now(
     gxtime *value, unsigned char meterTime)
 {
-    time_initUnix(value, (unsigned long)time(NULL));
+	extern DS1307_I2C_STRUCT_TYPEDEF DS1307_Str;
+
+	DS1307_Get_Time(&DS1307_Str);
+
+	time_initUnix(value, (unsigned long)time(NULL));
+
     // If date time is wanted in meter time.
     if (meterTime)
     {
         clock_utcToMeterTime(&clock1, value);
     }
 
-    struct tm value_ZS;
+    uint16_t 	j_y;
+    uint8_t 	j_m;
+    uint8_t 	j_d;
+	uint16_t  	g_y=((uint16_t) DS1307_Str.year) + 2000;
+	uint8_t  	g_m=DS1307_Str.month;
+	uint8_t  	g_d=DS1307_Str.date;
+    M2Sh (&j_y, &j_m, &j_d, g_y, g_m, g_d);
 
-    value->deviation = 0;
-    value->extraInfo = DLMS_DATE_TIME_EXTRA_INFO_NONE;
-	value->skip = DATETIME_SKIPS_NONE;
-	value->status = DLMS_CLOCK_STATUS_OK;
-	value->value.tm_year = 23;
-	value->value.tm_mon = 11;
-	value->value.tm_mday = 17;
-	value->value.tm_hour = 10;
-	value->value.tm_min = 20;
-	value->value.tm_sec = 30;
+	value->value.tm_year= j_y - 1900;
+	value->value.tm_mon = j_m - 1;
+	value->value.tm_mday= j_d;
+	value->value.tm_hour= DS1307_Str.hour;
+	value->value.tm_min = DS1307_Str.minute;
+	value->value.tm_sec = DS1307_Str.second;
+
+    value->deviation 	= 0;
+    value->extraInfo 	= DLMS_DATE_TIME_EXTRA_INFO_NONE;
+	value->skip 		= DATETIME_SKIPS_NONE;
+	value->status 		= DLMS_CLOCK_STATUS_OK;
+
+//	printf("Time now =========================> Y.M.D - HH:MM:SS = %d.%d.%d - %d:%d:%d\n",
+//			value->value.tm_year,
+//			value->value.tm_mon,
+//			value->value.tm_mday,
+//			value->value.tm_hour,
+//			value->value.tm_min,
+//			value->value.tm_sec);
 }
 
 void println(char *desc, gxByteBuffer *data)
@@ -3476,7 +3496,7 @@ void svr_postWrite(
             // printf("In DLMS_OBJECT_TYPE_CLOCK at post write Function\n");
             struct tm tptr;
             struct timeval tv;
-//            extern DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str;
+            extern DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str;
 
             printf("clock1.time.value.tm_year = %d\n",clock1.time.value.tm_year);
             printf("clock1.time.value.tm_mon = %d\n",clock1.time.value.tm_mon);
@@ -3494,36 +3514,29 @@ void svr_postWrite(
             tptr.tm_sec = clock1.time.value.tm_sec;
             tptr.tm_isdst = -1;
 
-            printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Y.M.D - HH.MM.SS: %d.%d.%d - %d:%d:%d\n",
-            		tptr.tm_year,
-					tptr.tm_mon,
-					tptr.tm_mday,
-					tptr.tm_hour,
-					tptr.tm_min,
-					tptr.tm_sec);
+//            printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Y.M.D - HH.MM.SS: %d.%d.%d - %d:%d:%d\n",
+//            		tptr.tm_year,
+//					tptr.tm_mon,
+//					tptr.tm_mday,
+//					tptr.tm_hour,
+//					tptr.tm_min,
+//					tptr.tm_sec);
 
-//            DS1307_Str.year		= clock1.time.value.tm_year - 100;		// 123 - 100 = 23
-//            DS1307_Str.month	= clock1.time.value.tm_mon + 1;			// 0-11 => 1-12
-//			DS1307_Str.date		= clock1.time.value.tm_mday;
-//			DS1307_Str.hour		= clock1.time.value.tm_hour;
-//			DS1307_Str.minute	= clock1.time.value.tm_min;
-//			DS1307_Str.second	= clock1.time.value.tm_sec;
-//			DS1307_Str.H_12		= 0;
-//			DS1307_Set_Time(DS1307_Str);
+            uint16_t 	My;
+            uint8_t		Mm, Md;
+            SH2M (&My, &Mm, &Md, 1900 + clock1.time.value.tm_year, 1 + clock1.time.value.tm_mon, clock1.time.value.tm_mday);
 
-//            printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ TV.SEC = %d\n", tv.tv_sec);
-//            uint32_t TIME10 = time_toUnixTime(&clock1.time);
-//                        gxtime tm10;
-//            clock_utcToMeterTime(&clock1, &tm10);
-//                        uint32_t TIME10 = time_toUnixTime2(&clock1.time);
-//                        printf("...............................unixTime = %d................\n",TIME10);
-//            printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ TIME10 = %d\n", TIME10);
-//            tv.tv_usec = 0;
+            DS1307_Str.year		= (uint8_t) (My - 2000)	;		// 123 - 100 = 23
+            DS1307_Str.month	= Mm					;		// 0-11 => 1-12
+			DS1307_Str.date		= Md					;
+			DS1307_Str.hour		= clock1.time.value.tm_hour;
+			DS1307_Str.minute	= clock1.time.value.tm_min;
+			DS1307_Str.second	= clock1.time.value.tm_sec;
+			DS1307_Str.H_12		= 0;
+			DS1307_Set_Time( DS1307_Str);
+//			printf("POST write==========================>");
+			Set_System_Date_Time(&DS1307_Str)	;
 
-            tv.tv_sec = mktime(&tptr);	//12600 seconds = 3.5 hours , Iran's time zone
-            printf("tv.tv_sec = %d\n",tv.tv_sec);
-            ret = settimeofday(&tv, NULL);
-            printf("ret of settimeofday = %d\n",ret);
         }
         if (e->error == 0)
         {

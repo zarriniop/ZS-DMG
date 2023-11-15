@@ -42,6 +42,8 @@ void 			Servers_Monitor (void)		;
 const char * 	get_time		(void)		;
 void 			LED_Init 		(void)		;
 void 			File_Init 		(char* argv[])	;
-int 			report 			(REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Information);
+int 			report 			(REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Information)					;
+void 			M2Sh			(uint16_t *j_y, uint8_t *j_m, uint8_t *j_d, uint16_t  g_y, uint8_t  g_m, uint8_t  g_d)	;
+void 			SH2M 			(uint16_t *My, uint8_t *Mm, uint8_t *Md,long jy, long jm, long jd)						;
 
 #endif /* TOOLS_H_ */

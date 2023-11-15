@@ -1421,13 +1421,13 @@ void DS1307_Get_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
     DS1307_Time->minute = (((time[1]>>4)&0x07)*10) + (time[1]&0x0F)	;
     DS1307_Time->second = (((time[0]>>4)&0x07)*10) + (time[0]&0x0F)	;
 
-    printf("=================== Y.M.D - HH:MM:SS = %d.%d.%d - %d:%d:%d\n",
-    		DS1307_Time->year,
-			DS1307_Time->month,
-			DS1307_Time->date,
-			DS1307_Time->hour,
-			DS1307_Time->minute,
-			DS1307_Time->second);
+//    printf("DS1307 get time =================== Y.M.D - HH:MM:SS = %d.%d.%d - %d:%d:%d\n",
+//    		DS1307_Time->year,
+//			DS1307_Time->month,
+//			DS1307_Time->date,
+//			DS1307_Time->hour,
+//			DS1307_Time->minute,
+//			DS1307_Time->second);
 }
 
 void Set_System_Date_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
