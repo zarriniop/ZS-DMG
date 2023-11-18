@@ -13,6 +13,7 @@
 // Copyright (c) Gurux Ltd
 //
 //---------------------------------------------------------------------------
+#include "exampleserver.h"
 #include "../include/connection.h"
 #include "../../development/include/server.h"
 
@@ -43,12 +44,13 @@ struct timeval 			Inctivity_start_timeout;
 extern gxGPRSSetup 		gprsSetup	;
 extern gxData 			imei		;
 extern gxData 			deviceid6	;
-extern connection 		lnWrapper , lniec , rs485;
+extern connection 		lnWrapper , rs485;
 extern gxTcpUdpSetup 	udpSetup;
 extern gxAutoConnect 	autoConnect	;
 extern gxPushSetup	 	pushSetup	;
 extern gxIp4Setup 		ip4Setup	;
 extern gxTcpUdpSetup 	udpSetup	;
+extern SETTINGS 		Settings	;
 
 //Initialize connection buffers.
 void con_initializeBuffers(connection * connection, int size)
@@ -275,7 +277,9 @@ void Socket_Receive_Thread(void* pVoid)
 			if(ret <= 0)
         	{
 				//Notify error.
-				svr_reset(&con->settings);
+				if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
+					svr_reset(&con->settings);
+
 				con->socket.Status.Connected = false;
         	}
 			else
@@ -304,14 +308,24 @@ void Socket_Receive_Thread(void* pVoid)
 				{
 					if (tmp[8] == 0x60)
 					{
-						svr_reset(&con->settings);
+						if(strcmp(Settings.MDM , SHAHAB_OLD_VERSION) == 0)
+							svr_reset(&con->settings);
 					}
 
 
-					if (svr_handleRequest2(&con->settings, &tmp, ret, &reply) != 0)
-					{
+					int ret_hr2=0;
+					ret_hr2 = svr_handleRequest2(&con->settings, &tmp, ret, &reply);
+//					if (svr_handleRequest2(&con->settings, &tmp, ret, &reply) != 0)
+//					{
+//
+//					}
+					printf("ret_hr2=%d\n", ret_hr2);
 
-					}
+				    FILE* f = fopen("/root/TEST.txt", "wb");
+				    int ret_fwrite = fwrite((unsigned char*) &con->settings, sizeof(dlmsServerSettings), 1, f);
+				    printf("====================================>>>>ret_fwrite = %d - size of = %d\n", ret_fwrite, sizeof(dlmsServerSettings));
+				    printf("con->settings.base.connected = %d\n", con->settings.base.connected);
+				    fclose(f);
 
 
 				}
@@ -352,7 +366,9 @@ void Socket_Send_Thread(void* pVoid)
 			if (send(con->serversocket.Accept_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
 			{
 				//If error has occured
-				svr_reset(&con->settings);
+				if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
+					svr_reset(&con->settings);
+
 				con->serversocket.Status.Connected = false;
 			}
 			else
@@ -373,7 +389,9 @@ void Socket_Send_Thread(void* pVoid)
 			if (send(con->socket.Socket_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
 			{
 				//If error has occured
-				svr_reset(&con->settings);
+				if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
+					svr_reset(&con->settings);
+
 				con->socket.Status.Connected = false;
 			}
 			else
@@ -454,7 +472,7 @@ void Socket_get_open(connection* con)
 
 		report(CLIENT, CONNECTION,"CONNECTED");
 
-		sendPush(&con->settings.base, &pushSetup);
+//		sendPush(&con->settings.base, &pushSetup);
 	}
 	else
 	{
@@ -598,7 +616,9 @@ void Socket_Listen_Thread(void* pVoid)
     			{
     				//Notify error.
                     //Notify error.
-                    svr_reset(&con->settings);
+    				if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
+    					svr_reset(&con->settings);
+
                     close(con->serversocket.Accept_fd);
                     con->serversocket.Accept_fd = -1;
                     con->serversocket.Status.Connected = false;
@@ -666,7 +686,9 @@ void Socket_Listen_Thread(void* pVoid)
     //            svr_reset(&con->settings);
             }
             report(SERVER, CONNECTION, "DISCONNECTED");
-            svr_reset(&con->settings);
+
+            if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
+            	svr_reset(&con->settings);
         }
     }
     bb_clear(&reply);
@@ -1179,16 +1201,16 @@ void WAN_Connection (void)
 
 				exec(GET_GATEWAY_IP, exc_res, 10);
 
-				printf("<= IP:%s - GW:%s - PRI_DNS:%s - SEC_DNS:%s - NAME:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n",
-						payload.v4.addr.ip,
-						exc_res,
-						payload.v4.addr.pri_dns,
-						payload.v4.addr.sec_dns,
-						payload.v4.addr.name,
-						Sig_Strg_Info.LTE_SignalStrength.rssi,
-						NW_Cell_Info.gsm_info_valid,
-						NW_Cell_Info.umts_info_valid,
-						NW_Cell_Info.lte_info_valid);
+//				printf("<= IP:%s - GW:%s - PRI_DNS:%s - SEC_DNS:%s - NAME:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n",
+//						payload.v4.addr.ip,
+//						exc_res,
+//						payload.v4.addr.pri_dns,
+//						payload.v4.addr.sec_dns,
+//						payload.v4.addr.name,
+//						Sig_Strg_Info.LTE_SignalStrength.rssi,
+//						NW_Cell_Info.gsm_info_valid,
+//						NW_Cell_Info.umts_info_valid,
+//						NW_Cell_Info.lte_info_valid);
 
 				inet_pton(AF_INET, payload.v4.addr.ip, 			&addr);
 				ip4Setup.ipAddress = ntohl(addr.s_addr);
