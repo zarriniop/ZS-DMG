@@ -1179,16 +1179,16 @@ void WAN_Connection (void)
 
 				exec(GET_GATEWAY_IP, exc_res, 10);
 
-//				printf("<= IP:%s - GW:%s - PRI_DNS:%s - SEC_DNS:%s - NAME:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n",
-//						payload.v4.addr.ip,
-//						exc_res,
-//						payload.v4.addr.pri_dns,
-//						payload.v4.addr.sec_dns,
-//						payload.v4.addr.name,
-//						Sig_Strg_Info.LTE_SignalStrength.rssi,
-//						NW_Cell_Info.gsm_info_valid,
-//						NW_Cell_Info.umts_info_valid,
-//						NW_Cell_Info.lte_info_valid);
+				printf("<= IP:%s - GW:%s - PRI_DNS:%s - SEC_DNS:%s - NAME:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n",
+						payload.v4.addr.ip,
+						exc_res,
+						payload.v4.addr.pri_dns,
+						payload.v4.addr.sec_dns,
+						payload.v4.addr.name,
+						Sig_Strg_Info.LTE_SignalStrength.rssi,
+						NW_Cell_Info.gsm_info_valid,
+						NW_Cell_Info.umts_info_valid,
+						NW_Cell_Info.lte_info_valid);
 
 				inet_pton(AF_INET, payload.v4.addr.ip, 			&addr);
 				ip4Setup.ipAddress = ntohl(addr.s_addr);
