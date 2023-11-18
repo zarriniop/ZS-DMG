@@ -143,9 +143,15 @@ int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Informatio
     {
     	stat("/root/log.txt", &st);
     	fprintf(f, "%s\r\n", log);
-        fseek(f, 0L, SEEK_END);
+
+        fseek(f, 0L, SEEK_END);		//Measuring size and copying old logs
         size = ftell(f);
-//        printf("The size of the file is %ld bytes.\n", size);
+        if(size > MAX_FILE_SIZE)
+        {
+        	remove("log_old.txt");
+        	rename("log.txt", "log_old.txt");
+        }
+
     	fclose(f);
     }
 

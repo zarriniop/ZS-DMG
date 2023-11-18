@@ -36,6 +36,8 @@
 #define OPTIC_SERIAL_FD 		"/dev/ttyS1"
 #define RS485_SERIAL_FD 		"/dev/ttyS2"
 
+#define MAX_FILE_SIZE			2097152	//Bytes == 2MByets (2*1024^2)
+
 /***** PROTOTYPES *****/
 int 			Servers_Start	(int trace)	;
 void 			Servers_Monitor (void)		;
