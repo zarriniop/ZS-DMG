@@ -2289,55 +2289,56 @@ int svr_InitObjects(
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 1, 255};
         INIT_OBJECT(deviceid2, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[49];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid2.value, buf, 49);
+         char buf[49];
+         memset(buf,0,sizeof(buf));
+
+         sprintf(buf,"31");
+         var_setString(&deviceid2.value, buf, 49);
     }
 
     // Device ID 3
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 2, 255};
         INIT_OBJECT(deviceid3, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[49];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid3.value, buf, 49);
+         char buf[49];
+         sprintf(buf,"Function Location");
+         var_setString(&deviceid3.value, buf, 49);
     }
 
     // Device ID 4
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 3, 255};
         INIT_OBJECT(deviceid4, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[49];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid4.value, buf, 49);
+         char buf[49];
+         sprintf(buf,"36.441788,59.420799");
+         var_setString(&deviceid4.value, buf, 49);
     }
 
     // Device ID 5
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 4, 255};
         INIT_OBJECT(deviceid5, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[49];
-        // sprintf(buf, "ZARRINSAMANEH\n");
-        // var_setString(&deviceid5.value, buf, 49);
+         char buf[49];
+         sprintf(buf, "RAMZ RAYANEH");
+         var_setString(&deviceid5.value, buf, 49);
     }
 
     // Device ID 6
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 5, 255};
         INIT_OBJECT(deviceid6, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[17];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid6.value, buf, 17);
+         char buf[17];
+         sprintf(buf, "0\n");
+         var_setString(&deviceid6.value, buf, 17);
     }
 
     // Device ID 7
    {
        const unsigned char ln[6] = {1, 0, 0, 0, 0, 255};
        INIT_OBJECT(deviceid7, DLMS_OBJECT_TYPE_DATA, ln);
-        char buf[15];
-        sprintf(buf, "%s31%s%s",Settings.manufactureID,Settings.ProductYear,Settings.SerialNumber);
-        printf("buf = %s\n",buf);
-        var_setString(&deviceid7.value, buf, 14);
+       char buf[15];
+       sprintf(buf, "%s31%s%s",Settings.manufactureID,Settings.ProductYear,Settings.SerialNumber);
+       var_setString(&deviceid7.value, buf, 15);
    }
 
     // Error Register
