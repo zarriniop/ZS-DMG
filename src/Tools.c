@@ -41,33 +41,33 @@ int Servers_Start(int trace)
     svr_init(&lniec.settings, 1, interfaceType, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, lnframeBuff, HDLC_HEADER_SIZE + HDLC_BUFFER_SIZE, lnpduBuff, PDU_BUFFER_SIZE);
     svr_InitObjects(&lniec.settings);
 
-    dlmsServerSettings tmp_settings;
-    FILE* f = fopen("/root/TEST.txt", "rb");
-    int ret_fwrite = fread((unsigned char*) &tmp_settings, sizeof(dlmsServerSettings), 1, f);
-    printf("====================================>>>>ret_fread = %d - size of = %d\n", ret_fwrite, sizeof(dlmsServerSettings));
-    printf("tmp_settings.base.connected = %d\n", tmp_settings.base.connected);
-    fclose(f);
+//    dlmsServerSettings tmp_settings;
+//    FILE* f = fopen("/root/TEST.txt", "rb");
+//    int ret_fwrite = fread((unsigned char*) &tmp_settings, sizeof(dlmsServerSettings), 1, f);
+//    printf("====================================>>>>ret_fread = %d - size of = %d\n", ret_fwrite, sizeof(dlmsServerSettings));
+//    printf("tmp_settings.base.connected = %d\n", tmp_settings.base.connected);
+//    fclose(f);
 
-    lnWrapper.settings.base.protocolVersion 			= tmp_settings.base.protocolVersion			;
+//    lnWrapper.settings.base.protocolVersion 			= tmp_settings.base.protocolVersion			;
 //    memcpy(&lnWrapper.settings.base.cipher.dedicatedKey, &tmp_settings.base.cipher.dedicatedKey, sizeof(tmp_settings.base.cipher.dedicatedKey));
 //    memcpy(lnWrapper.settings.base.sourceSystemTitle, tmp_settings.base.sourceSystemTitle, sizeof(tmp_settings.base.sourceSystemTitle));
 //    memcpy(&lnWrapper.settings.transaction, &tmp_settings.transaction, sizeof(tmp_settings.transaction))	;
-    lnWrapper.settings.base.blockIndex 					= tmp_settings.base.blockIndex				;
-    lnWrapper.settings.base.connected 					= tmp_settings.base.connected				;
-    lnWrapper.settings.base.authentication 				= tmp_settings.base.authentication			;
-    lnWrapper.settings.base.isAuthenticationRequired 	= tmp_settings.base.isAuthenticationRequired;
-    lnWrapper.settings.base.cipher.security 			= tmp_settings.base.cipher.security			;
+//    lnWrapper.settings.base.blockIndex 					= tmp_settings.base.blockIndex				;
+//    lnWrapper.settings.base.connected 					= tmp_settings.base.connected				;
+//    lnWrapper.settings.base.authentication 				= tmp_settings.base.authentication			;
+//    lnWrapper.settings.base.isAuthenticationRequired 	= tmp_settings.base.isAuthenticationRequired;
+//    lnWrapper.settings.base.cipher.security 			= tmp_settings.base.cipher.security			;
 //    memcpy(&lnWrapper.settings.base.ctoSChallenge, &tmp_settings.base.ctoSChallenge, sizeof(tmp_settings.base.ctoSChallenge))	;
 //	memcpy(&lnWrapper.settings.base.stoCChallenge, &tmp_settings.base.stoCChallenge, sizeof(tmp_settings.base.stoCChallenge))	;
-
-	lnWrapper.settings.base.server						= tmp_settings.base.server					;
-	lnWrapper.settings.base.senderFrame					= tmp_settings.base.senderFrame				;
-	lnWrapper.settings.base.receiverFrame				= tmp_settings.base.receiverFrame			;
-
-	lnWrapper.settings.base.serverAddress 				= tmp_settings.base.serverAddress	;
-	lnWrapper.settings.base.clientAddress 				= tmp_settings.base.clientAddress	;
-	lnWrapper.settings.dataReceived 					= tmp_settings.dataReceived			;
-	lnWrapper.settings.frameReceived					= tmp_settings.frameReceived		;
+//
+//	lnWrapper.settings.base.server						= tmp_settings.base.server					;
+//	lnWrapper.settings.base.senderFrame					= tmp_settings.base.senderFrame				;
+//	lnWrapper.settings.base.receiverFrame				= tmp_settings.base.receiverFrame			;
+//
+//	lnWrapper.settings.base.serverAddress 				= tmp_settings.base.serverAddress	;
+//	lnWrapper.settings.base.clientAddress 				= tmp_settings.base.clientAddress	;
+//	lnWrapper.settings.dataReceived 					= tmp_settings.dataReceived			;
+//	lnWrapper.settings.frameReceived					= tmp_settings.frameReceived		;
 
     //Start server
     if ((ret = TCP_start(&lnWrapper)) != 0)
