@@ -992,12 +992,36 @@ int addSecuritySetupManagementClient()
     int ret;
     // Define client system title.
     static unsigned char CLIENT_SYSTEM_TITLE[8] = {0};
-    static unsigned char SERVER_SYSTEM_TITLE[8] = {0};
+    static unsigned char SERVER_SYSTEM_TITLE[8] = {'Z','S','S',0x31, 0,0,0,0};
 
     const unsigned char ln[6] = {0, 0, 43, 0, 0, 255};
     if ((ret = INIT_OBJECT(securitySetupManagementClient, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
     {
-        // BB_ATTACH(securitySetupManagementClient.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
+    	printf("SERIAL_NUMBER in addSecuritySetupManagementClient = %d\n",SERIAL_NUMBER);
+        unsigned char hexBytes[4];
+        for (int i = 0; i < 4; i++)
+        {
+            hexBytes[i] = (SERIAL_NUMBER >> (i * 8)) & 0xFF;
+        }
+        hexBytes[3] |= 0x40;
+
+        SERVER_SYSTEM_TITLE[4] = hexBytes[3] ;
+        SERVER_SYSTEM_TITLE[4] |= 0x0;
+        printf("SERVER_SYSTEM_TITLE[4] = %x\n",SERVER_SYSTEM_TITLE[4]);
+        SERVER_SYSTEM_TITLE[5] = hexBytes[2] ;
+        SERVER_SYSTEM_TITLE[5] |= 0x0;
+        printf("SERVER_SYSTEM_TITLE[5] = %x\n",SERVER_SYSTEM_TITLE[5]);
+
+        SERVER_SYSTEM_TITLE[6] = hexBytes[1] ;
+        SERVER_SYSTEM_TITLE[6] |= 0x0;
+        printf("SERVER_SYSTEM_TITLE[6] = %x\n",SERVER_SYSTEM_TITLE[6]);
+
+        SERVER_SYSTEM_TITLE[7] = hexBytes[0] ;
+        SERVER_SYSTEM_TITLE[7] |= 0x0;
+        printf("SERVER_SYSTEM_TITLE[7] = %x\n",SERVER_SYSTEM_TITLE[7]);
+
+
+         BB_ATTACH(securitySetupManagementClient.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
         // BB_ATTACH(securitySetupManagementClient.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
         // securitySetupManagementClient.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
         securitySetupManagementClient.securitySuite = DLMS_SECURITY_SUITE_V0;
