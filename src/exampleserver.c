@@ -1330,7 +1330,7 @@ int addTcpUdpSetup()
     udpSetup.ipSetup = &ip4Setup;
     udpSetup.maximumSimultaneousConnections = 5;
     udpSetup.maximumSegmentSize = 1280;
-    udpSetup.inactivityTimeout = 180;
+    udpSetup.inactivityTimeout = 600;
     return 0;
 }
 
