@@ -43,7 +43,7 @@ main-build: ZS-DMG
 ZS-DMG: $(OBJS) $(USER_OBJS) makefile objects.mk $(OPTIONAL_TOOL_DEPS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Cross GCC Linker'
-	arm-openwrt-linux-gcc -L"/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Library/ql-ol-extsdk/lib" -L"/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Library/uci-2021-04-14-4b3db117" -L"/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Library/usr/lib" -L"/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Library/lib" -L"/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Library/root-mmp/lib" -L"/home/mhn/DMGProject/ZS-DMG/development/lib" -o "ZS-DMG" $(OBJS) $(USER_OBJS) $(LIBS)
+	arm-openwrt-linux-gcc -L"/home/mhn/git/ZS-DMG/DMG-SDK/Library/ql-ol-extsdk/lib" -L"/home/mhn/git/ZS-DMG/DMG-SDK/Library/uci-2021-04-14-4b3db117" -L"/home/mhn/git/ZS-DMG/DMG-SDK/Library/usr/lib" -L"/home/mhn/git/ZS-DMG/DMG-SDK/Library/root-mmp/lib" -L"/home/mhn/git/ZS-DMG/development/lib" -o "ZS-DMG" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

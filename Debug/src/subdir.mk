@@ -29,7 +29,7 @@ C_DEPS += \
 src/%.o: ../src/%.c src/subdir.mk
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross GCC Compiler'
-	arm-openwrt-linux-gcc -I"/home/mhn/DMGProject/ZS-DMG/DMG-SDK/Include/ql-common-lib/include" -I"/home/mhn/DMGProject/ZS-DMG/development/include" -I"/home/mhn/DMGProject/ZS-DMG/include" -O0 -Wall -c -fmessage-length=0 -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@" "$<"
+	arm-openwrt-linux-gcc -I"/home/mhn/git/ZS-DMG/DMG-SDK/Include/ql-common-lib/include" -I"/home/mhn/git/ZS-DMG/development/include" -I"/home/mhn/git/ZS-DMG/include" -O0 -Wall -c -fmessage-length=0 -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 
