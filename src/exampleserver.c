@@ -4638,6 +4638,9 @@ void srv_Load(dlmsServerSettings *settings)
 {
 	SvrSettings svrsettings;
 	FILE* f = fopen("/root/svr.RAW", "rb");
+
+	if(!f) return;
+
 	int ret_fread = fread((unsigned char*) &svrsettings, sizeof(SvrSettings), 1, f);
 
 	fclose(f);
