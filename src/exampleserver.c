@@ -994,12 +994,36 @@ int addSecuritySetupManagementClient()
     int ret;
     // Define client system title.
     static unsigned char CLIENT_SYSTEM_TITLE[8] = {0};
-    static unsigned char SERVER_SYSTEM_TITLE[8] = {0};
+    static unsigned char SERVER_SYSTEM_TITLE[8] = {'Z','S','S',0x31, 0,0,0,0};
 
     const unsigned char ln[6] = {0, 0, 43, 0, 0, 255};
     if ((ret = INIT_OBJECT(securitySetupManagementClient, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
     {
-        // BB_ATTACH(securitySetupManagementClient.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
+    	printf("SERIAL_NUMBER in addSecuritySetupManagementClient = %d\n",SERIAL_NUMBER);
+        unsigned char hexBytes[4];
+        for (int i = 0; i < 4; i++)
+        {
+            hexBytes[i] = (SERIAL_NUMBER >> (i * 8)) & 0xFF;
+        }
+        hexBytes[3] |= 0x40;
+
+        SERVER_SYSTEM_TITLE[4] = hexBytes[3] ;
+        SERVER_SYSTEM_TITLE[4] |= 0x0;
+        printf("SERVER_SYSTEM_TITLE[4] = %x\n",SERVER_SYSTEM_TITLE[4]);
+        SERVER_SYSTEM_TITLE[5] = hexBytes[2] ;
+        SERVER_SYSTEM_TITLE[5] |= 0x0;
+        printf("SERVER_SYSTEM_TITLE[5] = %x\n",SERVER_SYSTEM_TITLE[5]);
+
+        SERVER_SYSTEM_TITLE[6] = hexBytes[1] ;
+        SERVER_SYSTEM_TITLE[6] |= 0x0;
+        printf("SERVER_SYSTEM_TITLE[6] = %x\n",SERVER_SYSTEM_TITLE[6]);
+
+        SERVER_SYSTEM_TITLE[7] = hexBytes[0] ;
+        SERVER_SYSTEM_TITLE[7] |= 0x0;
+        printf("SERVER_SYSTEM_TITLE[7] = %x\n",SERVER_SYSTEM_TITLE[7]);
+
+
+         BB_ATTACH(securitySetupManagementClient.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
         // BB_ATTACH(securitySetupManagementClient.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
         // securitySetupManagementClient.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
         securitySetupManagementClient.securitySuite = DLMS_SECURITY_SUITE_V0;
@@ -1308,7 +1332,7 @@ int addTcpUdpSetup()
     udpSetup.ipSetup = &ip4Setup;
     udpSetup.maximumSimultaneousConnections = 5;
     udpSetup.maximumSegmentSize = 1280;
-    udpSetup.inactivityTimeout = 180;
+    udpSetup.inactivityTimeout = 600;
     return 0;
 }
 
@@ -1614,7 +1638,7 @@ int addOpticalPortSetup(dlmsServerSettings *settings)
 {
     const unsigned char ln[6] = {0, 0, 20, 0, 0, 255};
     INIT_OBJECT(localPortSetup, DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP, ln);
-    localPortSetup.defaultMode = DLMS_OPTICAL_PROTOCOL_MODE_DEFAULT;
+    localPortSetup.defaultMode = DLMS_OPTICAL_PROTOCOL_MODE_NET;
     localPortSetup.proposedBaudrate = DLMS_BAUD_RATE_9600;
     localPortSetup.defaultBaudrate = DLMS_BAUD_RATE_300;
     localPortSetup.responseTime = DLMS_LOCAL_PORT_RESPONSE_TIME_200_MS;
@@ -2267,55 +2291,56 @@ int svr_InitObjects(
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 1, 255};
         INIT_OBJECT(deviceid2, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[49];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid2.value, buf, 49);
+         char buf[49];
+         memset(buf,0,sizeof(buf));
+
+         sprintf(buf,"31");
+         var_setString(&deviceid2.value, buf, 49);
     }
 
     // Device ID 3
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 2, 255};
         INIT_OBJECT(deviceid3, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[49];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid3.value, buf, 49);
+         char buf[49];
+         sprintf(buf,"Function Location");
+         var_setString(&deviceid3.value, buf, 49);
     }
 
     // Device ID 4
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 3, 255};
         INIT_OBJECT(deviceid4, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[49];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid4.value, buf, 49);
+         char buf[49];
+         sprintf(buf,"36.441788,59.420799");
+         var_setString(&deviceid4.value, buf, 49);
     }
 
     // Device ID 5
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 4, 255};
         INIT_OBJECT(deviceid5, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[49];
-        // sprintf(buf, "ZARRINSAMANEH\n");
-        // var_setString(&deviceid5.value, buf, 49);
+         char buf[49];
+         sprintf(buf, "RAMZ RAYANEH");
+         var_setString(&deviceid5.value, buf, 49);
     }
 
     // Device ID 6
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 5, 255};
         INIT_OBJECT(deviceid6, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[17];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid6.value, buf, 17);
+         char buf[17];
+         sprintf(buf, "0\n");
+         var_setString(&deviceid6.value, buf, 17);
     }
 
     // Device ID 7
    {
        const unsigned char ln[6] = {1, 0, 0, 0, 0, 255};
        INIT_OBJECT(deviceid7, DLMS_OBJECT_TYPE_DATA, ln);
-        char buf[15];
-        sprintf(buf, "%s31%s%s",Settings.manufactureID,Settings.ProductYear,Settings.SerialNumber);
-        printf("buf = %s\n",buf);
-        var_setString(&deviceid7.value, buf, 14);
+       char buf[15];
+       sprintf(buf, "%s31%s%s",Settings.manufactureID,Settings.ProductYear,Settings.SerialNumber);
+       var_setString(&deviceid7.value, buf, 15);
    }
 
     // Error Register
