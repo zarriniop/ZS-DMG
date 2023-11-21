@@ -319,13 +319,9 @@ void Socket_Receive_Thread(void* pVoid)
 //					{
 //
 //					}
-					printf("ret_hr2=%d\n", ret_hr2);
+					printf("(((((((((((((((((ret_hr2=%d\n", ret_hr2);
 
-//				    FILE* f = fopen("/root/TEST.txt", "wb");
-//				    int ret_fwrite = fwrite((unsigned char*) &con->settings, sizeof(dlmsServerSettings), 1, f);
-//				    printf("====================================>>>>ret_fwrite = %d - size of = %d\n", ret_fwrite, sizeof(dlmsServerSettings));
-//				    printf("con->settings.base.connected = %d\n", con->settings.base.connected);
-//				    fclose(f);
+					srv_Save(&con->settings);
 
 
 				}

@@ -46,6 +46,8 @@
 // Add support for serialization.
 #include "../../development/include/gxserializer.h"
 
+#include "../../development/include/gxmem.h"
+
 GX_TRACE_LEVEL trace = GX_TRACE_LEVEL_OFF;
 
 const static char *FLAG_ID = "ZSS";
@@ -4430,6 +4432,346 @@ DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
     }
     return DLMS_METHOD_ACCESS_MODE_ACCESS;
 }
+
+
+
+
+
+void srv_Save(dlmsServerSettings *settings)
+{
+	SvrSettings svrsettings;
+
+
+	svrsettings.protocolVersion					=settings->base.protocolVersion;
+//	printf("----in write -->>  settings->base.protocolVersion = %d\n",settings->base.connected);
+
+
+//	printf("----in write -->>  dedicatedKey->capacity = %lu\n",settings->base.cipher.dedicatedKey->capacity);
+//	printf("----in write -->>  dedicatedKey->position = %lu\n",settings->base.cipher.dedicatedKey->position);
+//	printf("----in write -->>  dedicatedKey->size = %lu\n",settings->base.cipher.dedicatedKey->size);
+
+
+
+//	svrsettings.dedicatedKey_capacity			=dedicatedKey->capacity;
+//	svrsettings.dedicatedKey_position			=dedicatedKey->position;
+//	svrsettings.dedicatedKey_size				=dedicatedKey->size;
+//	memcpy( svrsettings.dedicatedKey_data 		,&dedicatedKey->data , dedicatedKey->capacity);
+//
+
+	if(settings->base.cipher.dedicatedKey!=NULL)
+	{
+
+		svrsettings.dedicatedKey_capacity					=settings->base.cipher.dedicatedKey->capacity;
+		svrsettings.dedicatedKey_size						=settings->base.cipher.dedicatedKey->size;
+		svrsettings.dedicatedKey_position					=settings->base.cipher.dedicatedKey->position;
+		memcpy(svrsettings.dedicatedKey_data 				,settings->base.cipher.dedicatedKey->data ,settings->base.cipher.dedicatedKey->capacity);
+
+//		printf("----in write -->>  dedicatedKey->capacity = %u\n",settings->base.cipher.dedicatedKey->capacity);
+//		printf("----in write -->>  dedicatedKey->position = %u\n",settings->base.cipher.dedicatedKey->position);
+//		printf("----in write -->>  dedicatedKey->size     = %u\n",settings->base.cipher.dedicatedKey->size);
+//
+//		printf("----in write -->>  dedicatedKey->data = \n");
+//		for(int n=0;n< settings->base.cipher.dedicatedKey->capacity;n++)
+//			printf("%02X",settings->base.cipher.dedicatedKey->data[n]);
+//		printf("\n");
+	}
+	else
+	{
+		svrsettings.dedicatedKey_capacity					=0xFFFFFFFF;
+		svrsettings.dedicatedKey_size						=0xFFFFFFFF;
+		svrsettings.dedicatedKey_position					=0xFFFFFFFF;
+
+//		printf("----in write -->>  dedicatedKey->capacity = 0xFFFFFFFF\n");
+//		printf("----in write -->>  dedicatedKey->position = 0xFFFFFFFF\n");
+//		printf("----in write -->>  dedicatedKey->size     = 0xFFFFFFFF\n");
+	}
+
+
+
+
+
+	memcpy( svrsettings.sourceSystemTitle 		,&settings->base.sourceSystemTitle , sizeof(svrsettings.sourceSystemTitle));
+//	printf("----in write -->>  settings->base.sourceSystemTitle = \n");
+//	for(int n=0;n< sizeof(svrsettings.sourceSystemTitle);n++)
+//		printf("%02X",svrsettings.sourceSystemTitle[n]);
+//	printf("\n");
+
+
+
+
+
+
+
+	svrsettings.transaction_command				=settings->transaction.command;
+	svrsettings.transaction_capacity			=settings->transaction.data.capacity;
+	svrsettings.transaction_position			=settings->transaction.data.position;
+	svrsettings.transaction_size				=settings->transaction.data.size;
+	memcpy(svrsettings.transaction_data 		,settings->transaction.data.data , settings->transaction.data.capacity);
+
+//	printf("----in write -->>  settings->transaction.command = %d\n",settings->transaction.command);
+//	printf("----in write -->>  settings->transaction.data.capacity = %d\n",settings->transaction.data.capacity);
+//	printf("----in write -->>  settings->transaction.data.position = %d\n",settings->transaction.data.position);
+//	printf("----in write -->>  settings->transaction.data.size = %d\n",settings->transaction.data.size);
+//	printf("----in write -->>  settings->transaction.data.data = \n");
+//	for(int n=0;n< settings->transaction.data.capacity;n++)
+//		printf("%02X",settings->transaction.data.data[n]);
+//	printf("\n");
+
+
+
+
+
+
+
+	svrsettings.blockIndex						=settings->base.blockIndex;
+	svrsettings.connected						=settings->base.connected;
+	svrsettings.authentication					=settings->base.authentication;
+	svrsettings.isAuthenticationRequired		=settings->base.isAuthenticationRequired;
+	svrsettings.cipher_security					=settings->base.cipher.security;
+//	printf("----in write -->>  settings->base.blockIndex = %d\n",settings->base.blockIndex);
+//	printf("----in write -->>  settings->base.connected = %d\n",settings->base.connected);
+//	printf("----in write -->>  settings->base.authentication = %d\n",settings->base.authentication);
+//	printf("----in write -->>  settings->base.isAuthenticationRequired = %d\n",settings->base.isAuthenticationRequired);
+//	printf("----in write -->>  settings->base.cipher.security = %d\n",settings->base.cipher.security);
+
+
+
+
+
+
+	svrsettings.CtoS_capacity					=settings->base.ctoSChallenge.capacity;
+	svrsettings.CtoS_position					=settings->base.ctoSChallenge.position;
+	svrsettings.CtoS_size						=settings->base.ctoSChallenge.size;
+	memcpy(svrsettings.CtoS_data 				,settings->base.ctoSChallenge.data ,settings->base.ctoSChallenge.capacity);
+
+//	printf("----in write -->>  settings->base.ctoSChallenge.capacity = %d\n",settings->base.ctoSChallenge.capacity);
+//	printf("----in write -->>  settings->base.ctoSChallenge.position = %d\n",settings->base.ctoSChallenge.position);
+//	printf("----in write -->>  settings->base.ctoSChallenge.size = %d\n",settings->base.ctoSChallenge.size);
+//	printf("----in write -->>  settings->base.ctoSChallenge.data = \n");
+//	for(int n=0;n< settings->base.ctoSChallenge.capacity;n++)
+//		printf("%02X",settings->base.ctoSChallenge.data[n]);
+//	printf("\n");
+
+
+
+
+	svrsettings.StoC_capacity					=settings->base.stoCChallenge.capacity;
+	svrsettings.StoC_position					=settings->base.stoCChallenge.position;
+	svrsettings.StoC_size						=settings->base.stoCChallenge.size;
+	memcpy(svrsettings.StoC_data 				,settings->base.stoCChallenge.data , settings->base.stoCChallenge.capacity);
+
+//	printf("----in write -->>  settings->base.stoCChallenge.capacity = %d\n",settings->base.stoCChallenge.capacity);
+//	printf("----in write -->>  settings->base.stoCChallenge.position = %d\n",settings->base.stoCChallenge.position);
+//	printf("----in write -->>  settings->base.stoCChallenge.size = %d\n",settings->base.stoCChallenge.size);
+//	printf("----in write -->>  settings->base.stoCChallenge.data = \n");
+//	for(int n=0;n< settings->base.stoCChallenge.capacity;n++)
+//		printf("%02X",settings->base.stoCChallenge.data[n]);
+//	printf("\n");
+
+
+
+
+
+	svrsettings.senderFrame						=settings->base.senderFrame;
+	svrsettings.receiverFrame					=settings->base.receiverFrame;
+	svrsettings.serverAddress					=settings->base.serverAddress;
+	svrsettings.clientAddress					=settings->base.clientAddress;
+	svrsettings.dataReceived					=settings->dataReceived;
+	svrsettings.frameReceived					=settings->frameReceived;
+//	printf("----in write -->>  settings->base.senderFrame = %d\n",settings->base.senderFrame);
+//	printf("----in write -->>  settings->base.receiverFrame = %d\n",settings->base.receiverFrame);
+//	printf("----in write -->>  settings->base.serverAddress = %d\n",settings->base.serverAddress);
+//	printf("----in write -->>  settings->base.clientAddress = %d\n",settings->base.clientAddress);
+//	printf("----in write -->>  settings->dataReceived = %d\n",settings->dataReceived);
+//	printf("----in write -->>  settings->frameReceived = %d\n",settings->frameReceived);
+
+
+
+	svrsettings.negotiatedConformance			=settings->base.negotiatedConformance;
+//	printf("----in write -->>  settings->base.negotiatedConformance = %d\n",settings->base.negotiatedConformance);
+
+
+	svrsettings.maxPduSize						=settings->base.maxPduSize;
+//	printf("----in write -->>  settings->base.maxPduSize = %d\n",settings->base.maxPduSize);
+
+
+
+
+	FILE* f = fopen("/root/svr.RAW", "wb");
+	int ret_fwrite = fwrite((unsigned char*) &svrsettings, sizeof(SvrSettings), 1, f);
+//	printf("====================================>>>>ret_fwrite = %d - size of = %d\n", ret_fwrite, sizeof(SvrSettings));
+//	printf("----in write -->>  con->settings.base.connected = %d\n",settings->base.connected);
+	fclose(f);
+
+}
+
+
+
+
+
+void srv_Load(dlmsServerSettings *settings)
+{
+	SvrSettings svrsettings;
+	FILE* f = fopen("/root/svr.RAW", "rb");
+	int ret_fread = fread((unsigned char*) &svrsettings, sizeof(SvrSettings), 1, f);
+
+	fclose(f);
+
+//	printf("====================================>>>>ret_fread = %d - size of = %d\n", ret_fread, sizeof(SvrSettings));
+
+
+
+	if(ret_fread)
+	{
+
+
+
+		settings->base.protocolVersion						=svrsettings.protocolVersion;
+
+		if(svrsettings.dedicatedKey_capacity!=0xFFFFFFFF)
+		{
+			settings->base.cipher.dedicatedKey=gxmalloc(sizeof(gxByteBuffer));
+			BYTE_BUFFER_INIT(settings->base.cipher.dedicatedKey);
+
+			bb_set(settings->base.cipher.dedicatedKey,svrsettings.dedicatedKey_data,svrsettings.dedicatedKey_capacity);
+
+//			settings->base.stoCChallenge.capacity				=svrsettings.StoC_capacity;
+//			settings->base.stoCChallenge.position				=svrsettings.StoC_position;
+//			settings->base.stoCChallenge.size					=svrsettings.StoC_size;
+		}
+
+
+		memcpy(	settings->base.sourceSystemTitle 			,svrsettings.sourceSystemTitle			, sizeof(svrsettings.sourceSystemTitle));
+
+
+//		settings->transaction.command						=svrsettings.transaction_command;
+//		settings->transaction.data.capacity					=svrsettings.transaction_capacity;
+//		settings->transaction.data.position					=svrsettings.transaction_position;
+//		settings->transaction.data.size						=svrsettings.transaction_size;
+		//memcpy(settings->transaction.data.data 		 		,svrsettings.transaction_data 			,sizeof(settings->transaction.data.data ));
+
+
+		settings->base.blockIndex							=svrsettings.blockIndex;
+		settings->base.connected							=svrsettings.connected;
+		settings->base.authentication						=svrsettings.authentication;
+		settings->base.isAuthenticationRequired				=svrsettings.isAuthenticationRequired;
+		settings->base.cipher.security						=svrsettings.cipher_security;
+
+		bb_set(&settings->base.ctoSChallenge				,svrsettings.CtoS_data,svrsettings.CtoS_capacity);
+		settings->base.ctoSChallenge.capacity				=svrsettings.CtoS_capacity;
+		settings->base.ctoSChallenge.position				=svrsettings.CtoS_position;
+		settings->base.ctoSChallenge.size					=svrsettings.CtoS_size;
+
+
+		bb_set(&settings->base.stoCChallenge				,svrsettings.StoC_data,svrsettings.StoC_capacity);
+		settings->base.stoCChallenge.capacity				=svrsettings.StoC_capacity;
+		settings->base.stoCChallenge.position				=svrsettings.StoC_position;
+		settings->base.stoCChallenge.size					=svrsettings.StoC_size;
+
+
+		settings->base.senderFrame							=svrsettings.senderFrame;
+		settings->base.receiverFrame						=svrsettings.receiverFrame;
+
+
+		settings->base.serverAddress						=svrsettings.serverAddress;
+		settings->base.clientAddress						=svrsettings.clientAddress;
+//		settings->dataReceived								=svrsettings.dataReceived;
+		settings->frameReceived								=svrsettings.frameReceived;
+		settings->base.negotiatedConformance				=svrsettings.negotiatedConformance;
+		settings->base.maxPduSize							=svrsettings.maxPduSize;
+
+
+
+//		printf("----in read -->>  settings->base.protocolVersion = %d\n",settings->base.connected);
+
+
+
+//		if(settings->base.cipher.dedicatedKey!=NULL)
+//		{
+//
+//			printf("----in read -->>  dedicatedKey->capacity = %u\n",settings->base.cipher.dedicatedKey->capacity);
+//			printf("----in read -->>  dedicatedKey->position = %u\n",settings->base.cipher.dedicatedKey->position);
+//			printf("----in read -->>  dedicatedKey->size     = %u\n",settings->base.cipher.dedicatedKey->size);
+//
+//			printf("----in read -->>  dedicatedKey->data = \n");
+//			for(int n=0;n< settings->base.cipher.dedicatedKey->capacity;n++)
+//				printf("%02X",settings->base.cipher.dedicatedKey->data[n]);
+//			printf("\n");
+//		}
+
+
+
+//		printf("----in read -->>  settings->base.sourceSystemTitle = \n");
+//		for(int n=0;n< sizeof(svrsettings.sourceSystemTitle);n++)
+//			printf("%02X",svrsettings.sourceSystemTitle[n]);
+//		printf("\n");
+
+//		printf("----in read -->>  settings->transaction.command = %d\n",settings->transaction.command);
+//		printf("----in read -->>  settings->transaction.data.capacity = %d\n",settings->transaction.data.capacity);
+//		printf("----in read -->>  settings->transaction.data.position = %d\n",settings->transaction.data.position);
+//		printf("----in read -->>  settings->transaction.data.size = %d\n",settings->transaction.data.size);
+//		printf("----in read -->>  settings->transaction.data.data = \n");
+//		for(int n=0;n< settings->transaction.data.capacity;n++)
+//			printf("%02X",settings->transaction.data.data[n]);
+//		printf("\n");
+
+
+
+//		printf("----in read -->>  settings->base.blockIndex = %d\n",settings->base.blockIndex);
+//		printf("----in read -->>  settings->base.connected = %d\n",settings->base.connected);
+//		printf("----in read -->>  settings->base.authentication = %d\n",settings->base.authentication);
+//		printf("----in read -->>  settings->base.isAuthenticationRequired = %d\n",settings->base.isAuthenticationRequired);
+//		printf("----in read -->>  settings->base.cipher.security = %d\n",settings->base.cipher.security);
+//
+//
+//		printf("----in read -->>  settings->base.ctoSChallenge.capacity = %d\n",settings->base.ctoSChallenge.capacity);
+//		printf("----in read -->>  settings->base.ctoSChallenge.position = %d\n",settings->base.ctoSChallenge.position);
+//		printf("----in read -->>  settings->base.ctoSChallenge.size = %d\n",settings->base.ctoSChallenge.size);
+//		printf("----in read -->>  settings->base.ctoSChallenge.data = \n");
+//		for(int n=0;n< settings->base.ctoSChallenge.capacity;n++)
+//			printf("%02X",settings->base.ctoSChallenge.data[n]);
+//		printf("\n");
+//
+//
+//		printf("----in read -->>  settings->base.stoCChallenge.capacity = %d\n",settings->base.stoCChallenge.capacity);
+//		printf("----in read -->>  settings->base.stoCChallenge.position = %d\n",settings->base.stoCChallenge.position);
+//		printf("----in read -->>  settings->base.stoCChallenge.size = %d\n",settings->base.stoCChallenge.size);
+//		printf("----in read -->>  settings->base.stoCChallenge.data = \n");
+//		for(int n=0;n< settings->base.stoCChallenge.capacity;n++)
+//			printf("%02X",settings->base.stoCChallenge.data[n]);
+//		printf("\n");
+//
+//
+//		printf("----in read -->>  settings->base.senderFrame = %d\n",settings->base.senderFrame);
+//		printf("----in read -->>  settings->base.receiverFrame = %d\n",settings->base.receiverFrame);
+//		printf("----in read -->>  settings->base.serverAddress = %d\n",settings->base.serverAddress);
+//		printf("----in read -->>  settings->base.clientAddress = %d\n",settings->base.clientAddress);
+//		printf("----in read -->>  settings->dataReceived = %d\n",settings->dataReceived);
+//		printf("----in read -->>  settings->frameReceived = %d\n",settings->frameReceived);
+//
+//
+//		printf("----in write -->>  settings->base.negotiatedConformance = %d\n",settings->base.negotiatedConformance);
+
+//		printf("----in write -->>  settings->base.maxPduSize = %d\n",settings->base.maxPduSize);
+
+
+	}
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 // Client has made connection to the server.
