@@ -1009,18 +1009,14 @@ int addSecuritySetupManagementClient()
 
         SERVER_SYSTEM_TITLE[4] = hexBytes[3] ;
         SERVER_SYSTEM_TITLE[4] |= 0x0;
-        printf("SERVER_SYSTEM_TITLE[4] = %x\n",SERVER_SYSTEM_TITLE[4]);
         SERVER_SYSTEM_TITLE[5] = hexBytes[2] ;
         SERVER_SYSTEM_TITLE[5] |= 0x0;
-        printf("SERVER_SYSTEM_TITLE[5] = %x\n",SERVER_SYSTEM_TITLE[5]);
 
         SERVER_SYSTEM_TITLE[6] = hexBytes[1] ;
         SERVER_SYSTEM_TITLE[6] |= 0x0;
-        printf("SERVER_SYSTEM_TITLE[6] = %x\n",SERVER_SYSTEM_TITLE[6]);
 
         SERVER_SYSTEM_TITLE[7] = hexBytes[0] ;
         SERVER_SYSTEM_TITLE[7] |= 0x0;
-        printf("SERVER_SYSTEM_TITLE[7] = %x\n",SERVER_SYSTEM_TITLE[7]);
 
 
          BB_ATTACH(securitySetupManagementClient.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
@@ -2340,7 +2336,7 @@ int svr_InitObjects(
        INIT_OBJECT(deviceid7, DLMS_OBJECT_TYPE_DATA, ln);
        char buf[15];
        sprintf(buf, "%s31%s%s",Settings.manufactureID,Settings.ProductYear,Settings.SerialNumber);
-       var_setString(&deviceid7.value, buf, 15);
+       var_setString(&deviceid7.value, buf, 14);
    }
 
     // Error Register
@@ -3693,8 +3689,13 @@ int sendPush(
     mes_init(&messages);
 //    if ((ret = connectServer(host, port, &s)) == 0)
     {
-        if ((ret = notify_generatePushSetupMessages(settings, 0, push, &messages)) == 0)
+    	int sec=settings->cipher.security;
+    	settings->cipher.security=0;
+    	ret = notify_generatePushSetupMessages(settings, 0, push, &messages);
+    	settings->cipher.security=sec;
+        if (ret == 0)
         {
+
             for (pos = 0; pos != messages.size; ++pos)
             {
                 bb = messages.data[pos];
