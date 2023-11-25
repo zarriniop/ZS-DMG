@@ -468,7 +468,7 @@ void Socket_get_open(connection* con)
 
 		report(CLIENT, CONNECTION,"CONNECTED");
 
-//		sendPush(&con->settings.base, &pushSetup);
+		sendPush(&con->settings.base, &pushSetup);
 	}
 	else
 	{
