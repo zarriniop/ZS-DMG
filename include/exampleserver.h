@@ -24,6 +24,9 @@
 
 #define  SETTINGS_PATH 	"/root/Settings.txt"
 
+#define SHAHAB_OLD_VERSION	"1"
+#define SHAHAB_NEW_VERSION	"2"
+
 typedef struct
 {
 	char SerialNumber[10];
@@ -33,8 +36,74 @@ typedef struct
 	char PORT[7];
 	char ListenPORT[7];
 	char APN[22];
+	char AuthKey[16];
+	char BroadEncKey[16];
+	char UniEncKey[16];
+	char KEK[16];
+	char LLSPass[10];
+	char MDM[5];
 }SETTINGS;
 SETTINGS Settings;
+
+
+
+
+
+
+typedef struct
+{
+	unsigned char		protocolVersion;
+
+	uint32_t			dedicatedKey_capacity;
+	uint32_t			dedicatedKey_position;
+	uint32_t			dedicatedKey_size;
+	unsigned char		dedicatedKey_data[100];
+
+	unsigned char		sourceSystemTitle[8];
+
+	DLMS_COMMAND		transaction_command;
+	uint32_t			transaction_capacity;
+	uint32_t			transaction_position;
+	uint32_t			transaction_size;
+	unsigned char		transaction_data[2000];
+
+	uint32_t 				blockIndex;
+	DLMS_CONNECTION_STATE 	connected;
+	DLMS_AUTHENTICATION 	authentication;
+	unsigned char 			isAuthenticationRequired;
+	DLMS_SECURITY 			cipher_security;
+
+	uint32_t			CtoS_capacity;
+	uint32_t			CtoS_position;
+	uint32_t			CtoS_size;
+	unsigned char		CtoS_data[100];
+
+	uint32_t			StoC_capacity;
+	uint32_t			StoC_position;
+	uint32_t			StoC_size;
+	unsigned char		StoC_data[100];
+
+	unsigned char 		senderFrame;
+	unsigned char 		receiverFrame;
+
+	uint32_t 			serverAddress;
+	uint16_t			clientAddress;
+	uint32_t 			dataReceived;
+	uint32_t 			frameReceived;
+	DLMS_CONFORMANCE 	negotiatedConformance;
+	uint16_t 			maxPduSize;
+}SvrSettings;
+
+
+
+
+
+
+
+
+
+
+
 
 void Read_Settings(SETTINGS *settings);
 
@@ -50,6 +119,9 @@ int IEC_start(connection *con, char *file);
 
 int rs485_start(connection *con, char *file);
     
+void srv_Save(dlmsServerSettings *settings);
+void srv_Load(dlmsServerSettings *settings);
+
 
 int svr_InitObjects(dlmsServerSettings *settings);
 

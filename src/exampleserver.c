@@ -46,9 +46,11 @@
 // Add support for serialization.
 #include "../../development/include/gxserializer.h"
 
+#include "../../development/include/gxmem.h"
+
 GX_TRACE_LEVEL trace = GX_TRACE_LEVEL_OFF;
 
-const static char *FLAG_ID = "grx";
+const static char *FLAG_ID = "ZSS";
 // Serialization version is increased every time when structure of serialized data is changed.
 const static uint16_t SERIALIZATION_VERSION = 2;
 
@@ -87,6 +89,8 @@ time_t imageActionStartTime = 0;
 gxImageActivateInfo IMAGE_ACTIVATE_INFO[1];
 static gxByteBuffer reply;
 
+extern connection lnWrapper;
+
 uint32_t time_current(void)
 {
     // Get current time somewhere.
@@ -102,6 +106,7 @@ uint32_t time_elapsed(void)
 time_t imageActionStartTime;
 
 static gxClock clock1;
+//gxClock clock1;
 static gxIecHdlcSetup hdlc;
 static gxIecHdlcSetup hdlcelectricalrs485port;
 
@@ -376,7 +381,7 @@ int saveSecurity(
     dlmsSettings *settings)
 {
     int ret = 0;
-    const char *fileName = "security.raw";
+    const char *fileName = "/usr/bin/ZS-DMG/security.raw";
     // Save keys to own block in EEPROM.
 #if _MSC_VER > 1400
     FILE *f = NULL;
@@ -418,7 +423,7 @@ int saveSecurity(
 int saveSettings()
 {
     int ret = 0;
-    const char *fileName = "settings.raw";
+    const char *fileName = "/usr/bin/ZS-DMG/settings.raw";
     // Save keys to own block in EEPROM.
 #if _MSC_VER > 1400
     FILE *f = NULL;
@@ -771,12 +776,45 @@ void GXTRACE_LN(const char *str, uint16_t type, unsigned char *ln)
 void time_now(
     gxtime *value, unsigned char meterTime)
 {
-    time_initUnix(value, (unsigned long)time(NULL));
+	extern DS1307_I2C_STRUCT_TYPEDEF DS1307_Str;
+
+	DS1307_Get_Time(&DS1307_Str);
+
+	time_initUnix(value, (unsigned long)time(NULL));
+
     // If date time is wanted in meter time.
     if (meterTime)
     {
         clock_utcToMeterTime(&clock1, value);
     }
+
+    uint16_t 	j_y;
+    uint8_t 	j_m;
+    uint8_t 	j_d;
+	uint16_t  	g_y=((uint16_t) DS1307_Str.year) + 2000;
+	uint8_t  	g_m=DS1307_Str.month;
+	uint8_t  	g_d=DS1307_Str.date;
+    M2Sh (&j_y, &j_m, &j_d, g_y, g_m, g_d);
+
+	value->value.tm_year= j_y - 1900;
+	value->value.tm_mon = j_m - 1;
+	value->value.tm_mday= j_d;
+	value->value.tm_hour= DS1307_Str.hour;
+	value->value.tm_min = DS1307_Str.minute;
+	value->value.tm_sec = DS1307_Str.second;
+
+    value->deviation 	= 0;
+    value->extraInfo 	= DLMS_DATE_TIME_EXTRA_INFO_NONE;
+	value->skip 		= DATETIME_SKIPS_NONE;
+	value->status 		= DLMS_CLOCK_STATUS_OK;
+
+//	printf("Time now =========================> Y.M.D - HH:MM:SS = %d.%d.%d - %d:%d:%d\n",
+//			value->value.tm_year,
+//			value->value.tm_mon,
+//			value->value.tm_mday,
+//			value->value.tm_hour,
+//			value->value.tm_min,
+//			value->value.tm_sec);
 }
 
 void println(char *desc, gxByteBuffer *data)
@@ -956,12 +994,32 @@ int addSecuritySetupManagementClient()
     int ret;
     // Define client system title.
     static unsigned char CLIENT_SYSTEM_TITLE[8] = {0};
-    static unsigned char SERVER_SYSTEM_TITLE[8] = {0};
+    static unsigned char SERVER_SYSTEM_TITLE[8] = {'Z','S','S',0x31, 0,0,0,0};
 
     const unsigned char ln[6] = {0, 0, 43, 0, 0, 255};
     if ((ret = INIT_OBJECT(securitySetupManagementClient, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
     {
-        // BB_ATTACH(securitySetupManagementClient.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
+    	printf("SERIAL_NUMBER in addSecuritySetupManagementClient = %d\n",SERIAL_NUMBER);
+        unsigned char hexBytes[4];
+        for (int i = 0; i < 4; i++)
+        {
+            hexBytes[i] = (SERIAL_NUMBER >> (i * 8)) & 0xFF;
+        }
+        hexBytes[3] |= 0x40;
+
+        SERVER_SYSTEM_TITLE[4] = hexBytes[3] ;
+        SERVER_SYSTEM_TITLE[4] |= 0x0;
+        SERVER_SYSTEM_TITLE[5] = hexBytes[2] ;
+        SERVER_SYSTEM_TITLE[5] |= 0x0;
+
+        SERVER_SYSTEM_TITLE[6] = hexBytes[1] ;
+        SERVER_SYSTEM_TITLE[6] |= 0x0;
+
+        SERVER_SYSTEM_TITLE[7] = hexBytes[0] ;
+        SERVER_SYSTEM_TITLE[7] |= 0x0;
+
+
+         BB_ATTACH(securitySetupManagementClient.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
         // BB_ATTACH(securitySetupManagementClient.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
         // securitySetupManagementClient.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
         securitySetupManagementClient.securitySuite = DLMS_SECURITY_SUITE_V0;
@@ -1270,7 +1328,7 @@ int addTcpUdpSetup()
     udpSetup.ipSetup = &ip4Setup;
     udpSetup.maximumSimultaneousConnections = 5;
     udpSetup.maximumSegmentSize = 1280;
-    udpSetup.inactivityTimeout = 180;
+    udpSetup.inactivityTimeout = 600;
     return 0;
 }
 
@@ -1576,7 +1634,7 @@ int addOpticalPortSetup(dlmsServerSettings *settings)
 {
     const unsigned char ln[6] = {0, 0, 20, 0, 0, 255};
     INIT_OBJECT(localPortSetup, DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP, ln);
-    localPortSetup.defaultMode = DLMS_OPTICAL_PROTOCOL_MODE_DEFAULT;
+    localPortSetup.defaultMode = DLMS_OPTICAL_PROTOCOL_MODE_NET;
     localPortSetup.proposedBaudrate = DLMS_BAUD_RATE_9600;
     localPortSetup.defaultBaudrate = DLMS_BAUD_RATE_300;
     localPortSetup.responseTime = DLMS_LOCAL_PORT_RESPONSE_TIME_200_MS;
@@ -1829,7 +1887,8 @@ int addSapAssignment()
         bb_init(&it->name);
         ret = sprintf(tmp, "%s%.13lu", FLAG_ID, SERIAL_NUMBER);
         bb_addString(&it->name, tmp);
-        it->id = SERIAL_NUMBER % 10000 + 1000;
+//        it->id = SERIAL_NUMBER % 10000 + 1000;
+        it->id = 1;
         ret = arr_push(&sapAssignment.sapAssignmentList, it);
     }
     return ret;
@@ -2047,27 +2106,40 @@ int addPushSetup()
     static unsigned char DESTINATION[20] = {0};
 
     const char dest[] = "127.0.0.1:7000";
-    // gxTarget *co;
+     gxTarget *co;
 
     const unsigned char ln[6] = {0, 0, 25, 9, 0, 255};
     INIT_OBJECT(pushSetup, DLMS_OBJECT_TYPE_PUSH_SETUP, ln);
     bb_addString(&pushSetup.destination, "127.0.0.1:7000");
     // Add push object itself. This is needed to tell structure of data to
     // the Push listener.
-    // co = (gxTarget *)malloc(sizeof(gxTarget));
-    // co->attributeIndex = 2;
-    // co->dataIndex = 0;
-    // arr_push(&pushSetup.pushObjectList, key_init(&pushSetup, co));
-    // // Add logical device name.
-    // co = (gxTarget *)malloc(sizeof(gxTarget));
-    // co->attributeIndex = 2;
-    // co->dataIndex = 0;
-    // arr_push(&pushSetup.pushObjectList, key_init(&ldn, co));
-    // // Add 0.0.25.1.0.255 Ch. 0 IPv4 setup IP address.
-    // co = (gxTarget *)malloc(sizeof(gxTarget));
-    // co->attributeIndex = 3;
-    // co->dataIndex = 0;
-    // arr_push(&pushSetup.pushObjectList, key_init(&ip4Setup, co));
+     co = (gxTarget *)malloc(sizeof(gxTarget));
+     co->attributeIndex = 1;
+     co->dataIndex = 0;
+     arr_push(&pushSetup.pushObjectList, key_init(&pushSetup, co));
+     // Add logical device name.
+     co = (gxTarget *)malloc(sizeof(gxTarget));
+     co->attributeIndex = 1;
+     co->dataIndex = 0;
+     arr_push(&pushSetup.pushObjectList, key_init(&deviceid7, co));
+     // Add 0.0.25.1.0.255 Ch. 0 IPv4 setup IP address.
+     co = (gxTarget *)malloc(sizeof(gxTarget));
+     co->attributeIndex = 2;
+     co->dataIndex = 0;
+     arr_push(&pushSetup.pushObjectList, key_init(&deviceid7, co));
+
+     if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
+     {
+         co = (gxTarget *)malloc(sizeof(gxTarget));
+         co->attributeIndex = 1;
+         co->dataIndex = 0;
+         arr_push(&pushSetup.pushObjectList, key_init(&deviceid6, co));
+
+         co = (gxTarget *)malloc(sizeof(gxTarget));
+         co->attributeIndex = 2;
+         co->dataIndex = 0;
+         arr_push(&pushSetup.pushObjectList, key_init(&deviceid6, co));
+     }
 
     pushSetup.randomisationStartInterval = 0;
     // pushSetup.numberOfRetries = 5;
@@ -2080,7 +2152,7 @@ int addPushSetup()
 /////////////////////////////////////////////////////////////////////////////
 int loadSecurity(dlmsSettings *settings)
 {
-    const char *fileName = "security.raw";
+    const char *fileName = "/usr/bin/ZS-DMG/security.raw";
     int ret = 0;
     // Update keys.
 #if _MSC_VER > 1400
@@ -2127,7 +2199,7 @@ int loadSecurity(dlmsSettings *settings)
 /////////////////////////////////////////////////////////////////////////////
 int loadSettings(dlmsSettings *settings)
 {
-    const char *fileName = "settings.raw";
+    const char *fileName = "/usr/bin/ZS-DMG/settings.raw";
     int ret = 0;
     // Update keys.
 #if _MSC_VER > 1400
@@ -2165,6 +2237,7 @@ int svr_InitObjects(
     char buff[17];
     int ret;
     Read_Settings(&Settings);
+    SERIAL_NUMBER = atoi(Settings.SerialNumber);
     OA_ATTACH(settings->base.objects, ALL_OBJECTS);
     ///////////////////////////////////////////////////////////////////////
     // Add Logical Device Name. 123456 is meter serial number.
@@ -2206,7 +2279,6 @@ int svr_InitObjects(
         const unsigned char ln[6] = {0, 0, 96, 1, 0, 255};
         INIT_OBJECT(deviceid1, DLMS_OBJECT_TYPE_DATA, ln);
         char buf[8];
-        printf("SerialNumber333 = %s\n",Settings.SerialNumber);
         sprintf(buf,"%s",Settings.SerialNumber);
         var_setString(&deviceid1.value, buf, 8);
     }
@@ -2215,55 +2287,56 @@ int svr_InitObjects(
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 1, 255};
         INIT_OBJECT(deviceid2, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[49];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid2.value, buf, 49);
+         char buf[49];
+         memset(buf,0,sizeof(buf));
+
+         sprintf(buf,"31");
+         var_setString(&deviceid2.value, buf, 49);
     }
 
     // Device ID 3
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 2, 255};
         INIT_OBJECT(deviceid3, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[49];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid3.value, buf, 49);
+         char buf[49];
+         sprintf(buf,"Function Location");
+         var_setString(&deviceid3.value, buf, 49);
     }
 
     // Device ID 4
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 3, 255};
         INIT_OBJECT(deviceid4, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[49];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid4.value, buf, 49);
+         char buf[49];
+         sprintf(buf,"36.441788,59.420799");
+         var_setString(&deviceid4.value, buf, 49);
     }
 
     // Device ID 5
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 4, 255};
         INIT_OBJECT(deviceid5, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[49];
-        // sprintf(buf, "ZARRINSAMANEH\n");
-        // var_setString(&deviceid5.value, buf, 49);
+         char buf[49];
+         sprintf(buf, "RAMZ RAYANEH");
+         var_setString(&deviceid5.value, buf, 49);
     }
 
     // Device ID 6
     {
         const unsigned char ln[6] = {0, 0, 96, 1, 5, 255};
         INIT_OBJECT(deviceid6, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[17];
-        // sprintf(buf, "0\n");
-        // var_setString(&deviceid6.value, buf, 17);
+         char buf[17];
+         sprintf(buf, "0\n");
+         var_setString(&deviceid6.value, buf, 17);
     }
 
     // Device ID 7
    {
        const unsigned char ln[6] = {1, 0, 0, 0, 0, 255};
        INIT_OBJECT(deviceid7, DLMS_OBJECT_TYPE_DATA, ln);
-        char buf[15];
-        sprintf(buf, "%s31%s%s",Settings.manufactureID,Settings.ProductYear,Settings.SerialNumber);
-        printf("buf = %s\n",buf);
-        var_setString(&deviceid7.value, buf, 15);
+       char buf[15];
+       sprintf(buf, "%s31%s%s",Settings.manufactureID,Settings.ProductYear,Settings.SerialNumber);
+       var_setString(&deviceid7.value, buf, 14);
    }
 
     // Error Register
@@ -2485,6 +2558,8 @@ int IEC_start(connection *con, char *file)
     
     //Set flag id.
     memcpy(con->settings.flagId, FLAG_ID, 3);
+    memcpy(con->settings.base.cipher.authenticationKey.data	,Settings.AuthKey, 	16);
+    memcpy(con->settings.base.cipher.blockCipherKey.data	,Settings.UniEncKey,16);
 
     con->settings.hdlc = &hdlc;
     con->settings.localPortSetup = &localPortSetup;
@@ -2538,13 +2613,15 @@ int rs485_start(connection *con, char *file)
 int TCP_start(connection *con)
 {
     int ret;
-    con->settings.pushClientAddress = 64;
+    con->settings.pushClientAddress = 102;
     if ((ret = Socket_Connection_Start(con)) != 0)
     {
         return ret;
     }
 
 	con->settings.wrapper = &udpSetup;
+    memcpy(con->settings.base.cipher.authenticationKey.data	,Settings.AuthKey, 	16);
+    memcpy(con->settings.base.cipher.blockCipherKey.data	,Settings.UniEncKey,16);
 
     ///////////////////////////////////////////////////////////////////////
     // Server must initialize after all objects are added.
@@ -3196,7 +3273,7 @@ void svr_preAction(
         else if (e->target == BASE(scriptTableGlobalMeterReset) && e->index == 1)
         {
             // Initialize data size so default values are used on next connection.
-            const char *fileName = "settings.raw";
+            const char *fileName = "/usr/bin/ZS-DMG/settings.raw";
 
             FILE *f = fopen(fileName, "wb");
             if (f != NULL)
@@ -3249,7 +3326,7 @@ void svr_preAction(
             e->handled = 1;
             FILE *f;
             gxImageTransfer *i = (gxImageTransfer *)e->target;
-            const char *imageFile = "image.raw";
+            const char *imageFile = "/usr/bin/ZS-DMG/image.raw";
             // Image name and size to transfer
             if (e->index == 1)
             {
@@ -3437,6 +3514,53 @@ void svr_postWrite(
                 }
             }
         }
+        if(e->target->objectType == DLMS_OBJECT_TYPE_CLOCK)
+        {
+            // printf("In DLMS_OBJECT_TYPE_CLOCK at post write Function\n");
+            struct tm tptr;
+            struct timeval tv;
+            extern DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str;
+
+            printf("clock1.time.value.tm_year = %d\n",clock1.time.value.tm_year);
+            printf("clock1.time.value.tm_mon = %d\n",clock1.time.value.tm_mon);
+            printf("clock1.time.value.tm_mday = %d\n",clock1.time.value.tm_mday);
+            printf("clock1.time.value.tm_hour = %d\n",clock1.time.value.tm_hour);
+            printf("clock1.time.value.tm_min = %d\n",clock1.time.value.tm_min);
+            printf("clock1.time.value.tm_sec = %d\n",clock1.time.value.tm_sec);
+//            printf("=========================================== clock1.TZ = %d\n",clock1.timeZone);
+
+            tptr.tm_year = clock1.time.value.tm_year;
+            tptr.tm_mon = clock1.time.value.tm_mon;
+            tptr.tm_mday = clock1.time.value.tm_mday;
+            tptr.tm_hour = clock1.time.value.tm_hour;
+            tptr.tm_min = clock1.time.value.tm_min;
+            tptr.tm_sec = clock1.time.value.tm_sec;
+            tptr.tm_isdst = -1;
+
+//            printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Y.M.D - HH.MM.SS: %d.%d.%d - %d:%d:%d\n",
+//            		tptr.tm_year,
+//					tptr.tm_mon,
+//					tptr.tm_mday,
+//					tptr.tm_hour,
+//					tptr.tm_min,
+//					tptr.tm_sec);
+
+            uint16_t 	My;
+            uint8_t		Mm, Md;
+            SH2M (&My, &Mm, &Md, 1900 + clock1.time.value.tm_year, 1 + clock1.time.value.tm_mon, clock1.time.value.tm_mday);
+
+            DS1307_Str.year		= (uint8_t) (My - 2000)	;		// 123 - 100 = 23
+            DS1307_Str.month	= Mm					;		// 0-11 => 1-12
+			DS1307_Str.date		= Md					;
+			DS1307_Str.hour		= clock1.time.value.tm_hour;
+			DS1307_Str.minute	= clock1.time.value.tm_min;
+			DS1307_Str.second	= clock1.time.value.tm_sec;
+			DS1307_Str.H_12		= 0;
+			DS1307_Set_Time( DS1307_Str);
+//			printf("POST write==========================>");
+			Set_System_Date_Time(&DS1307_Str)	;
+
+        }
         if (e->error == 0)
         {
             // Save settings to EEPROM.
@@ -3563,22 +3687,34 @@ int sendPush(
     host[pos] = '\0';
     sscanf(++p, "%d", &port);
     mes_init(&messages);
-    if ((ret = connectServer(host, port, &s)) == 0)
+//    if ((ret = connectServer(host, port, &s)) == 0)
     {
-        if ((ret = notify_generatePushSetupMessages(settings, 0, push, &messages)) == 0)
+    	int sec=settings->cipher.security;
+    	settings->cipher.security=0;
+    	ret = notify_generatePushSetupMessages(settings, 0, push, &messages);
+    	settings->cipher.security=sec;
+        if (ret == 0)
         {
+
             for (pos = 0; pos != messages.size; ++pos)
             {
                 bb = messages.data[pos];
-                if ((ret = send(s, (char *)bb->data, bb->size, 0)) == -1)
+//                if ((ret = send(s, (char *)bb->data, bb->size, 0)) == -1)
+
+                /****************/
+                memcpy(lnWrapper.buffer.TX,(char *)bb->data, bb->size);
+                lnWrapper.buffer.TX_Count = bb->size;
+                usleep(500000);
+                /****************/
+
                 {
-                    mes_clear(&messages);
-                    break;
+//                    mes_clear(&messages);
+//                    break;
                 }
             }
         }
 
-        close(s);
+//        close(s);
     }
     mes_clear(&messages);
     free(host);
@@ -4323,6 +4459,349 @@ DLMS_METHOD_ACCESS_MODE svr_getMethodAccess(
     return DLMS_METHOD_ACCESS_MODE_ACCESS;
 }
 
+
+
+
+
+void srv_Save(dlmsServerSettings *settings)
+{
+	SvrSettings svrsettings;
+
+
+	svrsettings.protocolVersion					=settings->base.protocolVersion;
+//	printf("----in write -->>  settings->base.protocolVersion = %d\n",settings->base.connected);
+
+
+//	printf("----in write -->>  dedicatedKey->capacity = %lu\n",settings->base.cipher.dedicatedKey->capacity);
+//	printf("----in write -->>  dedicatedKey->position = %lu\n",settings->base.cipher.dedicatedKey->position);
+//	printf("----in write -->>  dedicatedKey->size = %lu\n",settings->base.cipher.dedicatedKey->size);
+
+
+
+//	svrsettings.dedicatedKey_capacity			=dedicatedKey->capacity;
+//	svrsettings.dedicatedKey_position			=dedicatedKey->position;
+//	svrsettings.dedicatedKey_size				=dedicatedKey->size;
+//	memcpy( svrsettings.dedicatedKey_data 		,&dedicatedKey->data , dedicatedKey->capacity);
+//
+
+	if(settings->base.cipher.dedicatedKey!=NULL)
+	{
+
+		svrsettings.dedicatedKey_capacity					=settings->base.cipher.dedicatedKey->capacity;
+		svrsettings.dedicatedKey_size						=settings->base.cipher.dedicatedKey->size;
+		svrsettings.dedicatedKey_position					=settings->base.cipher.dedicatedKey->position;
+		memcpy(svrsettings.dedicatedKey_data 				,settings->base.cipher.dedicatedKey->data ,settings->base.cipher.dedicatedKey->capacity);
+
+//		printf("----in write -->>  dedicatedKey->capacity = %u\n",settings->base.cipher.dedicatedKey->capacity);
+//		printf("----in write -->>  dedicatedKey->position = %u\n",settings->base.cipher.dedicatedKey->position);
+//		printf("----in write -->>  dedicatedKey->size     = %u\n",settings->base.cipher.dedicatedKey->size);
+//
+//		printf("----in write -->>  dedicatedKey->data = \n");
+//		for(int n=0;n< settings->base.cipher.dedicatedKey->capacity;n++)
+//			printf("%02X",settings->base.cipher.dedicatedKey->data[n]);
+//		printf("\n");
+	}
+	else
+	{
+		svrsettings.dedicatedKey_capacity					=0xFFFFFFFF;
+		svrsettings.dedicatedKey_size						=0xFFFFFFFF;
+		svrsettings.dedicatedKey_position					=0xFFFFFFFF;
+
+//		printf("----in write -->>  dedicatedKey->capacity = 0xFFFFFFFF\n");
+//		printf("----in write -->>  dedicatedKey->position = 0xFFFFFFFF\n");
+//		printf("----in write -->>  dedicatedKey->size     = 0xFFFFFFFF\n");
+	}
+
+
+
+
+
+	memcpy( svrsettings.sourceSystemTitle 		,&settings->base.sourceSystemTitle , sizeof(svrsettings.sourceSystemTitle));
+//	printf("----in write -->>  settings->base.sourceSystemTitle = \n");
+//	for(int n=0;n< sizeof(svrsettings.sourceSystemTitle);n++)
+//		printf("%02X",svrsettings.sourceSystemTitle[n]);
+//	printf("\n");
+
+
+
+
+
+
+
+	svrsettings.transaction_command				=settings->transaction.command;
+	svrsettings.transaction_capacity			=settings->transaction.data.capacity;
+	svrsettings.transaction_position			=settings->transaction.data.position;
+	svrsettings.transaction_size				=settings->transaction.data.size;
+	memcpy(svrsettings.transaction_data 		,settings->transaction.data.data , settings->transaction.data.capacity);
+
+//	printf("----in write -->>  settings->transaction.command = %d\n",settings->transaction.command);
+//	printf("----in write -->>  settings->transaction.data.capacity = %d\n",settings->transaction.data.capacity);
+//	printf("----in write -->>  settings->transaction.data.position = %d\n",settings->transaction.data.position);
+//	printf("----in write -->>  settings->transaction.data.size = %d\n",settings->transaction.data.size);
+//	printf("----in write -->>  settings->transaction.data.data = \n");
+//	for(int n=0;n< settings->transaction.data.capacity;n++)
+//		printf("%02X",settings->transaction.data.data[n]);
+//	printf("\n");
+
+
+
+
+
+
+
+	svrsettings.blockIndex						=settings->base.blockIndex;
+	svrsettings.connected						=settings->base.connected;
+	svrsettings.authentication					=settings->base.authentication;
+	svrsettings.isAuthenticationRequired		=settings->base.isAuthenticationRequired;
+	svrsettings.cipher_security					=settings->base.cipher.security;
+//	printf("----in write -->>  settings->base.blockIndex = %d\n",settings->base.blockIndex);
+//	printf("----in write -->>  settings->base.connected = %d\n",settings->base.connected);
+//	printf("----in write -->>  settings->base.authentication = %d\n",settings->base.authentication);
+//	printf("----in write -->>  settings->base.isAuthenticationRequired = %d\n",settings->base.isAuthenticationRequired);
+//	printf("----in write -->>  settings->base.cipher.security = %d\n",settings->base.cipher.security);
+
+
+
+
+
+
+	svrsettings.CtoS_capacity					=settings->base.ctoSChallenge.capacity;
+	svrsettings.CtoS_position					=settings->base.ctoSChallenge.position;
+	svrsettings.CtoS_size						=settings->base.ctoSChallenge.size;
+	memcpy(svrsettings.CtoS_data 				,settings->base.ctoSChallenge.data ,settings->base.ctoSChallenge.capacity);
+
+//	printf("----in write -->>  settings->base.ctoSChallenge.capacity = %d\n",settings->base.ctoSChallenge.capacity);
+//	printf("----in write -->>  settings->base.ctoSChallenge.position = %d\n",settings->base.ctoSChallenge.position);
+//	printf("----in write -->>  settings->base.ctoSChallenge.size = %d\n",settings->base.ctoSChallenge.size);
+//	printf("----in write -->>  settings->base.ctoSChallenge.data = \n");
+//	for(int n=0;n< settings->base.ctoSChallenge.capacity;n++)
+//		printf("%02X",settings->base.ctoSChallenge.data[n]);
+//	printf("\n");
+
+
+
+
+	svrsettings.StoC_capacity					=settings->base.stoCChallenge.capacity;
+	svrsettings.StoC_position					=settings->base.stoCChallenge.position;
+	svrsettings.StoC_size						=settings->base.stoCChallenge.size;
+	memcpy(svrsettings.StoC_data 				,settings->base.stoCChallenge.data , settings->base.stoCChallenge.capacity);
+
+//	printf("----in write -->>  settings->base.stoCChallenge.capacity = %d\n",settings->base.stoCChallenge.capacity);
+//	printf("----in write -->>  settings->base.stoCChallenge.position = %d\n",settings->base.stoCChallenge.position);
+//	printf("----in write -->>  settings->base.stoCChallenge.size = %d\n",settings->base.stoCChallenge.size);
+//	printf("----in write -->>  settings->base.stoCChallenge.data = \n");
+//	for(int n=0;n< settings->base.stoCChallenge.capacity;n++)
+//		printf("%02X",settings->base.stoCChallenge.data[n]);
+//	printf("\n");
+
+
+
+
+
+	svrsettings.senderFrame						=settings->base.senderFrame;
+	svrsettings.receiverFrame					=settings->base.receiverFrame;
+	svrsettings.serverAddress					=settings->base.serverAddress;
+	svrsettings.clientAddress					=settings->base.clientAddress;
+	svrsettings.dataReceived					=settings->dataReceived;
+	svrsettings.frameReceived					=settings->frameReceived;
+//	printf("----in write -->>  settings->base.senderFrame = %d\n",settings->base.senderFrame);
+//	printf("----in write -->>  settings->base.receiverFrame = %d\n",settings->base.receiverFrame);
+//	printf("----in write -->>  settings->base.serverAddress = %d\n",settings->base.serverAddress);
+//	printf("----in write -->>  settings->base.clientAddress = %d\n",settings->base.clientAddress);
+//	printf("----in write -->>  settings->dataReceived = %d\n",settings->dataReceived);
+//	printf("----in write -->>  settings->frameReceived = %d\n",settings->frameReceived);
+
+
+
+	svrsettings.negotiatedConformance			=settings->base.negotiatedConformance;
+//	printf("----in write -->>  settings->base.negotiatedConformance = %d\n",settings->base.negotiatedConformance);
+
+
+	svrsettings.maxPduSize						=settings->base.maxPduSize;
+//	printf("----in write -->>  settings->base.maxPduSize = %d\n",settings->base.maxPduSize);
+
+
+
+
+	FILE* f = fopen("/root/svr.RAW", "wb");
+	int ret_fwrite = fwrite((unsigned char*) &svrsettings, sizeof(SvrSettings), 1, f);
+//	printf("====================================>>>>ret_fwrite = %d - size of = %d\n", ret_fwrite, sizeof(SvrSettings));
+//	printf("----in write -->>  con->settings.base.connected = %d\n",settings->base.connected);
+	fclose(f);
+
+}
+
+
+
+
+
+void srv_Load(dlmsServerSettings *settings)
+{
+	SvrSettings svrsettings;
+	FILE* f = fopen("/root/svr.RAW", "rb");
+
+	if(!f) return;
+
+	int ret_fread = fread((unsigned char*) &svrsettings, sizeof(SvrSettings), 1, f);
+
+	fclose(f);
+
+//	printf("====================================>>>>ret_fread = %d - size of = %d\n", ret_fread, sizeof(SvrSettings));
+
+
+
+	if(ret_fread)
+	{
+
+
+
+		settings->base.protocolVersion						=svrsettings.protocolVersion;
+
+		if(svrsettings.dedicatedKey_capacity!=0xFFFFFFFF)
+		{
+			settings->base.cipher.dedicatedKey=gxmalloc(sizeof(gxByteBuffer));
+			BYTE_BUFFER_INIT(settings->base.cipher.dedicatedKey);
+
+			bb_set(settings->base.cipher.dedicatedKey,svrsettings.dedicatedKey_data,svrsettings.dedicatedKey_capacity);
+
+//			settings->base.stoCChallenge.capacity				=svrsettings.StoC_capacity;
+//			settings->base.stoCChallenge.position				=svrsettings.StoC_position;
+//			settings->base.stoCChallenge.size					=svrsettings.StoC_size;
+		}
+
+
+		memcpy(	settings->base.sourceSystemTitle 			,svrsettings.sourceSystemTitle			, sizeof(svrsettings.sourceSystemTitle));
+
+
+//		settings->transaction.command						=svrsettings.transaction_command;
+//		settings->transaction.data.capacity					=svrsettings.transaction_capacity;
+//		settings->transaction.data.position					=svrsettings.transaction_position;
+//		settings->transaction.data.size						=svrsettings.transaction_size;
+		//memcpy(settings->transaction.data.data 		 		,svrsettings.transaction_data 			,sizeof(settings->transaction.data.data ));
+
+
+		settings->base.blockIndex							=svrsettings.blockIndex;
+		settings->base.connected							=svrsettings.connected;
+		settings->base.authentication						=svrsettings.authentication;
+		settings->base.isAuthenticationRequired				=svrsettings.isAuthenticationRequired;
+		settings->base.cipher.security						=svrsettings.cipher_security;
+
+		bb_set(&settings->base.ctoSChallenge				,svrsettings.CtoS_data,svrsettings.CtoS_capacity);
+		settings->base.ctoSChallenge.capacity				=svrsettings.CtoS_capacity;
+		settings->base.ctoSChallenge.position				=svrsettings.CtoS_position;
+		settings->base.ctoSChallenge.size					=svrsettings.CtoS_size;
+
+
+		bb_set(&settings->base.stoCChallenge				,svrsettings.StoC_data,svrsettings.StoC_capacity);
+		settings->base.stoCChallenge.capacity				=svrsettings.StoC_capacity;
+		settings->base.stoCChallenge.position				=svrsettings.StoC_position;
+		settings->base.stoCChallenge.size					=svrsettings.StoC_size;
+
+
+		settings->base.senderFrame							=svrsettings.senderFrame;
+		settings->base.receiverFrame						=svrsettings.receiverFrame;
+
+
+		settings->base.serverAddress						=svrsettings.serverAddress;
+		settings->base.clientAddress						=svrsettings.clientAddress;
+//		settings->dataReceived								=svrsettings.dataReceived;
+		settings->frameReceived								=svrsettings.frameReceived;
+		settings->base.negotiatedConformance				=svrsettings.negotiatedConformance;
+		settings->base.maxPduSize							=svrsettings.maxPduSize;
+
+
+
+//		printf("----in read -->>  settings->base.protocolVersion = %d\n",settings->base.connected);
+
+
+
+//		if(settings->base.cipher.dedicatedKey!=NULL)
+//		{
+//
+//			printf("----in read -->>  dedicatedKey->capacity = %u\n",settings->base.cipher.dedicatedKey->capacity);
+//			printf("----in read -->>  dedicatedKey->position = %u\n",settings->base.cipher.dedicatedKey->position);
+//			printf("----in read -->>  dedicatedKey->size     = %u\n",settings->base.cipher.dedicatedKey->size);
+//
+//			printf("----in read -->>  dedicatedKey->data = \n");
+//			for(int n=0;n< settings->base.cipher.dedicatedKey->capacity;n++)
+//				printf("%02X",settings->base.cipher.dedicatedKey->data[n]);
+//			printf("\n");
+//		}
+
+
+
+//		printf("----in read -->>  settings->base.sourceSystemTitle = \n");
+//		for(int n=0;n< sizeof(svrsettings.sourceSystemTitle);n++)
+//			printf("%02X",svrsettings.sourceSystemTitle[n]);
+//		printf("\n");
+
+//		printf("----in read -->>  settings->transaction.command = %d\n",settings->transaction.command);
+//		printf("----in read -->>  settings->transaction.data.capacity = %d\n",settings->transaction.data.capacity);
+//		printf("----in read -->>  settings->transaction.data.position = %d\n",settings->transaction.data.position);
+//		printf("----in read -->>  settings->transaction.data.size = %d\n",settings->transaction.data.size);
+//		printf("----in read -->>  settings->transaction.data.data = \n");
+//		for(int n=0;n< settings->transaction.data.capacity;n++)
+//			printf("%02X",settings->transaction.data.data[n]);
+//		printf("\n");
+
+
+
+//		printf("----in read -->>  settings->base.blockIndex = %d\n",settings->base.blockIndex);
+//		printf("----in read -->>  settings->base.connected = %d\n",settings->base.connected);
+//		printf("----in read -->>  settings->base.authentication = %d\n",settings->base.authentication);
+//		printf("----in read -->>  settings->base.isAuthenticationRequired = %d\n",settings->base.isAuthenticationRequired);
+//		printf("----in read -->>  settings->base.cipher.security = %d\n",settings->base.cipher.security);
+//
+//
+//		printf("----in read -->>  settings->base.ctoSChallenge.capacity = %d\n",settings->base.ctoSChallenge.capacity);
+//		printf("----in read -->>  settings->base.ctoSChallenge.position = %d\n",settings->base.ctoSChallenge.position);
+//		printf("----in read -->>  settings->base.ctoSChallenge.size = %d\n",settings->base.ctoSChallenge.size);
+//		printf("----in read -->>  settings->base.ctoSChallenge.data = \n");
+//		for(int n=0;n< settings->base.ctoSChallenge.capacity;n++)
+//			printf("%02X",settings->base.ctoSChallenge.data[n]);
+//		printf("\n");
+//
+//
+//		printf("----in read -->>  settings->base.stoCChallenge.capacity = %d\n",settings->base.stoCChallenge.capacity);
+//		printf("----in read -->>  settings->base.stoCChallenge.position = %d\n",settings->base.stoCChallenge.position);
+//		printf("----in read -->>  settings->base.stoCChallenge.size = %d\n",settings->base.stoCChallenge.size);
+//		printf("----in read -->>  settings->base.stoCChallenge.data = \n");
+//		for(int n=0;n< settings->base.stoCChallenge.capacity;n++)
+//			printf("%02X",settings->base.stoCChallenge.data[n]);
+//		printf("\n");
+//
+//
+//		printf("----in read -->>  settings->base.senderFrame = %d\n",settings->base.senderFrame);
+//		printf("----in read -->>  settings->base.receiverFrame = %d\n",settings->base.receiverFrame);
+//		printf("----in read -->>  settings->base.serverAddress = %d\n",settings->base.serverAddress);
+//		printf("----in read -->>  settings->base.clientAddress = %d\n",settings->base.clientAddress);
+//		printf("----in read -->>  settings->dataReceived = %d\n",settings->dataReceived);
+//		printf("----in read -->>  settings->frameReceived = %d\n",settings->frameReceived);
+//
+//
+//		printf("----in write -->>  settings->base.negotiatedConformance = %d\n",settings->base.negotiatedConformance);
+
+//		printf("----in write -->>  settings->base.maxPduSize = %d\n",settings->base.maxPduSize);
+
+
+	}
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 // Client has made connection to the server.
 /////////////////////////////////////////////////////////////////////////////
@@ -4424,9 +4903,9 @@ void svr_getDataType(
 
 void Read_Settings(SETTINGS *settings)
 {
-	char buffer[1000],data[10][100];
+	char buffer[1000],data[20][100], temp[100];
 	memset(buffer,0,sizeof(buffer));
-	for(int i=0;i<10;i++)
+	for(int i=0;i<20;i++)
 	{
 		memset(data[i],0,sizeof(data[i]));
 	}
@@ -4449,55 +4928,163 @@ void Read_Settings(SETTINGS *settings)
     		memset(tmp,0,sizeof(tmp));
     		switch(cnt)
     		{
-    		case 1 :
-    		{
-    			memset(settings->SerialNumber,0,sizeof(settings->SerialNumber));
-    			strcpy(settings->SerialNumber,data[0]+13);
-    			printf("SerialNumber = %s\n",settings->SerialNumber);
-    			break;
-    		}
-    		case 2 :
-    		{
-    			memset(settings->ProductYear,0,sizeof(settings->ProductYear));
-    			strcpy(settings->ProductYear,data[1]+12);
-    			printf("ProductYear = %s\n",settings->ProductYear);
-    			break;
-    		}
-    		case 3 :
-    		{
-    			memset(settings->manufactureID,0,sizeof(settings->manufactureID));
-    			strcpy(settings->manufactureID,data[2]+14);
-    			printf("manufactureID = %s\n",settings->manufactureID);
-    			break;
-    		}
-    		case 4 :
-    		{
-    			memset(settings->IP,0,sizeof(settings->IP));
-    			strcpy(settings->IP,data[3]+3);
-    			printf("IP = %s\n",settings->IP);
-    			break;
-    		}
-    		case 5 :
-    		{
-    			memset(settings->PORT,0,sizeof(settings->PORT));
-    			strcpy(settings->PORT,data[4]+5);
-    			printf("PORT = %s\n",settings->PORT);
-    			break;
-    		}
-    		case 6 :
-    		{
-    			memset(settings->ListenPORT,0,sizeof(settings->ListenPORT));
-    			strcpy(settings->ListenPORT,data[5]+11);
-    			printf("ListenPORT = %s\n",settings->ListenPORT);
-    			break;
-    		}
-    		case 7 :
-    		{
-    			memset(settings->APN,0,sizeof(settings->APN));
-    			strcpy(settings->APN,data[6]+4);
-    			printf("APN = %s\n",settings->APN);
-    			break;
-    		}
+				case 1 :
+				{
+					memset(settings->SerialNumber,0,sizeof(settings->SerialNumber));
+					strcpy(settings->SerialNumber,data[0]+13);
+//					printf("SerialNumber = %s\n",settings->SerialNumber);
+					break;
+				}
+				case 2 :
+				{
+					memset(settings->ProductYear,0,sizeof(settings->ProductYear));
+					strcpy(settings->ProductYear,data[1]+12);
+//					printf("ProductYear = %s\n",settings->ProductYear);
+					break;
+				}
+				case 3 :
+				{
+					memset(settings->manufactureID,0,sizeof(settings->manufactureID));
+					strcpy(settings->manufactureID,data[2]+14);
+//					printf("manufactureID = %s\n",settings->manufactureID);
+					break;
+				}
+				case 4 :
+				{
+					memset(settings->IP,0,sizeof(settings->IP));
+					strcpy(settings->IP,data[3]+3);
+//					printf("IP = %s\n",settings->IP);
+					break;
+				}
+				case 5 :
+				{
+					memset(settings->PORT,0,sizeof(settings->PORT));
+					strcpy(settings->PORT,data[4]+5);
+//					printf("PORT = %s\n",settings->PORT);
+					break;
+				}
+				case 6 :
+				{
+					memset(settings->ListenPORT,0,sizeof(settings->ListenPORT));
+					strcpy(settings->ListenPORT,data[5]+11);
+//					printf("ListenPORT = %s\n",settings->ListenPORT);
+					break;
+				}
+				case 7 :
+				{
+					memset(settings->APN,0,sizeof(settings->APN));
+					strcpy(settings->APN,data[6]+4);
+//					printf("APN = %s\n",settings->APN);
+					break;
+				}
+				case 8 :
+				{
+					int i;
+					memset(temp, 0, sizeof(temp));
+					memset(settings->AuthKey,0,sizeof(settings->AuthKey));
+					strcpy(temp, data[7]+8);
+
+					for (int i=0; i < 16; i++)
+					{
+				        sscanf((temp) + (2*i), "%2hhx", &settings->AuthKey[i]);
+				    }
+
+//				    printf("AuthKey - Original string: %s\n", temp);
+//				    printf("AuthKey - Hexadecimal value: ");
+//				    for (i = 0; i < 16; i++)
+//				    {
+//				        printf("%02X", settings->AuthKey[i]);
+//				    }
+//				    printf("\n");
+
+					break;
+				}
+				case 9 :
+				{
+					int i;
+					memset(temp, 0, sizeof(temp));
+					memset(settings->BroadEncKey,0,sizeof(settings->BroadEncKey));
+					strcpy(temp, data[8]+12);
+
+					for (int i=0; i < 16; i++)
+					{
+				        sscanf((temp) + (2*i), "%2hhx", &settings->BroadEncKey[i]);
+				    }
+
+//				    printf("BroadEncKey - Original string: %s\n", temp);
+//				    printf("BroadEncKey - Hexadecimal value: ");
+//				    for (i = 0; i < 16; i++)
+//				    {
+//				        printf("%02X", settings->BroadEncKey[i]);
+//				    }
+//				    printf("\n");
+
+					break;
+				}
+				case 10 :
+				{
+					int i;
+					memset(temp, 0, sizeof(temp));
+					memset(settings->UniEncKey,0,sizeof(settings->UniEncKey));
+					strcpy(temp, data[9]+10);
+
+					for (int i=0; i < 16; i++)
+					{
+				        sscanf((temp) + (2*i), "%2hhx", &settings->UniEncKey[i]);
+				    }
+
+//				    printf("UniEncKey - Original string: %s\n", temp);
+//				    printf("UniEncKey - Hexadecimal value: ");
+//				    for (i = 0; i < 16; i++)
+//				    {
+//				        printf("%02X", settings->UniEncKey[i]);
+//				    }
+//				    printf("\n");
+
+					break;
+				}
+				case 11 :
+				{
+					int i;
+					memset(temp, 0, sizeof(temp));
+					memset(settings->KEK,0,sizeof(settings->KEK));
+					strcpy(temp, data[10]+4);
+
+					for (int i=0; i < 16; i++)
+					{
+				        sscanf((temp) + (2*i), "%2hhx", &settings->KEK[i]);
+				    }
+
+//				    printf("KEK - Original string: %s\n", temp);
+//				    printf("KEK - Hexadecimal value: ");
+//				    for (i = 0; i < 16; i++)
+//				    {
+//				        printf("%02X", settings->KEK[i]);
+//				    }
+//				    printf("\n");
+
+					break;
+				}
+				case 12:
+				{
+					memset(settings->LLSPass,0,sizeof(settings->LLSPass));
+					strcpy(settings->LLSPass,data[11]+8);
+//					printf("LLSPass = %s\n",settings->LLSPass);
+					break;
+				}
+				case 13:
+				{
+					memset(settings->MDM,0,sizeof(settings->MDM));
+					strcpy(settings->MDM,data[12]+4);
+//					settings->MDM = data[12][5];
+					break;
+				}
+				default :
+				{
+//					printf("");
+					break;
+				}
+
     		}
     	}
     }

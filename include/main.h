@@ -35,6 +35,8 @@
 #include "ql_uart.h"
 #include "ql_i2c.h"
 #include "stdbool.h"
+#include "ql_i2c.h"
+#include "sys/stat.h"
 
 /* HAJIAN */
 #define closesocket close
@@ -49,14 +51,7 @@
  ***********/
 
 /*HAJIAN*/
-#define HDLC_HEADER_SIZE 		17
-#define HDLC_BUFFER_SIZE 		128
-#define PDU_BUFFER_SIZE 		1024
-#define WRAPPER_BUFFER_SIZE 	8 + PDU_BUFFER_SIZE
 
-//#define RS485_SERIAL_FD 		"/dev/ttyS1"
-//#define OPTIC_SERIAL_FD 		"/dev/ttyS2"
-#define RS485_SERIAL_FD 		"/dev/ttyS2"
 
 /*************************
  * TYPEDEFS & STRUCTURES *
@@ -70,14 +65,27 @@ typedef struct
     uint32_t	Timeout_ms;
 } Buffer;
 
+typedef enum
+{
+	RS485 		= 0,
+	SERVER		= 1,
+	CLIENT		= 2,
+	OPTICAL		= 3,
+	START_APP	= 4
+}REPORT_INTERFACE;
+
+
+typedef enum
+{
+	RX 			= 0,
+	TX			= 1,
+	CONNECTION	= 2,
+	START		= 3
+}REPORT_MESSAGE;
+
 /***********************
  * FUNCTION PROTOTYPES *
  ***********************/
-int Servers_Start(int trace);
-
-void Servers_Monitor (void);
-
-
 
 
 #endif /* MAIN_H_ */

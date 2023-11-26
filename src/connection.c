@@ -13,6 +13,7 @@
 // Copyright (c) Gurux Ltd
 //
 //---------------------------------------------------------------------------
+#include "exampleserver.h"
 #include "../include/connection.h"
 #include "../../development/include/server.h"
 
@@ -36,14 +37,20 @@
 #include <fcntl.h> // File control definitions
 #include <errno.h> // Error number definitions
 
-pthread_t Wan_Connection_pthread_var;
+pthread_t 				Wan_Connection_pthread_var;
 
-extern gxGPRSSetup 	gprsSetup	;
-extern gxData 		imei		;
-extern gxData 		deviceid6	;
-extern connection 	lnWrapper , lniec , rs485;
-extern gxTcpUdpSetup udpSetup;
-extern gxAutoConnect autoConnect;
+struct timeval 			Inctivity_start_timeout;
+
+extern gxGPRSSetup 		gprsSetup	;
+extern gxData 			imei		;
+extern gxData 			deviceid6	;
+extern connection 		lnWrapper , rs485;
+extern gxTcpUdpSetup 	udpSetup;
+extern gxAutoConnect 	autoConnect	;
+extern gxPushSetup	 	pushSetup	;
+extern gxIp4Setup 		ip4Setup	;
+extern gxTcpUdpSetup 	udpSetup	;
+extern SETTINGS 		Settings	;
 
 //Initialize connection buffers.
 void con_initializeBuffers(connection * connection, int size)
@@ -266,51 +273,70 @@ void Socket_Receive_Thread(void* pVoid)
 //        	 if ((ret = recv(con->socket.Socket_fd, (char*) bb.data + bb.size, bb.capacity - bb.size, 0)) == -1)
 
         	ret = recv(con->socket.Socket_fd, tmp, 2048, 0);
-        	if(ret <= 0)
+
+			if(ret <= 0)
         	{
 				//Notify error.
-				svr_reset(&con->settings);
+				if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
+					svr_reset(&con->settings);
+
 				con->socket.Status.Connected = false;
         	}
-        	else
+			else
 			{
+				gettimeofday (&Inctivity_start_timeout, NULL);  //Getting system time to check timeout in manager thread
+				system(LED_DATA_SHOT);
 				if (con->trace > GX_TRACE_LEVEL_WARNING)
 				{
-					printf("\r\nTCP CLIENT - RCV %d:\t", ret);
+					unsigned char tcp_client_rx[4096] = {0};
 					for (pos = 0; pos != ret; ++pos)
 					{
-						printf("%.2X ", tmp[pos]);
+						sprintf(tcp_client_rx + strlen(tcp_client_rx), "%.2X ", tmp[pos]);
 					}
-					printf("\r\n");
+					report(CLIENT, RX, tcp_client_rx);
 				}
 
 	//			appendLog(0, &bb);
 
-				if(tmp[8] == 0xE6)
+				if(tmp[8] == 0xE6)					//GW running
 				{
 					memcpy(con->buffer.RX, tmp, ret);
 					con->buffer.RX_Count += ret;
-					printf("Checking 0xE6 - rx:%d\n", con->buffer.RX_Count);
+//					printf("Checking 0xE6 - rx:%d\n", con->buffer.RX_Count);
 				}
 				else
 				{
-					if (svr_handleRequest2(&con->settings, &tmp, ret, &reply) != 0)
+					if (tmp[8] == 0x60)
 					{
-
+						if(strcmp(Settings.MDM , SHAHAB_OLD_VERSION) == 0)
+							svr_reset(&con->settings);
 					}
+
+
+					int ret_hr2=0;
+					ret_hr2 = svr_handleRequest2(&con->settings, &tmp, ret, &reply);
+//					if (svr_handleRequest2(&con->settings, &tmp, ret, &reply) != 0)
+//					{
+//
+//					}
+					printf("(((((((((((((((((ret_hr2=%d\n", ret_hr2);
+
+					srv_Save(&con->settings);
+
+
 				}
 
 				if (reply.size != 0)
 				{
-					if (con->trace > GX_TRACE_LEVEL_WARNING)
-					{
-						printf("\r\nTX %u:\t", (unsigned int)reply.size);
-						for (pos = 0; pos != reply.size; ++pos)
-						{
-							printf("%.2X ", reply.data[pos]);
-						}
-						printf("\r\n");
-					}
+//					if (con->trace > GX_TRACE_LEVEL_WARNING)
+//					{
+//						unsigned char tcp_client_tx[4096] = {0};
+//						for (pos = 0; pos != reply.size; ++pos)
+//						{
+//							sprintf(tcp_client_tx + strlen(tcp_client_tx), "%.2X ", reply.data[pos]);
+//						}
+//						report(CLIENT, TX, tcp_client_tx);
+//					}
 	//				appendLog(1, &reply);
 
 					memcpy(con->buffer.TX, (const char*)reply.data, reply.size - reply.position);
@@ -331,49 +357,52 @@ void Socket_Send_Thread(void* pVoid)
     connection* con = (connection*)pVoid;
     while (1)
     {
-
-        if (con->socket.Status.Connected == true && con->buffer.TX_Count>0)
-        {
-			if (send(con->socket.Socket_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
-			{
-				//If error has occured
-				svr_reset(&con->settings);
-				con->socket.Status.Connected = false;
-			}
-			else
-			{
-		    	printf("*******************************\n");
-		    	printf("TCP CLIENT - SEND:%d\n", con->buffer.TX_Count);
-		    	for (int m=0; m<con->buffer.TX_Count; m++)
-		    	{
-		    		printf("%.2X-",con->buffer.TX[m]);
-		    	}
-		    	printf("\n");
-		    	printf("*******************************\n");
-		    	con->buffer.TX_Count = 0;
-			}
-
-        }
         if(con->serversocket.Status.Connected == true && con->buffer.TX_Count>0)
         {
 			if (send(con->serversocket.Accept_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
 			{
 				//If error has occured
-				svr_reset(&con->settings);
+				if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
+					svr_reset(&con->settings);
+
 				con->serversocket.Status.Connected = false;
 			}
 			else
 			{
-				printf("*******************************\n");
-				printf("TCP SERVER - SEND:%d\n", con->buffer.TX_Count);
+				system(LED_DATA_SHOT);
+				unsigned char tcp_svr_tx[4096] = {0};
 				for (int m=0; m<con->buffer.TX_Count; m++)
 				{
-					printf("%.2X-",con->buffer.TX[m]);
+					sprintf(tcp_svr_tx + strlen(tcp_svr_tx), "%.2X ",con->buffer.TX[m]);
 				}
-				printf("\n");
-				printf("*******************************\n");
+				report(SERVER, TX, tcp_svr_tx);
+
 				con->buffer.TX_Count = 0;
 			}
+        }
+        if (con->socket.Status.Connected == true && con->buffer.TX_Count>0)
+        {
+			if (send(con->socket.Socket_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
+			{
+				//If error has occured
+				if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
+					svr_reset(&con->settings);
+
+				con->socket.Status.Connected = false;
+			}
+			else
+			{
+				system(LED_DATA_SHOT);
+				unsigned char tcp_client_tx[4096] = {0};
+		    	for (int m=0; m<con->buffer.TX_Count; m++)
+		    	{
+		    		sprintf(tcp_client_tx + strlen(tcp_client_tx), "%.2X ",con->buffer.TX[m]);
+		    	}
+		    	report(CLIENT, TX, tcp_client_tx);
+
+		    	con->buffer.TX_Count = 0;
+			}
+
         }
         usleep(1000);
     }
@@ -383,6 +412,7 @@ void Socket_Send_Thread(void* pVoid)
 //Initialize connection settings.
 int Socket_Connection_Start(connection* con)
 {
+	gxByteBuffer* tmp_bb		;
     struct sockaddr_in add = { 0 };
     int ret;
     //Reply wait time is 5 seconds.
@@ -402,13 +432,11 @@ int Socket_Connection_Start(connection* con)
     con->socket.Status.Opened 			= true	;
     con->serversocket.Status.Connected 	= false	;
 
-    con->socket.Parameters.PORT = 30146;
-//    sprintf(con->socket.Parameters.IP, "10.21.1.96");
-    sprintf(con->socket.Parameters.IP, "109.125.142.200");
-//    sprintf(con->socket.Parameters.IP, "192.168.1.134");
-    con->serversocket.server_port = udpSetup.port;
-
-    printf(">>>>>>>>>>>>>>>>>>>autoConnect.destinations : %s\n", autoConnect.destinations.data);
+    arr_getByIndex(&autoConnect.destinations, 0, (void**)&tmp_bb)		;
+//    char *IP_Port= bb_toString(tmp_bb)								;
+    sprintf(con->socket.Parameters.IP, strtok(bb_toString(tmp_bb),":"))	;		//converting server port-ip type to string, IP:PORT
+    con->socket.Parameters.PORT 	= atoi(strtok(NULL,":"))			;
+    con->serversocket.server_port 	= udpSetup.port						;
 
     ret = pthread_create(&con->receiverThread, 		NULL, Socket_Receive_Thread	, (void*)con);
     ret = pthread_create(&con->sendThread, 			NULL, Socket_Send_Thread	, (void*)con);
@@ -424,37 +452,27 @@ void Socket_get_open(connection* con)
 	{
 		Socket_get_close(con);
 		con->socket.Status.Opened=false;
-
-//		report("sds","RS232 --> TCP-Client:Socket",n,"--> CONNECTION_CLOSE!!");
-//		printf("TCP-Client:Socket--> CONNECTION_CLOSE!!\n");
 																	//===============( Create Socket )=========================
-//		if(ClientSocket.Socket_create(n)==OK)
 		if(Socket_create(con) == 1)
 		{
-//			report("sds","RS232 --> TCP-Client:Socket",n,"--> CREATE_OK!");
-//			printf("TCP-Client:Socket--> CREATE_OK!\n");
-//			report("sds","RS232 --> TCP-Client:Socket",n,"--> Connecting .....!");
-			printf("TCP-Client:Socket--> Connecting .....\n");
-
+			gettimeofday (&Inctivity_start_timeout, NULL);  //Getting system time to check timeout in manager thread
+			report(CLIENT, CONNECTION,"OPEN");
 		}
-
 	}
 																	//===============( Connect to Server )=========================
 
-//	printf("----------server add:%s\n", con->socket.Serv_addr.sin_addr);
 	if(connect(con->socket.Socket_fd, (struct sockaddr *)&con->socket.Serv_addr, sizeof(con->socket.Serv_addr)) == 0)
 	{
-		con->socket.Status.Connected=true;
-		con->socket.Status.Opened=true;
+		con->socket.Status.Connected	=true;
+		con->socket.Status.Opened		=true;
 
-//		report("sds","RS232 --> TCP-Client:Socket",n,"--> Connected !");
-		printf("TCP-Client:Socket--> Connected\n");
+		report(CLIENT, CONNECTION,"CONNECTED");
 
+		sendPush(&con->settings.base, &pushSetup);
 	}
 	else
 	{
 		con->socket.Status.Connected=false;
-
 	}
 
 }
@@ -470,9 +488,12 @@ int Socket_Manage_Thread (connection* con)
 	while(1)
 	{
 		if(con->socket.Status.Connected == false)
-		{
-//			printf("Socket_get_open\n");
 			Socket_get_open(con);
+
+		else if((diff_time_s(&Inctivity_start_timeout) > udpSetup.inactivityTimeout) && (udpSetup.inactivityTimeout > 0))
+		{
+			printf("++++++++++++++++++++++++ TCP Timeout:%d\n", diff_time_s(&Inctivity_start_timeout));
+			con->socket.Status.Connected = false;
 		}
 
 //		con->socket.Error=0;
@@ -559,7 +580,7 @@ void Socket_Listen_Thread(void* pVoid)
         bb_clear(&senderInfo);
         con->serversocket.Accept_fd = accept(con->serversocket.Socket_fd, (struct sockaddr*) &client, &len);
 
-        printf("socket of client = %d\n",con->serversocket.Accept_fd);
+//        printf("socket of client = %d\n",con->serversocket.Accept_fd);
         // printf("client = %s\n",client.sin_addr);
         // printf("len = %s\n",len);
 
@@ -574,8 +595,7 @@ void Socket_Listen_Thread(void* pVoid)
                 //Notify error.
             }
             con->serversocket.Status.Connected = true;
-            // printf("client = %s\n",client.sin_addr);
-            // printf("len = %s\n",len);
+            report(SERVER, CONNECTION, "CONNECTED");
 
 //            info = inet_ntoa(add.sin_addr);
 //            bb_set(&senderInfo, (unsigned char*)info, (unsigned short)strlen(info));
@@ -592,22 +612,27 @@ void Socket_Listen_Thread(void* pVoid)
     			{
     				//Notify error.
                     //Notify error.
-                    svr_reset(&con->settings);
+    				if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
+    					svr_reset(&con->settings);
+
                     close(con->serversocket.Accept_fd);
                     con->serversocket.Accept_fd = -1;
                     con->serversocket.Status.Connected = false;
+                    report(SERVER, CONNECTION, "CLOSE");
                     break;
     			}
 
+    			gettimeofday (&Inctivity_start_timeout, NULL);  //Getting system time to check timeout in manager thread
+    			system(LED_DATA_SHOT);
 
     			if (con->trace > GX_TRACE_LEVEL_WARNING)
     			{
-    				printf("\r\nRX %d:\t", ret);
+    				unsigned char tcp_svr_rx[4096] = {0};
     				for (pos = 0; pos != ret; ++pos)
     				{
-    					printf("%.2X ", tmp[pos]);
+    					sprintf(tcp_svr_rx + strlen(tcp_svr_rx), "%.2X ", tmp[pos]);
     				}
-    				printf("\r\n");
+    				report(SERVER, RX, tcp_svr_rx);
     			}
 
     //			appendLog(0, &bb);
@@ -640,12 +665,12 @@ void Socket_Listen_Thread(void* pVoid)
     			{
     				if (con->trace > GX_TRACE_LEVEL_WARNING)
     				{
-    					printf("\r\nTX %u:\t", (unsigned int)reply.size);
+    					unsigned char svr_tx_tmp[4096] = {0};
     					for (pos = 0; pos != reply.size; ++pos)
     					{
-    						printf("%.2X ", reply.data[pos]);
+    						sprintf(svr_tx_tmp + strlen(svr_tx_tmp), "%.2X ", reply.data[pos]);
     					}
-    					printf("\r\n");
+    					report(SERVER, TX, svr_tx_tmp);
     				}
     //				appendLog(1, &reply);
 
@@ -656,7 +681,10 @@ void Socket_Listen_Thread(void* pVoid)
     			}
     //            svr_reset(&con->settings);
             }
-            svr_reset(&con->settings);
+            report(SERVER, CONNECTION, "DISCONNECTED");
+
+            if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
+            	svr_reset(&con->settings);
         }
     }
     bb_clear(&reply);
@@ -666,7 +694,6 @@ void Socket_Listen_Thread(void* pVoid)
 
 int	Socket_get_close(connection* con)
 {
-//	printf("before close\n");
 	int sh=shutdown(con->socket.Socket_fd, SHUT_RDWR);
 	int cl=close(con->socket.Socket_fd);
 
@@ -674,6 +701,7 @@ int	Socket_get_close(connection* con)
 	con->socket.Socket_fd=0;
 	con->socket.Status.Connected=false;
 	con->socket.Status.Opened=false;
+	report(CLIENT, CONNECTION, "CLOSE");
 	return 1;
 }
 
@@ -716,7 +744,7 @@ int Socket_create(connection* con)								//===============( Create client )====
 void* IEC_Serial_Thread(void* pVoid)
 {
     int ret;
-    unsigned char data;
+    unsigned char data[1024];
     unsigned char first = 1;
     uint16_t pos;
     int bytesRead;
@@ -727,7 +755,7 @@ void* IEC_Serial_Thread(void* pVoid)
 
     while (1)
     {
-        bytesRead = read(con->comPort, &data, 1);
+        bytesRead = read(con->comPort, &data, 1024);
         if (bytesRead < 1)
         {
             //If there is no data on the read buffer.
@@ -738,14 +766,23 @@ void* IEC_Serial_Thread(void* pVoid)
         }
         else
         {
+        	sr.dataSize = bytesRead;
             if (con->trace > GX_TRACE_LEVEL_WARNING)
             {
                 if (first)
                 {
-                    printf("\nRX:\t");
+//                    printf("\nRX:\t");
                     first = 0;
                 }
-                printf("%.2X ", data);
+//                printf("%.2X ", data);\
+
+            	unsigned char optical_rx_tmp_info[4096] = {0};
+            	for (int m=0; m<bytesRead; m++)
+            	{
+            		sprintf(optical_rx_tmp_info + strlen(optical_rx_tmp_info) ,"%.2X ",data[m]);
+            	}
+            	printf("\n");
+            	report(OPTICAL, RX, optical_rx_tmp_info);
             }
 
 
@@ -758,24 +795,27 @@ void* IEC_Serial_Thread(void* pVoid)
                 first = 1;
                 if (con->trace > GX_TRACE_LEVEL_WARNING)
                 {
-                    printf("\nTX\t");
+                	unsigned char optical_tx_tmp_info[4096] = {0};
                     for (pos = 0; pos != reply.size; ++pos)
                     {
-                        printf("%.2X ", reply.data[pos]);
+                        sprintf(optical_tx_tmp_info + strlen(optical_tx_tmp_info), "%.2X ", reply.data[pos]);
                     }
-                    printf("\n");
+                    report(OPTICAL, TX, optical_tx_tmp_info);
                 }
                 ret = write(con->comPort, reply.data, reply.size);
+
                 if (ret != reply.size)
                 {
                     printf("Write failed\n");
                 }
+
                 if (con->settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E && sr.newBaudRate != 0)
                 {
                     if (con->settings.base.connected == DLMS_CONNECTION_STATE_IEC)
                     {
                         /*Change baud rate settings if optical probe is used.*/
-                        printf("%s %d", "Connected with optical probe. The new baudrate is:", sr.newBaudRate);
+                    	report(OPTICAL, CONNECTION, "CONNECTED WITH OPTICAL PROBE");
+//                        printf("%s %d", "Connected with optical probe. The new baudrate is:", sr.newBaudRate);
 //                        com_updateSerialportSettings(con,0, sr.newBaudRate);
                         Quectel_Update_Serial_Port_Settings(con,0, sr.newBaudRate);
                     }
@@ -786,9 +826,10 @@ void* IEC_Serial_Thread(void* pVoid)
 
                         usleep(100000);
                         uint16_t baudRate = 300 << (int)con->settings.localPortSetup->defaultBaudrate;
-                        printf("%s %d", "Disconnected with optical probe. The new baudrate is:", baudRate);
+                        report(OPTICAL, CONNECTION, "DISCONNECTED WITH OPTICAL PROBE");
+//                        printf("%s %d", "Disconnected with optical probe. The new baudrate is:", baudRate);
 //                        com_updateSerialportSettings(con,1, 300);
-                        Quectel_Update_Serial_Port_Settings(con,1, 300);
+                        Quectel_Update_Serial_Port_Settings(con,1, baudRate);
                     }
                 }
                 bb_clear(&reply);
@@ -848,17 +889,17 @@ void* RS485_Receive_Thread(void* pVoid)
     	}
     	*/
 
-    	bytesRead = read(con->comPort, &con->buffer.RX, 1024);
-    	con->buffer.RX_Count = bytesRead;
+    	bytesRead = read(con->comPort, &con->buffer.RX, 1024);			//BLOCKING MODE
+    	system(LED_485_SHOT);
 
-    	printf("*******************************\n");
-    	printf("RS485-RCV:%d\n", con->buffer.RX_Count);
-    	for (int m=0; m<con->buffer.RX_Count; m++)
+    	unsigned char rs_rx_tmp_info[4096] = {0};
+    	for (int m=0; m<bytesRead; m++)
     	{
-    		printf("%.2X-",con->buffer.RX[m]);
+    		sprintf(rs_rx_tmp_info + strlen(rs_rx_tmp_info) ,"%.2X ",con->buffer.RX[m]);
     	}
-    	printf("\n");
-    	printf("*******************************\n");
+    	report(RS485, RX, rs_rx_tmp_info);
+
+    	con->buffer.RX_Count = bytesRead;
 
     	usleep(1000);
     }
@@ -879,20 +920,22 @@ void* RS485_Send_Thread(void* pVoid)
         {
         	system("echo 1 > /sys/class/leds/DIR_485/brightness");
             ret = write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
+            system(LED_485_SHOT);
 //            ret = Ql_UART_Write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
 
             baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
             delay_us = ((con->buffer.TX_Count * 12000)/baudRate);
 //            printf("RS485 Send : %d\n", con->buffer.TX_Count);
-        	printf("*******************************\n");
-        	printf("RS485-SND:%d\n", con->buffer.TX_Count);
+
+            unsigned char rs_tx_tmp_info[4096] = {0};
         	for (int m=0; m<con->buffer.TX_Count; m++)
         	{
-        		printf("%.2X-",con->buffer.TX[m]);
+        		sprintf(rs_tx_tmp_info + strlen(rs_tx_tmp_info) ,"%.2X " ,con->buffer.TX[m]);
         	}
-        	printf("\n");
-        	printf("*******************************\n");
+        	report(RS485, TX, rs_tx_tmp_info);
+
             con->buffer.TX_Count = 0 ;
+
             usleep(delay_us*1000);
 
             system("echo 0 > /sys/class/leds/DIR_485/brightness");
@@ -923,6 +966,7 @@ int IEC_Serial_Start(connection* con, char *file)
         return ret;
     }
     ret = pthread_create(&con->receiverThread, NULL, IEC_Serial_Thread, (void*)con);
+    report(OPTICAL, CONNECTION, "OPEN");
     return ret;
 }
 
@@ -935,15 +979,17 @@ int RS485_Serial_Start(connection* con, char *file)
     int ret;
     if ((ret = com_initializeSerialPort(con, file, 0)) != 0)
     {
+    	report(RS485, CONNECTION, "CLOSE");
         return ret;
     }
     
+    report(RS485, CONNECTION, "OPEN");
     con->buffer.RX_Count = 0 ;
     con->buffer.TX_Count = 0 ;
     con->buffer.Timeout_ms = 5000;
-    ret = pthread_create(&con->receiverThread, NULL, RS485_Receive_Thread, (void*)con);
-    ret = pthread_create(&con->sendThread, NULL, RS485_Send_Thread, (void*)con);
-    ret = pthread_create(&con->managerThread, NULL, GW_Start, (void*)con);
+    ret = pthread_create(&con->receiverThread, 	NULL, RS485_Receive_Thread, (void*)con);
+    ret = pthread_create(&con->sendThread, 		NULL, RS485_Send_Thread, 	(void*)con);
+    ret = pthread_create(&con->managerThread, 	NULL, GW_Start, 			(void*)con);
     return ret;
 }
 
@@ -951,6 +997,7 @@ int RS485_Serial_Start(connection* con, char *file)
 void GW_Start (void* pVoid)
 {
 	connection* con = (connection*)pVoid;
+	rs485.buffer.Timeout_ms=5000;
 	GW_Run(&lnWrapper.buffer , &rs485.buffer);
 }
 
@@ -987,62 +1034,6 @@ int con_close(
     return 0;
 }
 
-// void report(char *format, ... )
-// {
-// 	va_list args;
-// 	int i=0,count=0;
-// 	char ss[100],str[400];
-// 	va_start( args, format );
-
-// 	int		d;
-// 	float   f;
-// 	char   *s;
-
-// 	memset(str,0,sizeof(str));
-
-// 	for( i = 0; format[i] != '\0'; ++i )
-// 	{
-// 		switch( format[i] )
-// 		{
-// 	         case 'd':
-// 	        	d=va_arg(args, int );
-// 	            sprintf(ss,"%d\0",d);
-// 	         break;
-
-// 	         case 'f':
-// 	        	 f=va_arg(args, double );
-// 	             sprintf(ss,"%f\0",f);
-// 	         break;
-
-
-// 	         case 's':
-// 	        	 s=va_arg(args, char *);
-// 	             sprintf(ss,"%s\0",s);
-// 	         break;
-
-// 	         default:
-// 	         break;
-// 	      }
-
-// 			memcpy(str+count,ss,strlen(ss));
-// 			count=strlen(str);
-
-// 	}
-
-
-// 	va_end( args );
-
-
-// #if DEBUG_MODE
-// 	printf("((%s)) %s\n",get_time(),str);
-// #else
-// 	char str1[500];
-// 	memset(str1,0,sizeof(str1));
-// 	sprintf(str1,"logger -t \"=======(  ZS-LRM200  )=======\" \"%s\" ",str);
-// 	std::system(str1);
-// #endif
-// }
-
 
 void Initialize (void)
 {
@@ -1050,6 +1041,7 @@ void Initialize (void)
 	Sim_Init	()	;
 	NW_Init		()	;
 	WAN_Init	()	;
+
 }
 
 
@@ -1095,7 +1087,7 @@ void ICCID_Get (void)
 	char* ICCID_pointer;
     char iccid[32]={0};
     int ret = ql_sim_get_iccid(iccid,32);
-    var_setString(&deviceid6.value, iccid, 32);
+    var_setString(&deviceid6.value, iccid, strlen(iccid));
 //    printf("ICCID - RET:%d , iccid:%s\n", ret, iccid);
 }
 
@@ -1153,12 +1145,13 @@ void WAN_Connection (void)
 	QL_NW_SIGNAL_STRENGTH_INFO_T 	Sig_Strg_Info	;
 	QL_NW_ERROR_CODE 				Ret_Cell_Info	;
 	QL_NW_CELL_INFO_T				NW_Cell_Info	;
+	struct 	in_addr 				addr			;
+	char 							exc_res[2048]	;
 
 	memset(&Sig_Strg_Info,0,sizeof(QL_NW_SIGNAL_STRENGTH_INFO_T));
 
 	APN_Param_Struct.op = START_A_DATA_CALL							;
-	APN_Param_Struct.apn = &gprsSetup.apn.data						;
-	sprintf(APN_Param_Struct.apn, "mtnirancell")					;
+	APN_Param_Struct.apn= bb_toString(&gprsSetup.apn)				;
 //	printf("<= WAN Connection - APN:%s =>\n", APN_Param_Struct.apn)	;
 
 	APN_Param_Struct.profile_idx 	= 1		;
@@ -1166,7 +1159,7 @@ void WAN_Connection (void)
 
 
 	int ret = ql_wan_setapn(APN_Param_Struct.profile_idx, APN_Param_Struct.ip_type, APN_Param_Struct.apn, &APN_Param_Struct.userName, &APN_Param_Struct.password, auth);
-	if(ret!=0) printf("!ERROR! ql_wan_setapn - ret:%d", ret);
+	if(ret!=0) printf("!ERROR! ql_wan_setapn - ret:%d\n", ret);
 
 	int 	ip_type_get 	= 0	;
     char 	apn_get[128]	={0};
@@ -1174,7 +1167,7 @@ void WAN_Connection (void)
     char 	password_get[64]={0};
 
     ret = ql_wan_getapn(APN_Param_Struct.profile_idx, &ip_type_get, apn_get, sizeof(apn_get), userName_get, sizeof(userName_get), password_get, sizeof(password_get));
-	if(ret!=0) printf("!ERROR! ql_wan_getapn - ret:%d", ret);
+	if(ret!=0) printf("!ERROR! ql_wan_getapn - ret:%d\n", ret);
 //	else
 //	{
 //		printf("<= APN SET:%s =>\n", apn_get);
@@ -1191,7 +1184,7 @@ void WAN_Connection (void)
 
 		if (ret == 0)
 		{
-			if (payload.v4.state == 1)			//Data call status is Activation
+			if (payload.v4.state == 1)			//Data call status is activated
 			{
 //				if(Flags_Struct.WAN_Struct.WAN_IPv4_Started == DOWN)
 //				{
@@ -1202,7 +1195,42 @@ void WAN_Connection (void)
 				Ret_Signal 		= ql_nw_get_signal_strength (&Sig_Strg_Info);
 				Ret_Cell_Info 	= ql_nw_get_cell_info		(&NW_Cell_Info)	;
 
-//				printf("<= IP:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n", payload.v4.addr.ip, Sig_Strg_Info.LTE_SignalStrength.rssi, NW_Cell_Info.gsm_info_valid, NW_Cell_Info.umts_info_valid, NW_Cell_Info.lte_info_valid);
+				exec(GET_GATEWAY_IP, exc_res, 10);
+
+//				printf("<= IP:%s - GW:%s - PRI_DNS:%s - SEC_DNS:%s - NAME:%s - RSSI:%d - GSM:%d - UMTS:%d - LTE:%d =>\n",
+//						payload.v4.addr.ip,
+//						exc_res,
+//						payload.v4.addr.pri_dns,
+//						payload.v4.addr.sec_dns,
+//						payload.v4.addr.name,
+//						Sig_Strg_Info.LTE_SignalStrength.rssi,
+//						NW_Cell_Info.gsm_info_valid,
+//						NW_Cell_Info.umts_info_valid,
+//						NW_Cell_Info.lte_info_valid);
+
+				inet_pton(AF_INET, payload.v4.addr.ip, 			&addr);
+				ip4Setup.ipAddress = ntohl(addr.s_addr);
+
+				inet_pton(AF_INET, exc_res, 					&addr);
+				ip4Setup.gatewayIPAddress = ntohl(addr.s_addr);
+
+				inet_pton(AF_INET, payload.v4.addr.pri_dns, 	&addr);
+				ip4Setup.primaryDNSAddress = ntohl(addr.s_addr);
+
+				inet_pton(AF_INET, payload.v4.addr.sec_dns, 	&addr);
+				ip4Setup.secondaryDNSAddress = ntohl(addr.s_addr);
+
+
+				if		(NW_Cell_Info.lte_info_valid == 1)
+					system(PAT_3T_LED_NET);
+
+				else if(NW_Cell_Info.umts_info_valid == 1)
+					system(PAT_2T_LED_NET);
+
+				else if(NW_Cell_Info.gsm_info_valid == 1)
+					system(PAT_1T_LED_NET);
+
+
 
 //				printf("<= data_call_info v4: {\n    profile_idx:%d,\n    ip_type:%d,\n    state:%d,\n    ip:%s,\n    name:%s,\n    gateway:%s,\n    pri_dns:%s,\n    sec_dns:%s\n} =>\n",
 //					payload.profile_idx, payload.ip_type, payload.v4.state, payload.v4.addr.ip, payload.v4.addr.name, payload.v4.addr.gateway,
@@ -1233,17 +1261,17 @@ void WAN_Connection (void)
 				WAN_Init();
 
 				ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
-				if(ret!=0)
-					printf("!ERROR! ql_wan_start - ret:%d", ret);
+//				if(ret!=0)
+//					printf("!ERROR! ql_wan_start - ret:%d\n", ret);
 //				else
 //					printf("<= WAN STARTED! nw_cb=%d =>\n", nw_cb);
 			}
 		}
 		else
 		{
-			printf("!ERROR! ql_get_data_call_info - ret:%d", ret);
+//			printf("!ERROR! ql_get_data_call_info - ret:%d", ret);
 		}
-		sleep(2);
+		sleep(1);
 	}
 }
 
@@ -1274,6 +1302,17 @@ long diff_time_ms(struct timeval *start)
 }
 
 
+long diff_time_s(struct timeval *start)
+{
+	 struct timeval  tv;
+	 long diff=0;
+	 gettimeofday (&tv, NULL);
+	 diff=tv.tv_usec - start->tv_usec;
+	 if(diff < 0) diff += 1000000;
+	 diff = diff/1000000;
+	 diff += ((tv.tv_sec - start->tv_sec));
+	 return diff;
+}
 
 
 int PushSetup_OnConnectivity()
@@ -1368,6 +1407,100 @@ int closeServer(int* s)
     }
     return 0;
 }
+
+
+void DS1307_Init (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
+{
+	memset(DS1307_Time, 0, sizeof(DS1307_I2C_STRUCT_TYPEDEF));
+	DS1307_Time->I2C_fd = Ql_I2C_Init(I2C_DEV);
+
+	if(DS1307_Time->I2C_fd<0)
+		printf("!!!ERROR!!! Ql_I2C_Init:%d", DS1307_Time->I2C_fd);
+}
+
+
+int DS1307_Set_Time (DS1307_I2C_STRUCT_TYPEDEF DS1307_Time)
+{
+	uint8_t time[7]={0,0,0,0,0,0,0};
+
+	time[6] = ((DS1307_Time.year/10)<<4)	| (DS1307_Time.year%10)		;
+	time[5] = ((DS1307_Time.month/10)<<4)	| (DS1307_Time.month%10)	;
+	time[4] = ((DS1307_Time.date/10)<<4)	| (DS1307_Time.date%10)		;
+	time[3] = (DS1307_Time.day & 0x07)									;
+	time[2] = ((DS1307_Time.hour/10)<<4)	| (DS1307_Time.hour%10)		| (DS1307_Time.H_12*0x64)	;
+	time[1] = ((DS1307_Time.minute/10)<<4)	| (DS1307_Time.minute%10)	;
+	time[0] = ((DS1307_Time.second/10)<<4)	| (DS1307_Time.second%10)	;
+
+	return Ql_I2C_Write(DS1307_Time.I2C_fd, DS1307_I2C_SLAVE_ADDR, 0, time, 7);
+}
+
+
+void DS1307_Get_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
+{
+	uint8_t time[7];
+
+    Ql_I2C_Read(DS1307_Time->I2C_fd, DS1307_I2C_SLAVE_ADDR, 0, time, 7);
+
+    DS1307_Time->year 	= (((time[6]>>4)&0x0F)*10) + (time[6]&0x0F)	;
+    DS1307_Time->month 	= (((time[5]>>4)&0x01)*10) + (time[5]&0x0F)	;
+    DS1307_Time->date 	= (((time[4]>>4)&0x03)*10) + (time[4]&0x0F)	;
+    DS1307_Time->day 	= (time[3]&0x07)							;
+    DS1307_Time->H_12 	= (time[2]&0x64)							;
+    DS1307_Time->hour 	= (((time[2]>>4)&0x03)*10) + (time[2]&0x0F)	;
+    DS1307_Time->minute = (((time[1]>>4)&0x07)*10) + (time[1]&0x0F)	;
+    DS1307_Time->second = (((time[0]>>4)&0x07)*10) + (time[0]&0x0F)	;
+
+//    printf("DS1307 get time =================== Y.M.D - HH:MM:SS = %d.%d.%d - %d:%d:%d\n",
+//    		DS1307_Time->year,
+//			DS1307_Time->month,
+//			DS1307_Time->date,
+//			DS1307_Time->hour,
+//			DS1307_Time->minute,
+//			DS1307_Time->second);
+}
+
+void Set_System_Date_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
+{
+	struct timeval	tv_for_settimeofday = {0};
+	struct tm 		Sys_Time 			= {0};
+
+	DS1307_Get_Time(DS1307_Time);
+
+    Sys_Time.tm_year 	= 100 + DS1307_Time->year 		;	//2000+year(23)-1900
+    Sys_Time.tm_mon 	= DS1307_Time->month 	- 1		;
+    Sys_Time.tm_mday 	= DS1307_Time->date 			;
+    Sys_Time.tm_hour 	= DS1307_Time->hour 			;
+    Sys_Time.tm_min 	= DS1307_Time->minute 			;
+    Sys_Time.tm_sec 	= DS1307_Time->second 			;
+
+    tv_for_settimeofday.tv_sec = mktime (&Sys_Time)		; 		// time since the Epoch
+	settimeofday(&tv_for_settimeofday, NULL)			;
+}
+
+void DS1307_Time_Date_Correcting (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time)
+{
+	if(DS1307_Time->month == 12 && DS1307_Time->date > 29)
+	{
+		DS1307_I2C_STRUCT_TYPEDEF DS1307_Time_Cpy;
+		DS1307_Time->month 	= 1;
+		DS1307_Time->date 	= 1;
+		memcpy(&DS1307_Time_Cpy, DS1307_Time, sizeof(DS1307_I2C_STRUCT_TYPEDEF));
+		DS1307_Set_Time(DS1307_Time_Cpy);
+	}
+	else if(DS1307_Time->month > 6 && DS1307_Time->date > 30)
+	{
+		DS1307_I2C_STRUCT_TYPEDEF DS1307_Time_Cpy;
+		DS1307_Time->month ++;
+		DS1307_Time->date = 1;
+		memcpy(&DS1307_Time_Cpy, DS1307_Time, sizeof(DS1307_I2C_STRUCT_TYPEDEF));
+		DS1307_Set_Time(DS1307_Time_Cpy);
+	}
+}
+
+
+
+
+
 
 
 

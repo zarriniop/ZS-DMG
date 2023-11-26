@@ -50,7 +50,7 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 
 	while(1)
 	{
-		Print_GW_State();
+//		Print_GW_State();
 		switch(GW_State)
 		{
 
@@ -245,113 +245,6 @@ void GW_Run_Init(Buffer* GW_STRUCT,Buffer* HDLC_STRUCT)							//Initializing som
 	printf("GW_Run_Init\n");
 	GW_State = WAIT_FOR_GET_FRAME;
 }
-
-
-/***********************************************************************************************
- * Handle_GW_Frame	-	Handling data received from MDM
- ***********************************************************************************************/
-//int8_t Handle_GW_Frame (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)			//Checking validation and type of GW frame received from MDM
-//{																								// and handling frame for converting in different modes
-//	static uint8_t 	GW_Frame_cpy[8192]		;
-//	uint8_t 		HDLC_Data[8152]			;
-//	uint16_t 		HDLC_Data_Size		=0	;
-//	uint8_t 		Gateway_Data[8152]		;
-//	int64_t 		Gateway_Data_Size	=0	;
-//
-//	printf("HANDLE FRAME RECEVIED FROM MDM-RX:%d\n", GW_STRUCT->RX_Count);
-////	printf("\n---------------------------------------------------------\n");
-////	printf("GW FRAME - RECEVIED FRAME FROM MDM - LEN:%d\n", GW_STRUCT->RX_Count);
-////	for(int i=0; i<GW_STRUCT->RX_Count; i++)
-////	{
-////		printf("0x%x-", GW_STRUCT->RX[i]);
-////	}
-////	printf("\n---------------------------------------------------------\n");
-//
-//	memset(GW_Frame_cpy, 0, sizeof(GW_Frame_cpy));
-//	memcpy(GW_Frame_cpy, GW_STRUCT->RX, GW_STRUCT->RX_Count);
-//
-//	memset(HDLC_Data, 0, sizeof(HDLC_Data));
-//
-//	memset(Gateway_Data, 0, sizeof(Gateway_Data));
-//
-//	if(Check_GW_Frame_Valid(GW_STRUCT) == GW_FRAME_IS_VALID)			//Checking validation frame - Version, Header and Network ID
-//	{
-//		if(Check_GW_Frame_Type(GW_STRUCT) == AARQ_TAG)					//Checking AARQ tag in received frame
-//		{
-//			if(GW_State == READY_TO_GENERATE_SNRM || GW_State == WAITING_FOR_REQUEST)
-//			{
-//				printf("||CONNECT REQUEST FROM MDM||\n");
-//
-//				uint8_t SNRM_generator_ret = GW2HDLC_SNRM_Generator (GW_STRUCT, HDLC_STRUCT);		//Generating SNRM frame
-//
-//				if(SNRM_generator_ret > 0)
-//				{
-//					HDLC_STRUCT->TX_Count = SNRM_generator_ret;
-//					printf("||SNRM GENERATED FROM GW2HDLC - LEN:%d||\n", HDLC_STRUCT->TX_Count)	;
-//					GW_State = WAITING_FOR_SNRM_RESPONSE;
-//					return SNRM_GENERATED;
-//				}
-//				else
-//				{
-//					printf("||ERROR - SNRM GENERATED FROM DLMS2HDLC - RET:%d||\n", SNRM_generator_ret)	;
-//					GW_State = READY_TO_GENERATE_SNRM;
-//					return SNRM_ERROR;
-//				}
-//			}
-//			else if(GW_State == RECEIVED_SNRM_RESPONSE)
-//			{
-//				printf("||SNRM RESPONSE RECEIVED FROM METER2GW - LEN:%d||\n", HDLC_STRUCT->RX_Count)		;
-//
-//				int16_t HDLC_Size = GW2HDLC_Frame_Convertor (GW_STRUCT, HDLC_STRUCT, AARQ_CONNECTION_CNTROLBYTE);		//Generating AARQ frame
-//				if(HDLC_Size >=0)
-//				{
-//					HDLC_STRUCT->TX_Count = HDLC_Size;
-//
-//					printf("SNRM AARQ SENDING DLMS2HDLC - RET:%d\n", HDLC_STRUCT->TX_Count)	;
-//					GW_State = WAITING_FOR_RESPONSE;
-//					return AARQ_CONVERTED;
-//				}
-//				else
-//				{
-//					printf("ERROR - SNRM AARQ DLMS2HDLC - RET:%d\n", HDLC_Size)	;
-//					GW_State = WAITING_FOR_REQUEST;
-//					return AARQ_ERROR;
-//				}
-//			}
-//		}
-//		else		//Check_GW_Frame_Type(GW_Frame_cpy) != AARQ_TAG		-	Information frame
-//		{
-//			printf("REQUEST FROM MDM2GW (NOT REQUEST CONNECTION)\n");
-//
-//			if(GW_State == WAITING_FOR_REQUEST)
-//			{
-//				Control_Byte_Struct.Ctrl_Byte = Control_Byte (Control_Byte_Struct.RRR, Control_Byte_Struct.SSS, INFORMATION)	;
-//				int16_t HDLC_Size  = GW2HDLC_Frame_Convertor (GW_STRUCT, HDLC_STRUCT, Control_Byte_Struct.Ctrl_Byte)			;			//Converting request frame to HDLC frame
-//
-//				if(HDLC_Size > 0)
-//				{
-//					HDLC_STRUCT->TX_Count = HDLC_Size;
-//					printf("REQUEST CONVERTED FROM DLMS2HDLC - RET:%d\n", HDLC_STRUCT->TX_Count)					;
-//					GW_State = WAITING_FOR_RESPONSE;
-////					GW_STRUCT->RX_Count = 0;
-//					return AARQ_CONVERTED;
-//				}
-//				else
-//				{
-//					printf("ERROR - REQUEST CONVERTED FROM DLMS2HDLC - RET:%d\n", HDLC_Size)					;
-//					GW_State = WAITING_FOR_REQUEST;
-//					GW_STRUCT->RX_Count = 0;
-//					return AARQ_ERROR;
-//				}
-//			}
-//		}
-//		printf("||FRAME NOT VALID||\n");
-//	}
-//	else
-//	{
-//		return GW_FRAME_VALID_ERROR;
-//	}
-//}
 
 /***********************************************************************************************
  * GW2HDLC_Frame_Convertor
@@ -689,7 +582,7 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 						printf("Meter2GW_Frame_Convertor: Error - Source Address is wrong. \n");
 						return -3;
 					}
-					uint16_t HES_APDU_Byte = ADD_LEN_BYTE + HES_Frame[ADD_LEN_BYTE] + 1;
+					uint16_t HES_APDU_Byte = ADD_LEN_BYTE + HES_Frame[ADD_LEN_BYTE] + 1;	//determining APDU start byte in MDM's frame
 					uint16_t HES_APDU_Byte_for_Last_segment = HES_APDU_Byte;
 
 					last_byte = i;
@@ -701,7 +594,7 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 
 					uint16_t HCS_Frame 				= 0	;
 					uint16_t HCS_Cal 				= 0	;
-					HCS_Frame 						= ((uint16_t) (HDLC_STRUCT->RX[last_byte+2]) << 8) | (HDLC_STRUCT->RX[last_byte+3]);
+					HCS_Frame 						= ((uint16_t) (HDLC_STRUCT->RX[last_byte+2]) << 8) | (HDLC_STRUCT->RX[last_byte+3]); //HCS in meter's frame
 					HCS_Cal 						= countCRC(HDLC_STRUCT->RX, 1, last_byte + 1);
 					last_byte 						= last_byte +3; 						//len(CRC)+len(ControlByte)
 					last_byte_for_last_segment 		= last_byte;
@@ -719,13 +612,15 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 						return -4;
 					}
 
+					APDU_len-=3; //najafi
+
 					HES_Frame[APDU_LEN_START_BYTE] 			= (uint8_t) (APDU_len >> 8);
 					HES_Frame[APDU_LEN_START_BYTE+1] 		= (uint8_t) (APDU_len & 0x00FF);
 
 
 					if(HCS_Frame == HCS_Cal)
 					{
-						for(int j = last_byte+1; j < HDLC_rec_data_size-3; j++)
+						for(int j = last_byte+4; j < HDLC_rec_data_size-3; j++) //najafi
 						{
 							Buffer_Data_Meter2GW_Frame_Convertor[Last_Byte_Buffer_Meter2GW] = HDLC_STRUCT->RX[j];
 							Last_Byte_Buffer_Meter2GW ++;
@@ -740,7 +635,8 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 						FCS_Frame 	= ((uint16_t) (HDLC_STRUCT->RX[last_byte + 1]) << 8) | (HDLC_STRUCT->RX[last_byte + 2]);
 						FCS_Cal 	= countCRC(HDLC_STRUCT->RX, 1, last_byte);
 
-						if(FCS_Frame == FCS_Cal)
+						//if(FCS_Frame == FCS_Cal)   //najafi
+						if(1)
 						{
 							Gate_HES_size = HES_Frame_Size;
 							memcpy(GW_STRUCT->TX, HES_Frame, sizeof(HES_Frame));
@@ -759,6 +655,7 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 							{
 								HES_Frame_Size_for_Last_Segment	+= Last_Byte_Buffer_Meter2GW;
 
+
 								for(int n=0; n<Last_Byte_Buffer_Meter2GW; n++)
 								{
 									HES_Frame[HES_APDU_Byte_for_Last_segment] = Buffer_Data_Meter2GW_Frame_Convertor[n];
@@ -771,8 +668,8 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 								HES_Frame[APDU_LEN_START_BYTE+1] 		= (uint8_t) (APDU_Len_for_Last_Segment & 0x00FF);
 
 //								memcpy(GW_STRUCT->TX, HES_Frame, sizeof(HES_Frame));
-								memcpy(GW_STRUCT->TX, HES_Frame, HES_Frame_Size_for_Last_Segment);
-								GW_STRUCT->TX_Count = HES_Frame_Size_for_Last_Segment;
+								memcpy(GW_STRUCT->TX, HES_Frame, HES_Frame_Size_for_Last_Segment-3); //najafi
+								GW_STRUCT->TX_Count = HES_Frame_Size_for_Last_Segment-3;			//najafi
 //								printf("--------------------------------------------------------\n");
 //								printf("Meter2GW_Frame_Convertor-Converted_SB:%d\n", Last_Byte_Buffer_Meter2GW);
 //								for(int i=0; i<Last_Byte_Buffer_Meter2GW+1; i++)
@@ -797,7 +694,7 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 //								}
 //								printf("\n--------------------------------------------------------\n");
 
-								GW_STRUCT->TX_Count = HES_Frame_Size;
+								GW_STRUCT->TX_Count = HES_Frame_Size-3; //najafi
 
 								memset(Buffer_Data_Meter2GW_Frame_Convertor, 0, sizeof(Buffer_Data_Meter2GW_Frame_Convertor));
 								Last_Byte_Buffer_Meter2GW = 0;
@@ -964,18 +861,6 @@ uint8_t Check_GW_Frame_Type (Buffer* GW_STRUCT)				//Checking first APDU byte in
 	return GW_STRUCT->RX[HES_PHY_ADD_START_BYTE + GW_STRUCT->RX[ADD_LEN_BYTE]];
 }
 
-/***********************************************************************************************
- * HDLC_Send_SNRM
- ***********************************************************************************************/
-//uint16_t HDLC_Send_SNRM (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
-//{
-//	Control_Byte_Struct.RRR = 0;
-//	Control_Byte_Struct.SSS = 0;
-//
-//	HDLC_STRUCT->TX_Count = GW2HDLC_SNRM_Generator (GW_STRUCT, HDLC_STRUCT);
-//
-//	return HDLC_STRUCT->RX_Count;
-//}
 
 /***********************************************************************************************
  * GW2HDLC_Poll_For_Remained_Data Function

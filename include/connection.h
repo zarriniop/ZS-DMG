@@ -41,6 +41,18 @@ extern "C" {
 
 extern gxPushSetup pushSetup;
 
+#define LED_DATA_SHOT	"echo 1 > /sys/devices/platform/leds/leds/LED1/shot"
+#define LED_485_SHOT	"echo 1 > /sys/devices/platform/leds/leds/LED2/shot"
+#define PAT_0T_LED_NET	"echo 1 0 0 20000 > /sys/devices/platform/leds/leds/LED3/pattern"
+#define PAT_1T_LED_NET	"echo 1 100 0 20000 > /sys/devices/platform/leds/leds/LED3/pattern"
+#define PAT_2T_LED_NET	"echo 1 100 0 200 1 100 0 20000 > /sys/devices/platform/leds/leds/LED3/pattern"
+#define PAT_3T_LED_NET	"echo 1 100 0 200 1 100 0 200 1 100 0 20000 > /sys/devices/platform/leds/leds/LED3/pattern"
+#define GET_GATEWAY_IP	"uci get network.wan0.gateway"
+
+/*I2C*/
+#define I2C_DEV          		"/dev/i2c-0"
+#define DS1307_I2C_SLAVE_ADDR	0x68			//codec 5616
+
 
 static uint32_t Boudrate[]={ 300 , 600 , 1200 , 2400 , 4800 , 9600 , 19200 , 38400 , 57600 , 115200 };
 
@@ -150,6 +162,19 @@ typedef struct
 	char 			password[20];
 }APN_PARAM_STRUCT_TYPEDEF;
 
+typedef struct
+{
+	int		I2C_fd	;
+	uint8_t second	;		//0-60
+	uint8_t minute	;		//0-60
+	uint8_t hour	;		//0-24
+	uint8_t day		;		//1-7
+	uint8_t date	;		//1-31
+	uint8_t month	;		//1-12
+	uint8_t year	;		//0-99
+	bool	H_12	;		//0-1
+}DS1307_I2C_STRUCT_TYPEDEF;
+
 void con_initializeBuffers(connection* connection, int size);
 
 
@@ -238,12 +263,24 @@ void WAN_Connection (void);
 
 long diff_time_us(struct timeval *start);
 long diff_time_ms(struct timeval *start);
+long diff_time_s (struct timeval *start);
 
 int PushSetup_OnConnectivity();
 
 int connectServer_pushon(char* address, char *port, int* s);
 
 int closeServer(int* s);
+
+void DS1307_Init (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time);
+
+int DS1307_Set_Time (DS1307_I2C_STRUCT_TYPEDEF DS1307_Time);
+
+void DS1307_Get_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time);
+
+void Set_System_Date_Time (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time);
+
+void DS1307_Time_Date_Correcting (DS1307_I2C_STRUCT_TYPEDEF* DS1307_Time);
+
 
 #ifdef  __cplusplus
 }
