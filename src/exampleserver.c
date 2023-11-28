@@ -2221,7 +2221,9 @@ int loadSettings(dlmsSettings *settings)
             serializerSettings.stream = f;
             serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
             serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
+            printf("------------------> 1 \n");
             ret = ser_loadObjects(settings, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
+            printf("------------------> 2 \n");
             return ret;
         }
         fclose(f);
@@ -2248,7 +2250,7 @@ int svr_InitObjects(
     // The following 13 octets are assigned by the manufacturer.
     // The manufacturer is responsible for guaranteeing the uniqueness of these octets.
 
-    sprintf(buff, "GRX%.13lu", SERIAL_NUMBER);
+    sprintf(buff, "ZSS03107%.8lu", SERIAL_NUMBER);
     {
         const unsigned char ln[6] = {0, 0, 42, 0, 0, 255};
         INIT_OBJECT(ldn, DLMS_OBJECT_TYPE_DATA, ln);
@@ -2339,124 +2341,162 @@ int svr_InitObjects(
        var_setString(&deviceid7.value, buf, 14);
    }
 
-    // Error Register
-    {
-        const unsigned char ln[6] = {0, 0, 97, 97, 0, 255};
-        INIT_OBJECT(errorregister, DLMS_OBJECT_TYPE_DATA, ln);
-        // double long value = 0;
-        // var_setUInt32(&errorregister.value, value);
-    }
+   // Error Register
+   {
+   	printf("<<<=== errorregister ===>>>\n");
+       const unsigned char ln[6] = {0, 0, 97, 97, 0, 255};
+       INIT_OBJECT(errorregister, DLMS_OBJECT_TYPE_DATA, ln);
+		uint32_t value = 0;
+		var_setUInt32(&errorregister.value, value);
+   }
 
-    // Unread Log Files Status Register
-    {
-        const unsigned char ln[6] = {0, 0, 94, 98, 26, 255};
-        INIT_OBJECT(unreadlogfilesstatusregister, DLMS_OBJECT_TYPE_DATA, ln);
-        // long value = 0;
-        // var_setUInt32(&unreadlogfilesstatusregister.value, value);
-    }
+   // Unread Log Files Status Register
+   {
+   	printf("<<<=== unreadlogfilesstatusregister ===>>>\n");
+       const unsigned char ln[6] = {0, 0, 94, 98, 26, 255};
+       INIT_OBJECT(unreadlogfilesstatusregister, DLMS_OBJECT_TYPE_DATA, ln);
+		uint32_t value = 0;
+		var_setUInt32(&unreadlogfilesstatusregister.value, value);
+   }
 
-    // Alarm Register 1
-    {
-        const unsigned char ln[6] = {0, 0, 97, 98, 0, 255};
-        INIT_OBJECT(alarmregister1, DLMS_OBJECT_TYPE_DATA, ln);
-        // double long value = 0;
-        // var_setUInt32(&alarmregister1.value, value);
-    }
-    // Alarm Filter 1
-    {
-        const unsigned char ln[6] = {0, 0, 97, 98, 10, 255};
-        INIT_OBJECT(alarmfilter1, DLMS_OBJECT_TYPE_DATA, ln);
-        // double long value = 0;
-        // var_setUInt32(&alarmfilter1.value, value);
-    }
+   // Alarm Register 1
+   {
+   	printf("<<<=== alarmregister1 ===>>>\n");
+       const unsigned char ln[6] = {0, 0, 97, 98, 0, 255};
+       INIT_OBJECT(alarmregister1, DLMS_OBJECT_TYPE_DATA, ln);
+		uint32_t value = 0;
+		var_setUInt32(&alarmregister1.value, value);
+   }
+   // Alarm Filter 1
+   {
+   	printf("<<<=== alarmfilter1 ===>>>\n");
+       const unsigned char ln[6] = {0, 0, 97, 98, 10, 255};
+       INIT_OBJECT(alarmfilter1, DLMS_OBJECT_TYPE_DATA, ln);
+		uint32_t value = 0;
+		var_setUInt32(&alarmfilter1.value, value);
+   }
 
-    // Alarm Register 2
-    {
-        const unsigned char ln[6] = {0, 0, 97, 98, 1, 255};
-        INIT_OBJECT(alarmregister2, DLMS_OBJECT_TYPE_DATA, ln);
-        // double long value = 0;
-        // var_setUInt32(&alarmregister2.value, value);
-    }
+   // Alarm Register 2
+   {
+   	printf("<<<=== alarmregister2 ===>>>\n");
+       const unsigned char ln[6] = {0, 0, 97, 98, 1, 255};
+       INIT_OBJECT(alarmregister2, DLMS_OBJECT_TYPE_DATA, ln);
+		double long value = 0;
+		var_setUInt32(&alarmregister2.value, value);
+   }
 
-    // Alarm Filter 2
-    {
-        const unsigned char ln[6] = {0, 0, 97, 98, 11, 255};
-        INIT_OBJECT(alarmfilter2, DLMS_OBJECT_TYPE_DATA, ln);
-        // double long value = 0;
-        // var_setUInt32(&alarmfilter2.value, value);
-    }
+   // Alarm Filter 2
+   {
+   	printf("<<<=== alarmfilter2 ===>>>\n");
+       const unsigned char ln[6] = {0, 0, 97, 98, 11, 255};
+       INIT_OBJECT(alarmfilter2, DLMS_OBJECT_TYPE_DATA, ln);
+		double long value = 0;
+		var_setUInt32(&alarmfilter2.value, value);
+   }
 
-    // Event Parameter
-    {
-        const unsigned char ln[6] = {0, 0, 96, 11, 10, 255};
-        INIT_OBJECT(eventparameter, DLMS_OBJECT_TYPE_DATA, ln);
-        // uint8_t value = 0;
-        // var_setEnum(&eventparameter.value, value);
-    }
+   // Event Parameter
+   // Event Parameter-Standard Event Log
+   {
+   	printf("<<<=== Event Parameter-Standard Event Log ===>>>\n");
+       const unsigned char ln[6] = {0, 0, 96, 11, 10, 255};
+       INIT_OBJECT(eventparameter, DLMS_OBJECT_TYPE_DATA, ln);
+		uint8_t value = 0;
+		var_setEnum(&eventparameter.value, value);
+   }
 
-    // Event Object - Fraud Detection Log
-    {
-        const unsigned char ln[6] = {0, 0, 96, 11, 1, 255};
-        INIT_OBJECT(eventobjectfrauddetectionlog, DLMS_OBJECT_TYPE_DATA, ln);
-        // uint8_t value = 0;
-        // var_setEnum(&eventobjectfrauddetectionlog.value, value);
-    }
+   // Event Object - Fraud Detection Log
+   {
+       const unsigned char ln[6] = {0, 0, 96, 11, 1, 255};
+       INIT_OBJECT(eventobjectfrauddetectionlog, DLMS_OBJECT_TYPE_DATA, ln);
+		uint8_t value = 255;
+		var_setEnum(&eventobjectfrauddetectionlog.value, value);
+		printf("<<<***== eventobjectfrauddetectionlog.value:%d ==***>>>\n", eventobjectfrauddetectionlog.value.bVal);
+   }
 
-    // Event Object - Communication Log
-    {
-        const unsigned char ln[6] = {0, 0, 96, 11, 5, 255};
-        INIT_OBJECT(eventobjectcommunicationlog, DLMS_OBJECT_TYPE_DATA, ln);
-        // uint8_t value = 0;
-        // var_setEnum(&eventobjectcommunicationlog.value, value);
-    }
+   // Event Object - Communication Log
+   {
+       const unsigned char ln[6] = {0, 0, 96, 11, 5, 255};
+       INIT_OBJECT(eventobjectcommunicationlog, DLMS_OBJECT_TYPE_DATA, ln);
+		uint8_t value = 255;
+		var_setEnum(&eventobjectcommunicationlog.value, value);
+		printf("<<<***== eventobjectcommunicationlog.value:%d ==***>>>\n", eventobjectcommunicationlog.value.bVal);
+   }
 
-    // GPRS Keep Alive Time Interval
-    {
-        const unsigned char ln[6] = {0, 0, 94, 98, 19, 255};
-        INIT_OBJECT(gprskeepalivetimeinterval, DLMS_OBJECT_TYPE_DATA, ln);
+   // GPRS Keep Alive Time Interval
+   {
+   	printf("<<<***== GPRS Keep Alive Time Interval ==***>>>\n");
+		const unsigned char ln[6] = {0, 0, 94, 98, 19, 255};
+		INIT_OBJECT(gprskeepalivetimeinterval, DLMS_OBJECT_TYPE_DATA, ln);
 
-        // var_init(&gprskeepalivetimeinterval.value);
+//		arr1234 = (variantArray *)malloc(sizeof(variantArray));
+//		arr123[0] = (dlmsVARIANT *)malloc(sizeof(dlmsVARIANT));
+//		arr123[1] = (dlmsVARIANT *)malloc(sizeof(dlmsVARIANT));
+//		arr123[2] = (dlmsVARIANT *)malloc(sizeof(dlmsVARIANT));
 
-        // va_init(&arr1234);
+		gprskeepalivetimeinterval.value.Arr = (variantArray *)malloc(sizeof(variantArray));
 
-        // var_init(&arr123[0]);
-        // var_init(&arr123[1]);
-        // var_init(&arr123[2]);
+		var_init(&gprskeepalivetimeinterval.value);
+		va_init(&gprskeepalivetimeinterval.value.Arr);
 
-        // arr123[0].vt = DLMS_DATA_TYPE_BOOLEAN;
-        // arr123[0].bVal = 1;
-        // arr123[1].vt = DLMS_DATA_TYPE_UINT32;
-        // arr123[1].ulVal = 60;
-        // arr123[2].vt = DLMS_DATA_TYPE_UINT32;
-        // arr123[2].ulVal = 10;
+		va_init(&arr1234);
 
-        // va_push(&arr1234,&arr123[0]);
-        // va_push(&arr1234,&arr123[1]);
-        // va_push(&arr1234,&arr123[2]);
+		var_init(&arr123[0]);
+		var_init(&arr123[1]);
+		var_init(&arr123[2]);
 
-        // var_attachStructure(&gprskeepalivetimeinterval.value, arr1234.data, 3);
+		var_setBoolean	(&arr123[0], 1);
+		var_setUInt32	(&arr123[1], 60);
+		var_setUInt32	(&arr123[2], 10);
 
-    }
+//		arr123[0].vt	= DLMS_DATA_TYPE_BOOLEAN;
+//		arr123[1].vt	= DLMS_DATA_TYPE_UINT32;
+//		arr123[2].vt	= DLMS_DATA_TYPE_UINT32;
+//		arr123[0].bVal	= 1;
+//		arr123[1].ulVal	= 60;
+//		arr123[2].ulVal	= 10;
 
-    // Local Authentication Protection
-    {
-        const unsigned char ln[6] = {0, 0, 94, 98, 20, 255};
-        INIT_OBJECT(localauthenticationprotection, DLMS_OBJECT_TYPE_DATA, ln);
+		va_push(&arr1234,&arr123[0]);
+		va_push(&arr1234,&arr123[1]);
+		va_push(&arr1234,&arr123[2]);
 
-        // var_init(&localauthenticationprotection.value);
-        // var_init(&arr321[0]);
-        // var_init(&arr321[1]);
-        // va_init(&arr12345);
-        // arr321[0].vt = DLMS_DATA_TYPE_UINT8 ;
-        // arr321[0].bVal = 2 ; 
-        // arr321[1].vt = DLMS_DATA_TYPE_UINT8 ;
-        // arr321[1].bVal = 12 ; 
+//		va_attach2(gprskeepalivetimeinterval.value.Arr, &arr1234);
 
-        // va_push(&arr12345,&arr321[0]);
-        // va_push(&arr12345,&arr321[1]);
+		gprskeepalivetimeinterval.value.vt	= DLMS_DATA_TYPE_STRUCTURE;
+		gprskeepalivetimeinterval.value.Arr	= &arr1234;
 
-        // var_attachStructure(&localauthenticationprotection.value, arr12345.data, 2);
-    }
+		printf("----------------------------------------------------------\n");
+		printValues(&arr1234);
+		printValues(gprskeepalivetimeinterval.value.Arr);
+		printf("----------------------------------------------------------\n");
+   }
+
+   // Local Authentication Protection
+   {
+   	printf("<<<***== Local Authentication Protection ==***>>>\n");
+       const unsigned char ln[6] = {0, 0, 94, 98, 20, 255};
+       INIT_OBJECT(localauthenticationprotection, DLMS_OBJECT_TYPE_DATA, ln);
+
+//		var_init(&localauthenticationprotection.value);
+//		va_init(&arr12345);
+//		var_init(&arr321[0]);
+//		var_init(&arr321[1]);
+//
+//		var_setUInt8(&arr321[0], 5);
+//		var_setUInt8(&arr321[1], 5);
+//
+//		//         arr321[0].vt = DLMS_DATA_TYPE_UINT8 ;
+//		//         arr321[0].bVal = 2 ;
+//		//         arr321[1].vt = DLMS_DATA_TYPE_UINT8 ;
+//		//         arr321[1].bVal = 12 ;
+//
+//		va_push(&arr12345,&arr321[0]);
+//		va_push(&arr12345,&arr321[1]);
+//
+//		localauthenticationprotection.value.vt	= DLMS_DATA_TYPE_STRUCTURE;
+//		localauthenticationprotection.value.Arr	= &arr12345;
+
+//         var_attachStructure(&localauthenticationprotection.value, arr12345.data, 2);
+   }
 
     // IMEI
     {
@@ -2528,12 +2568,14 @@ int svr_InitObjects(
         executeTime = 0;
         return ret;
     }
+    printf("------------------> 3 \n");
     if ((ret = loadSettings(&settings->base)) != 0)
     {
         GXTRACE_INT(("Failed to load settings!"), ret);
         executeTime = 0;
         return ret;
     }
+    printf("------------------> 4 \n");
     if ((ret = loadSecurity(&settings->base)) != 0)
     {
         GXTRACE_INT(("Failed to load security settings!"), ret);
