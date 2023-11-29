@@ -315,11 +315,6 @@ void Socket_Receive_Thread(void* pVoid)
 
 					int ret_hr2=0;
 					ret_hr2 = svr_handleRequest2(&con->settings, &tmp, ret, &reply);
-//					if (svr_handleRequest2(&con->settings, &tmp, ret, &reply) != 0)
-//					{
-//
-//					}
-					printf("(((((((((((((((((ret_hr2=%d\n", ret_hr2);
 
 					srv_Save(&con->settings);
 
@@ -355,6 +350,7 @@ void Socket_Receive_Thread(void* pVoid)
 void Socket_Send_Thread(void* pVoid)
 {
     connection* con = (connection*)pVoid;
+
     while (1)
     {
         if(con->serversocket.Status.Connected == true && con->buffer.TX_Count>0)

@@ -2254,25 +2254,35 @@ int svr_InitObjects(
     {
         const unsigned char ln[6] = {0, 0, 42, 0, 0, 255};
         INIT_OBJECT(ldn, DLMS_OBJECT_TYPE_DATA, ln);
-        // var_addBytes(&ldn.value, (unsigned char *)buff, 16);
+        var_addBytes(&ldn.value, (unsigned char *)buff, 16);
     }
 
     // active firmware id 2
     {
+        char buf[49];
+        char AT_Response[512];
+        char *Firmware_Version;
+
         const unsigned char ln[6] = {1, 2, 0, 2, 0, 255};
         INIT_OBJECT(activefirmwareid2, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[49];
-        // sprintf(buf, "0\n");
-        // var_setString(&activefirmwareid2.value, buf, 49);
+
+        exec("serial_atcmd AT+GMR", AT_Response, 30);		//AT command send
+        Firmware_Version = strtok(AT_Response, "\n");		//Cutting firmware version
+        Firmware_Version = strtok(NULL, "\n");
+        if(Firmware_Version != NULL)
+        {
+        	sprintf(buf, "%s\0", Firmware_Version);
+        	var_setString(&activefirmwareid2.value, buf, 49);
+        }
     }
 
     // active firmware signature 2
     {
         const unsigned char ln[6] = {1, 2, 0, 2, 8, 255};
         INIT_OBJECT(activefirmwaresignature2, DLMS_OBJECT_TYPE_DATA, ln);
-        // char buf[49];
-        // sprintf(buf, "0\n");
-        // var_setString(&activefirmwaresignature2.value, buf, 49);
+         char buf[49];
+         sprintf(buf, "0\0");
+         var_setString(&activefirmwaresignature2.value, buf, 49);
     }
 
 
@@ -2343,7 +2353,6 @@ int svr_InitObjects(
 
    // Error Register
    {
-   	printf("<<<=== errorregister ===>>>\n");
        const unsigned char ln[6] = {0, 0, 97, 97, 0, 255};
        INIT_OBJECT(errorregister, DLMS_OBJECT_TYPE_DATA, ln);
 		uint32_t value = 0;
@@ -2352,7 +2361,6 @@ int svr_InitObjects(
 
    // Unread Log Files Status Register
    {
-   	printf("<<<=== unreadlogfilesstatusregister ===>>>\n");
        const unsigned char ln[6] = {0, 0, 94, 98, 26, 255};
        INIT_OBJECT(unreadlogfilesstatusregister, DLMS_OBJECT_TYPE_DATA, ln);
 		uint32_t value = 0;
@@ -2361,7 +2369,6 @@ int svr_InitObjects(
 
    // Alarm Register 1
    {
-   	printf("<<<=== alarmregister1 ===>>>\n");
        const unsigned char ln[6] = {0, 0, 97, 98, 0, 255};
        INIT_OBJECT(alarmregister1, DLMS_OBJECT_TYPE_DATA, ln);
 		uint32_t value = 0;
@@ -2369,7 +2376,6 @@ int svr_InitObjects(
    }
    // Alarm Filter 1
    {
-   	printf("<<<=== alarmfilter1 ===>>>\n");
        const unsigned char ln[6] = {0, 0, 97, 98, 10, 255};
        INIT_OBJECT(alarmfilter1, DLMS_OBJECT_TYPE_DATA, ln);
 		uint32_t value = 0;
@@ -2378,7 +2384,6 @@ int svr_InitObjects(
 
    // Alarm Register 2
    {
-   	printf("<<<=== alarmregister2 ===>>>\n");
        const unsigned char ln[6] = {0, 0, 97, 98, 1, 255};
        INIT_OBJECT(alarmregister2, DLMS_OBJECT_TYPE_DATA, ln);
 		double long value = 0;
@@ -2387,7 +2392,6 @@ int svr_InitObjects(
 
    // Alarm Filter 2
    {
-   	printf("<<<=== alarmfilter2 ===>>>\n");
        const unsigned char ln[6] = {0, 0, 97, 98, 11, 255};
        INIT_OBJECT(alarmfilter2, DLMS_OBJECT_TYPE_DATA, ln);
 		double long value = 0;
@@ -2397,7 +2401,6 @@ int svr_InitObjects(
    // Event Parameter
    // Event Parameter-Standard Event Log
    {
-   	printf("<<<=== Event Parameter-Standard Event Log ===>>>\n");
        const unsigned char ln[6] = {0, 0, 96, 11, 10, 255};
        INIT_OBJECT(eventparameter, DLMS_OBJECT_TYPE_DATA, ln);
 		uint8_t value = 0;
@@ -2410,7 +2413,6 @@ int svr_InitObjects(
        INIT_OBJECT(eventobjectfrauddetectionlog, DLMS_OBJECT_TYPE_DATA, ln);
 		uint8_t value = 255;
 		var_setEnum(&eventobjectfrauddetectionlog.value, value);
-		printf("<<<***== eventobjectfrauddetectionlog.value:%d ==***>>>\n", eventobjectfrauddetectionlog.value.bVal);
    }
 
    // Event Object - Communication Log
@@ -2419,7 +2421,6 @@ int svr_InitObjects(
        INIT_OBJECT(eventobjectcommunicationlog, DLMS_OBJECT_TYPE_DATA, ln);
 		uint8_t value = 255;
 		var_setEnum(&eventobjectcommunicationlog.value, value);
-		printf("<<<***== eventobjectcommunicationlog.value:%d ==***>>>\n", eventobjectcommunicationlog.value.bVal);
    }
 
    // GPRS Keep Alive Time Interval
@@ -2433,10 +2434,8 @@ int svr_InitObjects(
 //		arr123[1] = (dlmsVARIANT *)malloc(sizeof(dlmsVARIANT));
 //		arr123[2] = (dlmsVARIANT *)malloc(sizeof(dlmsVARIANT));
 
-		gprskeepalivetimeinterval.value.Arr = (variantArray *)malloc(sizeof(variantArray));
-
-		var_init(&gprskeepalivetimeinterval.value);
-		va_init(&gprskeepalivetimeinterval.value.Arr);
+//		var_init(&gprskeepalivetimeinterval.value);
+//		va_init(&gprskeepalivetimeinterval.value.Arr);
 
 		va_init(&arr1234);
 
@@ -2448,26 +2447,14 @@ int svr_InitObjects(
 		var_setUInt32	(&arr123[1], 60);
 		var_setUInt32	(&arr123[2], 10);
 
-//		arr123[0].vt	= DLMS_DATA_TYPE_BOOLEAN;
-//		arr123[1].vt	= DLMS_DATA_TYPE_UINT32;
-//		arr123[2].vt	= DLMS_DATA_TYPE_UINT32;
-//		arr123[0].bVal	= 1;
-//		arr123[1].ulVal	= 60;
-//		arr123[2].ulVal	= 10;
-
 		va_push(&arr1234,&arr123[0]);
 		va_push(&arr1234,&arr123[1]);
 		va_push(&arr1234,&arr123[2]);
 
-//		va_attach2(gprskeepalivetimeinterval.value.Arr, &arr1234);
-//
-//		gprskeepalivetimeinterval.value.vt	= DLMS_DATA_TYPE_STRUCTURE;
-//		gprskeepalivetimeinterval.value.Arr	= &arr1234;
+		dlmsVARIANT** p = (dlmsVARIANT**) arr1234.data;
 
-//		printf("----------------------------------------------------------\n");
-//		printValues(&arr1234);
-//		printValues(gprskeepalivetimeinterval.value.Arr);
-//		printf("----------------------------------------------------------\n");
+//		var_attachStructure(&gprskeepalivetimeinterval.value, p, 3);
+
    }
 
    // Local Authentication Protection
@@ -3371,7 +3358,7 @@ void svr_preAction(
 
             	FILE* f;
 				gxImageTransfer* i = (gxImageTransfer*)e->target;
-				const char* imageFile = "image.raw";
+				const char* imageFile = "/usr/bin/ZS-DMG/image.ipk";
 
 				//Image name and size to transfer
 				if (e->index == 1)
@@ -3556,6 +3543,11 @@ void svr_preAction(
 					{
 						i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_ACTIVATION_SUCCESSFUL;
 						imageActionStartTime = time(NULL);
+
+						char install_command[100];
+						memset(install_command, 0, sizeof(install_command));
+						sprintf(install_command, "opkg install %s", imageFile);
+						system(install_command);
 					}
 				}
 			#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
