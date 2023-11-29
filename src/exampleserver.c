@@ -1787,11 +1787,11 @@ int addImageTransfer()
 {
     unsigned char ln[6] = {0, 0, 44, 0, 0, 255};
     INIT_OBJECT(imageTransfer, DLMS_OBJECT_TYPE_IMAGE_TRANSFER, ln);
-    // imageTransfer.imageBlockSize = 1;
+     imageTransfer.imageBlockSize = 900;
 
     // imageTransfer.imageFirstNotTransferredBlockNumber = 10;
     // Enable image transfer.
-    // imageTransfer.imageTransferEnabled = 1;
+     imageTransfer.imageTransferEnabled = 1;
     // imageTransfer.imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_VERIFICATION_SUCCESSFUL;
 
     return 0;
@@ -2464,10 +2464,10 @@ int svr_InitObjects(
 //		gprskeepalivetimeinterval.value.vt	= DLMS_DATA_TYPE_STRUCTURE;
 //		gprskeepalivetimeinterval.value.Arr	= &arr1234;
 
-		printf("----------------------------------------------------------\n");
-		printValues(&arr1234);
-		printValues(gprskeepalivetimeinterval.value.Arr);
-		printf("----------------------------------------------------------\n");
+//		printf("----------------------------------------------------------\n");
+//		printValues(&arr1234);
+//		printValues(gprskeepalivetimeinterval.value.Arr);
+//		printf("----------------------------------------------------------\n");
    }
 
    // Local Authentication Protection
@@ -3368,9 +3368,11 @@ void svr_preAction(
 
             e->handled = 1;
 			#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-				FILE* f;
+
+            	FILE* f;
 				gxImageTransfer* i = (gxImageTransfer*)e->target;
 				const char* imageFile = "image.raw";
+
 				//Image name and size to transfer
 				if (e->index == 1)
 				{
@@ -3378,7 +3380,6 @@ void svr_preAction(
 					//There is only one image.
 
 					imageTransfer.imageActivateInfo.size = 1;
-
 
 					int pos;
 					dlmsVARIANT* it;
@@ -3389,38 +3390,22 @@ void svr_preAction(
 						if (va_getByIndex(e->parameters.Arr, pos, &it) != 0)
 						{
 							//return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-							printf("Error in Select");
 						}
 						else
 						{
 							var_toString(it, &bb);
 							char* tmp = bb_toString(&bb);
-							printf("Array [%d] type:%d = %s\r\n",pos,it->vt, tmp);
 							free(tmp);
 							bb_clear(&bb);
 						}
 
 					}
 
-					printf("ret========%d  \r\n", ret);
-
-					//if ((e->error = arr_getByIndex(&imageTransfer.imageActivateInfo, 0, (void**)&info)) != 0)
-					//{
-					//    e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
-					//    return;
-					//}
 					uint16_t size;
 
 					if (va_getByIndex(e->parameters.Arr, 0, &it) == 0)
 					{
-						//var_toString(it, &active_info->identification);
 						bb_set2(&IMAGE_ACTIVATE_INFO[0].identification, it->byteArr, 0, it->byteArr->size);
-						//bb_insert(it->byteArr->data, it->byteArr->size, &active_info->identification, 0);
-						//bb_clear(&active_info->identification);
-						//bb_set(&active_info->identification, it->byteArr->data, it->byteArr->size);
-						//memcpy(active_info->identification.data, it->byteArr->data, it->byteArr->size);
-						//active_info->identification.size = it->byteArr->size;
-						//active_info->identification.position = 0;
 					}
 					else
 					{
@@ -3439,17 +3424,10 @@ void svr_preAction(
 						return;
 					}
 
-					//if ((ret = cosem_checkStructure(e->parameters.byteArr, 2)) != 0 ||
-					//    (ret = cosem_getOctetString2(e->parameters.byteArr, info->identification.data, sizeof(info->identification.data), &size)) != 0 ||
-					//    (ret = cosem_getUInt32(e->parameters.byteArr, &info->size)) != 0)
-					//{
-					//    e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
-					//    return;
-					//}
-					//info->identification.size = size;
 					#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
 						printf("Updating image %s Size: %d\r\n", imageFile, IMAGE_ACTIVATE_INFO[0].size);
 					#endif
+
 					allocateImageTransfer(imageFile, IMAGE_ACTIVATE_INFO[0].size);
 					ba_clear(&i->imageTransferredBlocksStatus);
 					i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_INITIATED;
@@ -3469,13 +3447,11 @@ void svr_preAction(
 						if (va_getByIndex(e->parameters.Arr, pos, &it) != 0)
 						{
 							//return DLMS_ERROR_CODE_READ_WRITE_DENIED;
-							printf("Error in Select");
 						}
 						else
 						{
 							var_toString(it, &bb);
 							char* tmp = bb_toString(&bb);
-							printf("Array [%d] = %s , type=%d \r\n", pos, tmp,it->vt);
 
 							free(tmp);
 							bb_clear(&bb);
@@ -3498,7 +3474,6 @@ void svr_preAction(
 					if (va_getByIndex(e->parameters.Arr, 1, &it) == 0)
 					{
 						blockSize = it->byteArr->size;
-						printf("block size = %d \n", blockSize);
 					}
 					else
 					{
@@ -3513,9 +3488,9 @@ void svr_preAction(
 					f = fopen(imageFile, "r+b");
 					if (!f)
 					{
-						#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-							printf("Unable to open file %s\r\n", imageFile);
-						#endif
+//						#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
+//							printf("Unable to open file %s\r\n", imageFile);
+//						#endif
 
 						e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
 						return;
@@ -3526,11 +3501,9 @@ void svr_preAction(
 					{
 						e->error = DLMS_ERROR_CODE_UNMATCH_TYPE;
 					}
-					//bb_clear(e->parameters.byteArr);
 					var_clear(it);
 					imageActionStartTime = time(NULL);
 
-					printf("--------------imageActionStartTime=%llu \n", time(NULL));
 					return;
 				}
 				//Verifies the integrity of the Image before activation.
@@ -3540,9 +3513,9 @@ void svr_preAction(
 					f = fopen(imageFile, "rb");
 					if (!f)
 					{
-						#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)	//If Windows or Linux
-							printf("Unable to open file %s\r\n", imageFile);
-						#endif
+//						#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)	//If Windows or Linux
+//							printf("Unable to open file %s\r\n", imageFile);
+//						#endif
 
 						e->error = DLMS_ERROR_CODE_HARDWARE_FAULT;
 						return;
@@ -3558,21 +3531,13 @@ void svr_preAction(
 					else
 					{
 						//Wait 5 seconds before image is verified.  This is for example only.
-						printf("--------------Time=%llu \n", time(NULL));
-						if (time(NULL) - imageActionStartTime < 5)
+//						if (time(NULL) - imageActionStartTime < 5)
+//						{
+//
+//							e->error = DLMS_ERROR_CODE_TEMPORARY_FAILURE;
+//						}
+//						else
 						{
-							#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-								printf("Image verification is on progress.\r\n");
-							#endif
-
-							e->error = DLMS_ERROR_CODE_TEMPORARY_FAILURE;
-						}
-						//Sleep(1000);
-						{
-							#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-								printf("Image is verificated.\r\n");
-							#endif
-
 							i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_VERIFICATION_SUCCESSFUL;
 							imageActionStartTime = time(NULL);
 						}
@@ -3581,24 +3546,14 @@ void svr_preAction(
 				//Activates the Image.
 				else if (e->index == 4)
 				{
-
-					printf("0000000000000000000000000000000000000000000000000000000Image activation ==================.\r\n");
 					i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_ACTIVATION_INITIATED;
 					//Wait 5 seconds before image is activated. This is for example only.
-					if (time(NULL) - imageActionStartTime < 5)
+//					if (time(NULL) - imageActionStartTime < 5)
+//					{
+//						e->error = DLMS_ERROR_CODE_TEMPORARY_FAILURE;
+//					}
+//					else
 					{
-						#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-							printf("Image activation is on progress.\r\n");
-						#endif
-
-						e->error = DLMS_ERROR_CODE_TEMPORARY_FAILURE;
-					}
-					Sleep(1000);
-					{
-						#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
-							printf("Image is activated.\r\n");
-						#endif
-
 						i->imageTransferStatus = DLMS_IMAGE_TRANSFER_STATUS_ACTIVATION_SUCCESSFUL;
 						imageActionStartTime = time(NULL);
 					}
