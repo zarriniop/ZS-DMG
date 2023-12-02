@@ -1,7 +1,7 @@
 # Generate STATIC library.
 TARGET   = libgurux_dlms_c.a
 
-CC       = /home/mhn/EC200AEUCPY/ec200a_linux/owtoolchain/linux64/bin/arm-openwrt-linux-gcc
+CC       = /home/mhn/DMGProject/Compiler/bin/arm-openwrt-linux-gcc
 # compiling flags here
 CFLAGS   = -g -std=c99 -Wall -fPIC
 #Add this if used on microcontroller. -DGX_DLMS_MICROCONTROLLER

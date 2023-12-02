@@ -2425,17 +2425,8 @@ int svr_InitObjects(
 
    // GPRS Keep Alive Time Interval
    {
-   	printf("<<<***== GPRS Keep Alive Time Interval ==***>>>\n");
 		const unsigned char ln[6] = {0, 0, 94, 98, 19, 255};
 		INIT_OBJECT(gprskeepalivetimeinterval, DLMS_OBJECT_TYPE_DATA, ln);
-
-//		arr1234 = (variantArray *)malloc(sizeof(variantArray));
-//		arr123[0] = (dlmsVARIANT *)malloc(sizeof(dlmsVARIANT));
-//		arr123[1] = (dlmsVARIANT *)malloc(sizeof(dlmsVARIANT));
-//		arr123[2] = (dlmsVARIANT *)malloc(sizeof(dlmsVARIANT));
-
-//		var_init(&gprskeepalivetimeinterval.value);
-//		va_init(&gprskeepalivetimeinterval.value.Arr);
 
 		va_init(&arr1234);
 
@@ -2453,7 +2444,7 @@ int svr_InitObjects(
 
 		dlmsVARIANT** p = (dlmsVARIANT**) arr1234.data;
 
-//		var_attachStructure(&gprskeepalivetimeinterval.value, p, 3);
+		var_attachStructure(&gprskeepalivetimeinterval.value, p, 3);
 
    }
 
@@ -2464,25 +2455,21 @@ int svr_InitObjects(
        INIT_OBJECT(localauthenticationprotection, DLMS_OBJECT_TYPE_DATA, ln);
 
 //		var_init(&localauthenticationprotection.value);
-//		va_init(&arr12345);
-//		var_init(&arr321[0]);
-//		var_init(&arr321[1]);
-//
-//		var_setUInt8(&arr321[0], 5);
-//		var_setUInt8(&arr321[1], 5);
-//
-//		//         arr321[0].vt = DLMS_DATA_TYPE_UINT8 ;
-//		//         arr321[0].bVal = 2 ;
-//		//         arr321[1].vt = DLMS_DATA_TYPE_UINT8 ;
-//		//         arr321[1].bVal = 12 ;
-//
-//		va_push(&arr12345,&arr321[0]);
-//		va_push(&arr12345,&arr321[1]);
-//
-//		localauthenticationprotection.value.vt	= DLMS_DATA_TYPE_STRUCTURE;
-//		localauthenticationprotection.value.Arr	= &arr12345;
 
-//         var_attachStructure(&localauthenticationprotection.value, arr12345.data, 2);
+		va_init(&arr12345);
+
+		var_init(&arr321[0]);
+		var_init(&arr321[1]);
+
+		var_setUInt8(&arr321[0], 5);
+		var_setUInt8(&arr321[1], 5);
+
+		va_push(&arr12345,&arr321[0]);
+		va_push(&arr12345,&arr321[1]);
+
+		dlmsVARIANT** p = (dlmsVARIANT**) arr12345.data;
+
+		var_attachStructure(&localauthenticationprotection.value, p, 2);
    }
 
     // IMEI

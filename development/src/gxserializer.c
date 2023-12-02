@@ -858,7 +858,8 @@ int ser_loadVariant(dlmsVARIANT* data,
             {
                 for (pos = 0; pos != count; ++pos)
                 {
-                    if (pos < data->Arr->size)
+                    //if (pos < data->Arr->size)
+                    if (pos < count)
                     {
                         if ((ret = ser_getVariantArrayItem(data->Arr, pos, &tmp)) != 0)
                         {
