@@ -192,11 +192,11 @@ gxScriptTable predefinedscriptsimageactivation;
 gxRegisterActivation registerActivation;
 gxCompactData compactData;
 
-dlmsVARIANT arr123[3];
-variantArray arr1234;
+dlmsVARIANT gprs_kat_dlmsVar[3];
+variantArray gprs_kat_VarArr;
 
-dlmsVARIANT arr321[2];
-variantArray arr12345;
+dlmsVARIANT local_auth_dlmsVar[2];
+variantArray local_auth_VarArr;
 
 static gxObject *ALL_OBJECTS[] = {
     //these objects at the faham list
@@ -2428,21 +2428,21 @@ int svr_InitObjects(
 		const unsigned char ln[6] = {0, 0, 94, 98, 19, 255};
 		INIT_OBJECT(gprskeepalivetimeinterval, DLMS_OBJECT_TYPE_DATA, ln);
 
-		va_init(&arr1234);
+		va_init(&gprs_kat_VarArr);
 
-		var_init(&arr123[0]);
-		var_init(&arr123[1]);
-		var_init(&arr123[2]);
+		var_init(&gprs_kat_dlmsVar[0]);
+		var_init(&gprs_kat_dlmsVar[1]);
+		var_init(&gprs_kat_dlmsVar[2]);
 
-		var_setBoolean	(&arr123[0], 1);
-		var_setUInt32	(&arr123[1], 60);
-		var_setUInt32	(&arr123[2], 10);
+		var_setBoolean	(&gprs_kat_dlmsVar[0], 1);
+		var_setUInt32	(&gprs_kat_dlmsVar[1], 60);
+		var_setUInt32	(&gprs_kat_dlmsVar[2], 10);
 
-		va_push(&arr1234,&arr123[0]);
-		va_push(&arr1234,&arr123[1]);
-		va_push(&arr1234,&arr123[2]);
+		va_push(&gprs_kat_VarArr,&gprs_kat_dlmsVar[0]);
+		va_push(&gprs_kat_VarArr,&gprs_kat_dlmsVar[1]);
+		va_push(&gprs_kat_VarArr,&gprs_kat_dlmsVar[2]);
 
-		dlmsVARIANT** p = (dlmsVARIANT**) arr1234.data;
+		dlmsVARIANT** p = (dlmsVARIANT**) gprs_kat_VarArr.data;
 
 		var_attachStructure(&gprskeepalivetimeinterval.value, p, 3);
 
@@ -2450,24 +2450,21 @@ int svr_InitObjects(
 
    // Local Authentication Protection
    {
-   	printf("<<<***== Local Authentication Protection ==***>>>\n");
-       const unsigned char ln[6] = {0, 0, 94, 98, 20, 255};
-       INIT_OBJECT(localauthenticationprotection, DLMS_OBJECT_TYPE_DATA, ln);
+		const unsigned char ln[6] = {0, 0, 94, 98, 20, 255};
+		INIT_OBJECT(localauthenticationprotection, DLMS_OBJECT_TYPE_DATA, ln);
 
-//		var_init(&localauthenticationprotection.value);
+		va_init(&local_auth_VarArr);
 
-		va_init(&arr12345);
+		var_init(&local_auth_dlmsVar[0]);
+		var_init(&local_auth_dlmsVar[1]);
 
-		var_init(&arr321[0]);
-		var_init(&arr321[1]);
+		var_setUInt8(&local_auth_dlmsVar[0], 5);
+		var_setUInt8(&local_auth_dlmsVar[1], 5);
 
-		var_setUInt8(&arr321[0], 5);
-		var_setUInt8(&arr321[1], 5);
+		va_push(&local_auth_VarArr,&local_auth_dlmsVar[0]);
+		va_push(&local_auth_VarArr,&local_auth_dlmsVar[1]);
 
-		va_push(&arr12345,&arr321[0]);
-		va_push(&arr12345,&arr321[1]);
-
-		dlmsVARIANT** p = (dlmsVARIANT**) arr12345.data;
+		dlmsVARIANT** p = (dlmsVARIANT**) local_auth_VarArr.data;
 
 		var_attachStructure(&localauthenticationprotection.value, p, 2);
    }
