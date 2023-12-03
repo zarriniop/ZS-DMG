@@ -153,6 +153,7 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 
 				if(HDLC_STRUCT->RX_Count > 0)
 				{
+					memset(HDLC_tmp.RX, 0, sizeof(HDLC_tmp.RX));
 					memcpy(HDLC_tmp.RX, HDLC_STRUCT->RX, HDLC_STRUCT->RX_Count);
 					HDLC_tmp.RX_Count = HDLC_STRUCT->RX_Count;
 
@@ -184,11 +185,13 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 
 				printf("ret : %d , GW_State: %d \n", ret, GW_State);
 
-				if(ret > 0)
-				{
-//					GW_STRUCT->TX_Count = ret;
-					GW_State = WAIT_FOR_GET_FRAME;
-				}
+				GW_State = WAIT_FOR_GET_FRAME;
+
+//				if(ret > 0)
+//				{
+////					GW_STRUCT->TX_Count = ret;
+//					GW_State = WAIT_FOR_GET_FRAME;
+//				}
 //				else
 //				{
 //					GW_State = WAIT_FOR_GET_FRAME;

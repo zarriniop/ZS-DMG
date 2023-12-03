@@ -3651,9 +3651,12 @@ void svr_postWrite(
 			DS1307_Str.second	= clock1.time.value.tm_sec;
 			DS1307_Str.H_12		= 0;
 			DS1307_Set_Time( DS1307_Str);
-//			printf("POST write==========================>");
 			Set_System_Date_Time(&DS1307_Str)	;
 
+        }
+        if(e->target->objectType == DLMS_OBJECT_TYPE_DATA)
+        {
+        	printf("####################################### DLMS_OBJECT_TYPE_DATA\n");
         }
         if (e->error == 0)
         {

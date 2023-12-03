@@ -87,6 +87,8 @@ extern gxData 		gprskeepalivetimeinterval;
 #define TCP_ZEROCOPY_RECEIVE   35
 #define TCP_INQ          36
 
+#define GPIO_OUT_DIR	24
+
 /*I2C*/
 #define I2C_DEV          		"/dev/i2c-0"
 #define DS1307_I2C_SLAVE_ADDR	0x68			//codec 5616
@@ -166,6 +168,7 @@ typedef struct
     SERVERSOCKET 		serversocket;
     //Serial port handle.
     int 				comPort;
+    uint32_t			BASE_ADDR;
     //Receiver thread handle.
     pthread_t 			receiverThread;
     pthread_t 			sendThread;

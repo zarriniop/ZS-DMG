@@ -936,14 +936,26 @@ void* RS485_Send_Thread(void* pVoid)
     {
         if(con->buffer.TX_Count>0)
         {
-        	system("echo 1 > /sys/class/leds/DIR_485/brightness");
+            baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
+            delay_us = ((con->buffer.TX_Count * 10150)/baudRate);
+
+//        	system("echo 1 > /sys/class/leds/DIR_485/brightness");
+
+        	//Change dir pin to high level
+        	*(volatile uint32_t *)(con->BASE_ADDR + 0x19)=(1 <<GPIO_OUT_DIR);
+
             ret = write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
-            system(LED_485_SHOT);
 //            ret = Ql_UART_Write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
 
-            baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
-            delay_us = ((con->buffer.TX_Count * 12000)/baudRate);
-//            printf("RS485 Send : %d\n", con->buffer.TX_Count);
+            usleep(1000 + (delay_us*1000));
+
+//            tcdrain(con->comPort);
+
+            //Change dir pin to low level
+            *(volatile uint32_t *)(con->BASE_ADDR + 0x25)=(1 <<GPIO_OUT_DIR);
+//            system("echo 0 > /sys/class/leds/DIR_485/brightness");
+
+            system(LED_485_SHOT);
 
             unsigned char rs_tx_tmp_info[4096] = {0};
         	for (int m=0; m<con->buffer.TX_Count; m++)
@@ -953,10 +965,6 @@ void* RS485_Send_Thread(void* pVoid)
         	report(RS485, TX, rs_tx_tmp_info);
 
             con->buffer.TX_Count = 0 ;
-
-            usleep(delay_us*1000);
-
-            system("echo 0 > /sys/class/leds/DIR_485/brightness");
         }
         usleep(1000);
 //        usleep(10000);
@@ -995,6 +1003,23 @@ int IEC_Serial_Start(connection* con, char *file)
 int RS485_Serial_Start(connection* con, char *file)
 {
     int ret;
+	int mem_fd;
+
+	//Remap System RAM address
+	if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0)
+	{
+		report("s","GPIO --> can't open /dev/mem !");
+		//exit(-1);
+	}
+	con->BASE_ADDR = (uint8_t*) mmap(NULL, 1024, PROT_READ | PROT_WRITE,MAP_FILE | MAP_SHARED, mem_fd, 0xD4019000);
+	if (con->BASE_ADDR == MAP_FAILED) {
+		perror("foo");
+		fprintf(stderr, "failed to mmap\n");
+		con->BASE_ADDR = NULL;
+		close(mem_fd);
+	}
+	close(mem_fd);
+
     if ((ret = com_initializeSerialPort(con, file, 0)) != 0)
     {
     	report(RS485, CONNECTION, "CLOSE");
