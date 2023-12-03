@@ -3654,10 +3654,10 @@ void svr_postWrite(
 			Set_System_Date_Time(&DS1307_Str)	;
 
         }
-        if(e->target->objectType == DLMS_OBJECT_TYPE_DATA)
-        {
-        	printf("####################################### DLMS_OBJECT_TYPE_DATA\n");
-        }
+//        if(e->target->objectType == DLMS_OBJECT_TYPE_DATA)
+//        {
+//        	printf("####################################### DLMS_OBJECT_TYPE_DATA - e->index:%d\n", e->index);
+//        }
         if (e->error == 0)
         {
             // Save settings to EEPROM.
