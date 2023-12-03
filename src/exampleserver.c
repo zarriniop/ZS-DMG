@@ -1821,7 +1821,7 @@ int addIecHdlcSetup(dlmsServerSettings *settings)
 ///////////////////////////////////////////////////////////////////////
 // Add IEC HDLC Electrical Port object.
 ///////////////////////////////////////////////////////////////////////
-int addHdlcElectricalRS4785Port(dlmsServerSettings *settings)
+int addHdlcElectricalRS485Port(dlmsServerSettings *settings)
 {
     int ret = 0;
     unsigned char ln[6] = {0, 2, 22, 0, 0, 255};
@@ -2519,7 +2519,7 @@ int svr_InitObjects(
         (ret = addImageTransferActivationScheduler()) != 0 ||
         (ret = addDisconnectControl()) != 0 ||
         (ret = addIecHdlcSetup(settings)) != 0 ||
-        (ret = addHdlcElectricalRS4785Port(settings)) != 0 ||
+        (ret = addHdlcElectricalRS485Port(settings)) != 0 ||
         (ret = addTcpUdpSetup()) != 0 ||
         (ret = addAutoConnect()) != 0 ||
         (ret = addActivityCalendar()) != 0 ||
