@@ -534,6 +534,28 @@ int Socket_Server(connection* con)
         //setsockopt.
         return -1;
     }
+
+//    if(gprskeepalivetimeinterval.value.boolVal == true)
+//    {
+//		int flags = 60;
+//		int res=setsockopt(con->serversocket.Socket_fd, IPPROTO_TCP, TCP_KEEPIDLE, & flags, sizeof(flags));
+//		if(res<0) report("sds","SOCKET --> Client Socket",n," --> Set keep idle Error !");
+//
+//		flags=keepalive;
+//		res=setsockopt(con->serversocket.Socket_fd, IPPROTO_TCP, TCP_KEEPCNT, & flags, sizeof(flags));
+//		if(res<0) report("sds","SOCKET --> Client Socket",n," --> Set keepalive counter Error !");
+//
+//
+//		flags=10;
+//		res=setsockopt(con->serversocket.Socket_fd, IPPROTO_TCP, TCP_KEEPINTVL, &flags, sizeof(flags));
+//		if(res<0) report("sds","SOCKET --> Client Socket",n," --> Set keepalive interval Error !");
+//
+//
+//		flags=1;
+//		res=setsockopt(Server_fd[n], SOL_SOCKET, SO_KEEPALIVE, &flags, sizeof(flags));
+//		if(res<0) report("sds","SOCKET --> Client Socket",n,"--> Set keepalive Error !");
+//    }
+
     add.sin_port 		= htons(con->serversocket.server_port);
     add.sin_addr.s_addr = htonl(INADDR_ANY);
     add.sin_family		= AF_INET;

@@ -130,7 +130,8 @@ static gxData alarmfilter2;
 static gxData eventparameter;
 static gxData eventobjectfrauddetectionlog;
 static gxData eventobjectcommunicationlog;
-static gxData gprskeepalivetimeinterval;
+//static gxData gprskeepalivetimeinterval;
+gxData gprskeepalivetimeinterval;
 static gxData localauthenticationprotection;
 gxData imei;
 
@@ -2221,9 +2222,7 @@ int loadSettings(dlmsSettings *settings)
             serializerSettings.stream = f;
             serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
             serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
-            printf("------------------> 1 \n");
             ret = ser_loadObjects(settings, &serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
-            printf("------------------> 2 \n");
             return ret;
         }
         fclose(f);
@@ -2539,14 +2538,12 @@ int svr_InitObjects(
         executeTime = 0;
         return ret;
     }
-    printf("------------------> 3 \n");
     if ((ret = loadSettings(&settings->base)) != 0)
     {
         GXTRACE_INT(("Failed to load settings!"), ret);
         executeTime = 0;
         return ret;
     }
-    printf("------------------> 4 \n");
     if ((ret = loadSecurity(&settings->base)) != 0)
     {
         GXTRACE_INT(("Failed to load security settings!"), ret);
