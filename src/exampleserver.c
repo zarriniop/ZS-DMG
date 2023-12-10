@@ -3654,10 +3654,20 @@ void svr_postWrite(
 			Set_System_Date_Time(&DS1307_Str)	;
 
         }
-//        if(e->target->objectType == DLMS_OBJECT_TYPE_DATA)
-//        {
-//        	printf("####################################### DLMS_OBJECT_TYPE_DATA - e->index:%d\n", e->index);
-//        }
+        if(e->target->objectType == DLMS_OBJECT_TYPE_DATA)
+        {
+        	if(e->target == BASE(gprskeepalivetimeinterval))
+        	{
+        		GPRS_KAT_GXDATA_STR gprs_kat_values;
+        		GPRS_kat_gxData_Get_Value(&gprs_kat_values, &gprskeepalivetimeinterval);
+            	printf("####################################### DLMS_OBJECT_TYPE_DATA - EN:%d, ID:%d, IT:%d \n",
+            			gprs_kat_values.switch_enable,
+						gprs_kat_values.ideal_time,
+						gprs_kat_values.delay_retry_interval_value);
+
+            	Set_Socket_KAT_Option(lnWrapper.socket.Socket_fd, &gprs_kat_values);
+        	}
+        }
         if (e->error == 0)
         {
             // Save settings to EEPROM.

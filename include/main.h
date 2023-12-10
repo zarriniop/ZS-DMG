@@ -75,6 +75,12 @@ typedef enum
 	START_APP	= 4
 }REPORT_INTERFACE;
 
+typedef struct
+{
+	bool 		switch_enable;
+	uint32_t 	ideal_time;
+	uint32_t 	delay_retry_interval_value;
+}GPRS_KAT_GXDATA_STR;
 
 typedef enum
 {

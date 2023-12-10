@@ -48,5 +48,7 @@ int 			report 			(REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Info
 void 			M2Sh			(uint16_t *j_y, uint8_t *j_m, uint8_t *j_d, uint16_t  g_y, uint8_t  g_m, uint8_t  g_d)	;
 void 			SH2M 			(uint16_t *My, uint8_t *Mm, uint8_t *Md,long jy, long jm, long jd)						;
 void 			exec			(const char* cmd,char *resultt,uint32_t time);
+void 			exec			(const char* cmd,char *resultt,uint32_t time)	;
+void 			GPRS_kat_gxData_Get_Value 	(GPRS_KAT_GXDATA_STR* GPRS_Kat_gxData, gxData* gprs_keep_alive_gurux);
 
 #endif /* TOOLS_H_ */

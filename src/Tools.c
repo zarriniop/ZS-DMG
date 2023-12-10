@@ -300,3 +300,119 @@ void exec(const char* cmd,char *resultt,uint32_t time) {
 }
 
 
+void GPRS_kat_gxData_Get_Value (GPRS_KAT_GXDATA_STR* GPRS_Kat_gxData, gxData* gprs_keep_alive_gurux)
+{
+	int	pointer			= 0;
+	int cntr			= 0;
+	char buffer[10] 	= {0};
+	char data_cpy[50] 	= {0};
+	gxByteBuffer value_string;
+
+	memset(GPRS_Kat_gxData, 0, sizeof(GPRS_KAT_GXDATA_STR));
+	memset(&value_string, 0, sizeof(value_string));
+
+	var_toString(&gprs_keep_alive_gurux->value, &value_string);
+	strcpy(&data_cpy, value_string.data);
+
+	for (int i=1; data_cpy[i] != ','; i++)
+	{
+		buffer[cntr] = data_cpy[i];
+		cntr ++;
+		pointer = i;
+	}
+	pointer += 2;
+
+	if(!strcmp(&buffer ,"True"))
+		GPRS_Kat_gxData->switch_enable = true;
+	else
+		GPRS_Kat_gxData->switch_enable = false;
+
+	cntr = 0;
+	memset(buffer, 0, sizeof(buffer));
+
+	for (int i=pointer; data_cpy[i] != ','; i++)
+	{
+		buffer[cntr] = data_cpy[i];
+		cntr ++;
+		pointer = i;
+	}
+	pointer += 2;
+	GPRS_Kat_gxData->ideal_time = atoi(&buffer);
+
+	cntr = 0;
+	memset(buffer, 0, sizeof(buffer));
+	for (int i=pointer; data_cpy[i] != ']'; i++)
+	{
+		buffer[cntr] = data_cpy[i];
+		cntr ++;
+	}
+	GPRS_Kat_gxData->delay_retry_interval_value = atoi(&buffer);
+}
+
+
+uint8_t Set_Socket_KAT_Option (int socket_fd, GPRS_KAT_GXDATA_STR* gprs_kat_option)
+{
+	int flags 	= 0;
+	int res		= 0;
+	uint8_t ret = 0;
+
+	if(gprs_kat_option->switch_enable)
+	{
+		if(GPRS_KAT_IDEAL_CND)
+		{
+			flags = gprs_kat_option->ideal_time;
+			res=setsockopt(socket_fd, IPPROTO_TCP, TCP_KEEPIDLE, &flags, sizeof(flags));
+			if(res < 0)
+			{
+				printf("---------------- ERROR - TCP_KEEPIDLE\n");
+			}
+			else
+				ret = (ret | 0b1);
+		}
+
+
+		flags = 1;
+		res=setsockopt(socket_fd, IPPROTO_TCP, TCP_KEEPCNT, &flags, sizeof(flags));
+		if(res < 0)
+		{
+			printf("---------------- ERROR - TCP_KEEPCNT\n");
+		}
+		else
+			ret = (ret | 0b10);
+
+
+		if(GPRS_KAT_INTVL_CND)
+		{
+			flags = gprs_kat_option->delay_retry_interval_value;
+			res=setsockopt(socket_fd, IPPROTO_TCP, TCP_KEEPINTVL, &flags, sizeof(flags));
+			if(res < 0)
+			{
+				printf("---------------- ERROR - TCP_KEEPINTVL\n");
+			}
+			else
+				ret = (ret | 0b100);
+		}
+
+
+		flags = 1;
+		res=setsockopt(socket_fd, SOL_SOCKET, SO_KEEPALIVE, & flags, sizeof(flags));
+		if(res < 0)
+		{
+			printf("---------------- ERROR - KAT ENABLING\n");
+		}
+		else
+			ret = (ret | 0b1000);
+	}
+	else
+	{
+		ret = 0;
+		flags = 0;
+		res=setsockopt(socket_fd, SOL_SOCKET, SO_KEEPALIVE, & flags, sizeof(flags));
+	}
+
+	return ret;
+}
+
+
+
+
