@@ -38,6 +38,9 @@
 
 #define MAX_FILE_SIZE			2097152	//Bytes == 2MByets (2*1024^2)
 
+#define GPRS_KAT_IDEAL_CND		(gprs_kat_option->ideal_time >= 30) && (gprs_kat_option->ideal_time <= 1800)
+#define GPRS_KAT_INTVL_CND		(gprs_kat_option->delay_retry_interval_value >= 10) && (gprs_kat_option->delay_retry_interval_value <= 20)
+
 /***** PROTOTYPES *****/
 int 			Servers_Start	(int trace)	;
 void 			Servers_Monitor (void)		;
