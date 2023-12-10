@@ -692,6 +692,7 @@ int	Socket_get_close(connection* con)
 int Socket_create(connection* con)								//===============( Create client )======================
 {
 	int fFlag = 1;
+	GPRS_KAT_GXDATA_STR gprs_kat_clnt_str;
 
 	if ((con->socket.Socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
@@ -714,6 +715,9 @@ int Socket_create(connection* con)								//===============( Create client )====
 		//setsockopt.
 		return -1;
 	}
+
+    GPRS_kat_gxData_Get_Value(&gprs_kat_clnt_str, &gprskeepalivetimeinterval);	//get keep alive time parameters - write from gprskeepalivetimeinterval to gprs_kat_clnt_str
+    Set_Socket_KAT_Option(con->socket.Socket_fd, &gprs_kat_clnt_str);			//Set keep alive time parameters
 
 	con->socket.Status.Connected = 0;
 

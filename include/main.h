@@ -38,6 +38,7 @@
 #include "ql_i2c.h"
 #include "sys/stat.h"
 #include <sys/mman.h>
+#include <netinet/tcp.h>
 
 /* HAJIAN */
 #define closesocket close
