@@ -22,20 +22,20 @@
 
 #define INVALID_HANDLE_VALUE -1
 #include <unistd.h>
-#include <errno.h> //Add support for sockets
-#include <netdb.h> //Add support for sockets
-#include <sys/types.h> //Add support for sockets
+#include <errno.h> 		//Add support for sockets
+#include <netdb.h> 		//Add support for sockets
+#include <sys/types.h> 	//Add support for sockets
 #include <sys/socket.h> //Add support for sockets
 #include <netinet/in.h> //Add support for sockets
-#include <arpa/inet.h> //Add support for sockets
-#include <termios.h> // POSIX terminal control definitions
+#include <arpa/inet.h> 	//Add support for sockets
+#include <termios.h> 	//POSIX terminal control definitions
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <string.h> // string function definitions
-#include <unistd.h> // UNIX standard function definitions
-#include <fcntl.h> // File control definitions
-#include <errno.h> // Error number definitions
+#include <string.h> 	// string function definitions
+#include <unistd.h> 	// UNIX standard function definitions
+#include <fcntl.h> 		// File control definitions
+#include <errno.h> 		// Error number definitions
 
 pthread_t 				Wan_Connection_pthread_var;
 
@@ -100,7 +100,7 @@ void appendLog(unsigned char send, gxByteBuffer* reply)
 uint16_t GetLinuxBaudRate(uint32_t baudRate)
 {
     uint16_t br;
-//    printf("baudRate in GetLinuxBaudRate = %d\n",baudRate);
+
     switch (baudRate) {
     case 110:
         br = B110;
@@ -270,8 +270,6 @@ void Socket_Receive_Thread(void* pVoid)
         {
 			//If client is left wait for next client.
 
-//        	 if ((ret = recv(con->socket.Socket_fd, (char*) bb.data + bb.size, bb.capacity - bb.size, 0)) == -1)
-
         	ret = recv(con->socket.Socket_fd, tmp, 2048, 0);
 
 			if(ret <= 0)
@@ -296,13 +294,10 @@ void Socket_Receive_Thread(void* pVoid)
 					report(CLIENT, RX, tcp_client_rx);
 				}
 
-	//			appendLog(0, &bb);
-
 				if(tmp[8] == 0xE6)					//GW running
 				{
 					memcpy(con->buffer.RX, tmp, ret);
 					con->buffer.RX_Count += ret;
-//					printf("Checking 0xE6 - rx:%d\n", con->buffer.RX_Count);
 				}
 				else
 				{
@@ -323,19 +318,27 @@ void Socket_Receive_Thread(void* pVoid)
 
 				if (reply.size != 0)
 				{
-//					if (con->trace > GX_TRACE_LEVEL_WARNING)
-//					{
-//						unsigned char tcp_client_tx[4096] = {0};
-//						for (pos = 0; pos != reply.size; ++pos)
-//						{
-//							sprintf(tcp_client_tx + strlen(tcp_client_tx), "%.2X ", reply.data[pos]);
-//						}
-//						report(CLIENT, TX, tcp_client_tx);
-//					}
-	//				appendLog(1, &reply);
+					//Sending here because there is a problem in sending client and server at the same time - common TX buffer
+					if (send(con->socket.Socket_fd, (const char*)reply.data, (reply.size - reply.position), 0) == -1)
+					{
+						//If error has occured
+						if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
+							svr_reset(&con->settings);
 
-					memcpy(con->buffer.TX, (const char*)reply.data, reply.size - reply.position);
-					con->buffer.TX_Count = reply.size - reply.position;
+						con->socket.Status.Connected = false;
+					}
+					else
+					{
+						system(LED_DATA_SHOT);
+						unsigned char tcp_client_tx[4096] = {0};
+				    	for (int m=0; m < (reply.size - reply.position); m++)
+				    	{
+				    		sprintf(tcp_client_tx + strlen(tcp_client_tx), "%.2X ",(const char*)reply.data[m]);
+				    	}
+				    	report(CLIENT, TX, tcp_client_tx);
+
+				    	con->buffer.TX_Count = 0;
+					}
 
 					bb_clear(&reply);
 				}
@@ -353,7 +356,7 @@ void Socket_Send_Thread(void* pVoid)
 
     while (1)
     {
-        if(con->serversocket.Status.Connected == true && con->buffer.TX_Count>0)
+        if((con->serversocket.Status.Connected == true) && (con->buffer.TX_Count>0))
         {
 			if (send(con->serversocket.Accept_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
 			{
@@ -376,7 +379,7 @@ void Socket_Send_Thread(void* pVoid)
 				con->buffer.TX_Count = 0;
 			}
         }
-        if (con->socket.Status.Connected == true && con->buffer.TX_Count>0)
+        if ((con->socket.Status.Connected == true) && (con->buffer.TX_Count>0))
         {
 			if (send(con->socket.Socket_fd, con->buffer.TX, con->buffer.TX_Count, 0) == -1)
 			{
@@ -400,7 +403,7 @@ void Socket_Send_Thread(void* pVoid)
 			}
 
         }
-        usleep(1000);
+        usleep(100);
     }
 }
 
@@ -429,7 +432,7 @@ int Socket_Connection_Start(connection* con)
     con->serversocket.Status.Connected 	= false	;
 
     arr_getByIndex(&autoConnect.destinations, 0, (void**)&tmp_bb)		;
-//    char *IP_Port= bb_toString(tmp_bb)								;
+
     sprintf(con->socket.Parameters.IP, strtok(bb_toString(tmp_bb),":"))	;		//converting server port-ip type to string, IP:PORT
     con->socket.Parameters.PORT 	= atoi(strtok(NULL,":"))			;
     con->serversocket.server_port 	= udpSetup.port						;
@@ -479,8 +482,6 @@ int Socket_Manage_Thread (connection* con)
 	uint8_t i=0;
 	uint8_t r1=0,r2=0;
 
-//	report("s","RS232 --> TCP_CLIENT_CONNECTION_CHECK_Thread Started !");
-
 	while(1)
 	{
 		if(con->socket.Status.Connected == false)
@@ -491,12 +492,6 @@ int Socket_Manage_Thread (connection* con)
 			printf("++++++++++++++++++++++++ TCP Timeout:%d\n", diff_time_s(&Inctivity_start_timeout));
 			con->socket.Status.Connected = false;
 		}
-
-//		con->socket.Error=0;
-//		con->socket.ErrorLen=sizeof(con->socket.Error);
-//		getsockopt (con->socket.Socket_fd, SOL_SOCKET, SO_ERROR, &con->socket.Error, &con->socket.ErrorLen);
-
-//		if(con->socket.Error!=0) report("sdsd","RS232 --> TCP-Client:Socket",i,"--> Connection Error =",con->socket.Error);
 
 		sleep(1);
 
@@ -513,7 +508,6 @@ int Socket_Server(connection* con)
     con->waitTime 			= 5000;
     con->comPort 			= -1;
     con->receiverThread 	= -1;
-//    con->socket 			= -1;
     con->serversocket.Socket_fd	= -1;
     con->serversocket.Accept_fd = -1;
     con->closing 			= 0 ;
@@ -534,27 +528,6 @@ int Socket_Server(connection* con)
         //setsockopt.
         return -1;
     }
-
-//    if(gprskeepalivetimeinterval.value.boolVal == true)
-//    {
-//		int flags = 60;
-//		int res=setsockopt(con->serversocket.Socket_fd, IPPROTO_TCP, TCP_KEEPIDLE, & flags, sizeof(flags));
-//		if(res<0) report("sds","SOCKET --> Client Socket",n," --> Set keep idle Error !");
-//
-//		flags=keepalive;
-//		res=setsockopt(con->serversocket.Socket_fd, IPPROTO_TCP, TCP_KEEPCNT, & flags, sizeof(flags));
-//		if(res<0) report("sds","SOCKET --> Client Socket",n," --> Set keepalive counter Error !");
-//
-//
-//		flags=10;
-//		res=setsockopt(con->serversocket.Socket_fd, IPPROTO_TCP, TCP_KEEPINTVL, &flags, sizeof(flags));
-//		if(res<0) report("sds","SOCKET --> Client Socket",n," --> Set keepalive interval Error !");
-//
-//
-//		flags=1;
-//		res=setsockopt(Server_fd[n], SOL_SOCKET, SO_KEEPALIVE, &flags, sizeof(flags));
-//		if(res<0) report("sds","SOCKET --> Client Socket",n,"--> Set keepalive Error !");
-//    }
 
     add.sin_port 		= htons(con->serversocket.server_port);
     add.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -598,13 +571,8 @@ void Socket_Listen_Thread(void* pVoid)
         bb_clear(&senderInfo);
         con->serversocket.Accept_fd = accept(con->serversocket.Socket_fd, (struct sockaddr*) &client, &len);
 
-//        printf("socket of client = %d\n",con->serversocket.Accept_fd);
-        // printf("client = %s\n",client.sin_addr);
-        // printf("len = %s\n",len);
-
         if (con->serversocket.Socket_fd != -1)
         {
-//        	printf("SERVER - SOCKET ACCEPTED \n");
             if ((ret = getpeername(con->serversocket.Accept_fd, (struct sockaddr*) & add, &AddrLen)) == -1)
             {
                 close(con->serversocket.Accept_fd);
@@ -615,21 +583,13 @@ void Socket_Listen_Thread(void* pVoid)
             con->serversocket.Status.Connected = true;
             report(SERVER, CONNECTION, "CONNECTED");
 
-//            info = inet_ntoa(add.sin_addr);
-//            bb_set(&senderInfo, (unsigned char*)info, (unsigned short)strlen(info));
-//            bb_setInt8(&senderInfo, ':');
-//            hlp_intToString(tmp, 10, add.sin_port, 0, 0);
-//            bb_set(&senderInfo, (unsigned char*)tmp, (unsigned short)strlen(tmp));
-
             while (con->serversocket.Socket_fd != -1)
             {
     			//If client is left wait for next client.
 
-    //        	 if ((ret = recv(con->socket.Socket_fd, (char*) bb.data + bb.size, bb.capacity - bb.size, 0)) == -1)
     			if ((ret = recv(con->serversocket.Accept_fd, tmp, 2048, 0)) <= 0)
     			{
     				//Notify error.
-                    //Notify error.
     				if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
     					svr_reset(&con->settings);
 
@@ -653,8 +613,6 @@ void Socket_Listen_Thread(void* pVoid)
     				report(SERVER, RX, tcp_svr_rx);
     			}
 
-    //			appendLog(0, &bb);
-
     			if(tmp[8] == 0xE6)
     			{
 
@@ -663,8 +621,13 @@ void Socket_Listen_Thread(void* pVoid)
     			}
     			else
     			{
-    //				struct timeval  tv,strt;
-    //				long diff=0;
+
+					if (tmp[8] == 0x60)
+					{
+						if(strcmp(Settings.MDM , SHAHAB_OLD_VERSION) == 0)
+							svr_reset(&con->settings);						//close opened association before getting connection
+					}
+
 
     				if (svr_handleRequest2(&con->settings, &tmp, ret, &reply) != 0)
     				{
@@ -672,28 +635,33 @@ void Socket_Listen_Thread(void* pVoid)
                         con->serversocket.Accept_fd = -1;
     				}
 
-    //				 gettimeofday (&tv, NULL);
-    //				 diff=tv.tv_usec - strt.tv_usec;
-    //				 if(diff < 0) diff+=1000000;
-    //				 printf("######### Delay in svr_handleRequest2=  %d\r\n",diff);
+    				srv_Save(&con->settings);
 
     			}
 
     			if (reply.size != 0)
     			{
-    				if (con->trace > GX_TRACE_LEVEL_WARNING)
+    				//Send here because there is a problem in sending server and client at the same time
+    				if (send(con->serversocket.Accept_fd, (const char*)reply.data, (reply.size - reply.position), 0) == -1)
     				{
-    					unsigned char svr_tx_tmp[4096] = {0};
-    					for (pos = 0; pos != reply.size; ++pos)
-    					{
-    						sprintf(svr_tx_tmp + strlen(svr_tx_tmp), "%.2X ", reply.data[pos]);
-    					}
-    					report(SERVER, TX, svr_tx_tmp);
-    				}
-    //				appendLog(1, &reply);
+    					//If error has occured
+    					if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
+    						svr_reset(&con->settings);
 
-    				memcpy(con->buffer.TX, (const char*)reply.data, reply.size - reply.position);
-    				con->buffer.TX_Count = reply.size - reply.position;
+    					con->serversocket.Status.Connected = false;
+    				}
+    				else
+    				{
+    					system(LED_DATA_SHOT);
+    					unsigned char tcp_svr_tx[4096] = {0};
+    					for (int m=0; m < (reply.size - reply.position); m++)
+    					{
+    						sprintf(tcp_svr_tx + strlen(tcp_svr_tx), "%.2X ",(const char*)reply.data[m]);
+    					}
+    					report(SERVER, TX, tcp_svr_tx);
+
+    					con->buffer.TX_Count = 0;
+    				}
 
     				bb_clear(&reply);
     			}
@@ -706,7 +674,6 @@ void Socket_Listen_Thread(void* pVoid)
         }
     }
     bb_clear(&reply);
-//    bb_clear(&senderInfo);
 }
 
 
@@ -715,7 +682,6 @@ int	Socket_get_close(connection* con)
 	int sh=shutdown(con->socket.Socket_fd, SHUT_RDWR);
 	int cl=close(con->socket.Socket_fd);
 
-	//printf("s:%d  shut:%d  close:%d  \n",n,sh,cl);
 	con->socket.Socket_fd=0;
 	con->socket.Status.Connected=false;
 	con->socket.Status.Opened=false;
@@ -729,7 +695,6 @@ int Socket_create(connection* con)								//===============( Create client )====
 
 	if ((con->socket.Socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
-//		report("sds","SOCKET --> Client Socket",n," --> Create error !");
 		return -1;
 	}
 
@@ -737,8 +702,6 @@ int Socket_create(connection* con)								//===============( Create client )====
 	con->socket.Serv_addr.sin_port = htons(con->socket.Parameters.PORT);
 	if(inet_pton(AF_INET, con->socket.Parameters.IP, &con->socket.Serv_addr.sin_addr)<=0)
 	{
-
-//		report("sds","SOCKET --> Client Socket",n," --> Invalid address !");
 		printf("SOCKET --> Client Socket--> Invalid address !\n");
 
 		con->socket.Status.Valid = 0;		//0 means false
@@ -789,10 +752,8 @@ void* IEC_Serial_Thread(void* pVoid)
             {
                 if (first)
                 {
-//                    printf("\nRX:\t");
                     first = 0;
                 }
-//                printf("%.2X ", data);\
 
             	unsigned char optical_rx_tmp_info[4096] = {0};
             	for (int m=0; m<bytesRead; m++)
@@ -833,7 +794,7 @@ void* IEC_Serial_Thread(void* pVoid)
                     {
                         /*Change baud rate settings if optical probe is used.*/
                     	report(OPTICAL, CONNECTION, "CONNECTED WITH OPTICAL PROBE");
-//                        printf("%s %d", "Connected with optical probe. The new baudrate is:", sr.newBaudRate);
+
 //                        com_updateSerialportSettings(con,0, sr.newBaudRate);
                         Quectel_Update_Serial_Port_Settings(con,0, sr.newBaudRate);
                     }
@@ -845,7 +806,7 @@ void* IEC_Serial_Thread(void* pVoid)
                         usleep(100000);
                         uint16_t baudRate = 300 << (int)con->settings.localPortSetup->defaultBaudrate;
                         report(OPTICAL, CONNECTION, "DISCONNECTED WITH OPTICAL PROBE");
-//                        printf("%s %d", "Disconnected with optical probe. The new baudrate is:", baudRate);
+
 //                        com_updateSerialportSettings(con,1, 300);
                         Quectel_Update_Serial_Port_Settings(con,1, baudRate);
                     }
@@ -870,42 +831,6 @@ void* RS485_Receive_Thread(void* pVoid)
 
     while (1)
     {
-    	/*
-        bytesRead = read(con->comPort, &data, 1024);
-        printf("RS485\n");
-    	if(bytesRead>0)
-    	{
-    		gettimeofday (&tim, NULL);
-    		if(temp.RX_Count + bytesRead < 2048)
-    		{
-    			printf("RCV 485:%d\n", bytesRead);
-    			memcpy(temp.RX + temp.RX_Count, data, bytesRead);
-    			temp.RX_Count += bytesRead;
-    			bytesRead = 0;
-    		}
-    	}
-    	else
-    	{
-    		if(temp.RX_Count > 0)
-    		{
-    			//==============( Send On Timeout )=================
-//    			if( diff_time_ms(&tim) > 100)
-    			{
-    				memcpy(con->buffer.RX, temp.RX, temp.RX_Count);
-    				con->buffer.RX_Count = temp.RX_Count;
-
-    				temp.RX_Count = 0;
-
-    	            printf("con->rs485.RX = ");
-    	            for(int i = 0 ; i < con->buffer.RX_Count ; i++)
-    	            {
-    	                printf("%.2X ",con->buffer.RX[i]);
-    	            }
-    	            printf("\n");
-    			}
-    		}
-    	}
-    	*/
 
     	bytesRead = read(con->comPort, &con->buffer.RX, 1024);			//BLOCKING MODE
     	system(LED_485_SHOT);
@@ -939,21 +864,15 @@ void* RS485_Send_Thread(void* pVoid)
             baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
             delay_us = ((con->buffer.TX_Count * 10150)/baudRate);
 
-//        	system("echo 1 > /sys/class/leds/DIR_485/brightness");
-
         	//Change dir pin to high level
         	*(volatile uint32_t *)(con->BASE_ADDR + 0x19)=(1 <<GPIO_OUT_DIR);
 
             ret = write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
-//            ret = Ql_UART_Write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
 
             usleep(1000 + (delay_us*1000));
 
-//            tcdrain(con->comPort);
-
             //Change dir pin to low level
             *(volatile uint32_t *)(con->BASE_ADDR + 0x25)=(1 <<GPIO_OUT_DIR);
-//            system("echo 0 > /sys/class/leds/DIR_485/brightness");
 
             system(LED_485_SHOT);
 
@@ -967,7 +886,6 @@ void* RS485_Send_Thread(void* pVoid)
             con->buffer.TX_Count = 0 ;
         }
         usleep(1000);
-//        usleep(10000);
     }
     return NULL;
 }
@@ -1008,7 +926,7 @@ int RS485_Serial_Start(connection* con, char *file)
 	//Remap System RAM address
 	if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0)
 	{
-		report("s","GPIO --> can't open /dev/mem !");
+//		report("s","GPIO --> can't open /dev/mem !");
 		//exit(-1);
 	}
 	con->BASE_ADDR = (uint8_t*) mmap(NULL, 1024, PROT_READ | PROT_WRITE,MAP_FILE | MAP_SHARED, mem_fd, 0xD4019000);
@@ -1025,7 +943,6 @@ int RS485_Serial_Start(connection* con, char *file)
     	report(RS485, CONNECTION, "CLOSE");
         return ret;
     }
-    
     report(RS485, CONNECTION, "OPEN");
     con->buffer.RX_Count = 0 ;
     con->buffer.TX_Count = 0 ;
@@ -1103,7 +1020,6 @@ void IMEI_Get (void)
 	char 							imei_buf[20]={0}		;
 	Ret_Dev = ql_dev_get_imei(&imei_buf)					;
 	var_setString(&imei.value, imei_buf, 20)				;
-//	printf("Ret - get imei:%d - strlen:%d - IMEI:%s\n", Ret_Dev, strlen(imei_buf), imei_buf);
 }
 
 
@@ -1118,10 +1034,6 @@ void Sim_Init (void)
 	{
 		printf("!ERROR! - SIMCARD INITIALIZING - RET:%d\n", ret);
 	}
-//	else
-//	{
-//		printf("SIMCARD INITIALIZE DONE\n");
-//	}
 }
 
 
@@ -1131,7 +1043,6 @@ void ICCID_Get (void)
     char iccid[32]={0};
     int ret = ql_sim_get_iccid(iccid,32);
     var_setString(&deviceid6.value, iccid, strlen(iccid));
-//    printf("ICCID - RET:%d , iccid:%s\n", ret, iccid);
 }
 
 
@@ -1143,10 +1054,6 @@ void Device_Init (void)
 	{
 		printf("!ERROR! INITIALIZE DEVICE - RET:%d\n", ret);
 	}
-//	else
-//	{
-//		printf("DEVICE INITIALIZE DONE\n");
-//	}
 }
 
 /************************************/
@@ -1171,8 +1078,6 @@ void WAN_Init (void)
 
 	ret = ql_wan_init()		;
 	if(ret!=0) printf("!Error! ql_wan_init - ret:%d\n", ret);
-
-//	printf("<= WAN Initialization: DONE! =>\n");
 }
 
 /************************************/
@@ -1195,7 +1100,6 @@ void WAN_Connection (void)
 
 	APN_Param_Struct.op = START_A_DATA_CALL							;
 	APN_Param_Struct.apn= bb_toString(&gprsSetup.apn)				;
-//	printf("<= WAN Connection - APN:%s =>\n", APN_Param_Struct.apn)	;
 
 	APN_Param_Struct.profile_idx 	= 1		;
 	APN_Param_Struct.ip_type		= IPV4V6;
@@ -1211,15 +1115,8 @@ void WAN_Connection (void)
 
     ret = ql_wan_getapn(APN_Param_Struct.profile_idx, &ip_type_get, apn_get, sizeof(apn_get), userName_get, sizeof(userName_get), password_get, sizeof(password_get));
 	if(ret!=0) printf("!ERROR! ql_wan_getapn - ret:%d\n", ret);
-//	else
-//	{
-//		printf("<= APN SET:%s =>\n", apn_get);
-//	}
-
 
 	ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
-//	if(ret!=0) printf("ql_wan_start-ret:%d", ret);
-
 
 	while(1)
 	{
@@ -1229,12 +1126,6 @@ void WAN_Connection (void)
 		{
 			if (payload.v4.state == 1)			//Data call status is activated
 			{
-//				if(Flags_Struct.WAN_Struct.WAN_IPv4_Started == DOWN)
-//				{
-//					Flags_Struct.WAN_Struct.WAN_IPv4_Started 	= UP;
-//					Flags_Struct.TCP_Struct.TCP_Ready_To_Start 	= UP;
-//				}
-
 				Ret_Signal 		= ql_nw_get_signal_strength (&Sig_Strg_Info);
 				Ret_Cell_Info 	= ql_nw_get_cell_info		(&NW_Cell_Info)	;
 
@@ -1272,48 +1163,15 @@ void WAN_Connection (void)
 
 				else if(NW_Cell_Info.gsm_info_valid == 1)
 					system(PAT_1T_LED_NET);
-
-
-
-//				printf("<= data_call_info v4: {\n    profile_idx:%d,\n    ip_type:%d,\n    state:%d,\n    ip:%s,\n    name:%s,\n    gateway:%s,\n    pri_dns:%s,\n    sec_dns:%s\n} =>\n",
-//					payload.profile_idx, payload.ip_type, payload.v4.state, payload.v4.addr.ip, payload.v4.addr.name, payload.v4.addr.gateway,
-//					payload.v4.addr.pri_dns, payload.v4.addr.sec_dns);
-
-//				#define QUEC_AT_PORT        "/dev/smd1"
-//				int smd_fd = 0;
-//				smd_fd = open(QUEC_AT_PORT, O_RDWR | O_NONBLOCK | O_NOCTTY);
-//				printf("<= open(\"%s\")=%d =>\n", QUEC_AT_PORT, smd_fd);
 			}
 			else
 			{
-//				Flags_Struct.WAN_Struct.WAN_IPv4_Started 	= DOWN;
-//				Flags_Struct.TCP_Struct.TCP_Ready_To_Start 	= DOWN;
-
-//				ret = ql_wan_release()	;
-//				if(ret!=0)
-//					printf("ql_wan_release - ret:%d", ret);
-//				else
-//					printf("<= WAN RELEASED! =>\n");
-//
-//				ret = ql_wan_init()		;
-//				if(ret!=0)
-//					printf("ql_wan_init - ret:%d", ret);
-//				else
-//					printf("<= WAN INITIALIZED! =>\n");
-
 				WAN_Init();
 
 				ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
-//				if(ret!=0)
-//					printf("!ERROR! ql_wan_start - ret:%d\n", ret);
-//				else
-//					printf("<= WAN STARTED! nw_cb=%d =>\n", nw_cb);
 			}
 		}
-		else
-		{
-//			printf("!ERROR! ql_get_data_call_info - ret:%d", ret);
-		}
+
 		sleep(1);
 	}
 }

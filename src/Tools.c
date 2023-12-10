@@ -120,7 +120,6 @@ const char * get_time(void)
 int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Information)
 {
 	int 		ret;
-//	char		cmd[2048] = {0};
 	char		log[4096] = {0};
 	const char	*interface 	[] = {"RS485", "Server", "Client", "Optical", "Start App"}	;
 	const char	*message 	[] = {"RX", "TX", "Connection", "Start"}		;
@@ -128,16 +127,11 @@ int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Informatio
 	struct 		stat st;
 	long int 	size;
 
-//	memset(cmd, 0, sizeof(cmd));
-
 	Time_Tag = get_time();
 
 	sprintf(log, "[%s] (%s): %s = %s", Time_Tag, interface[Interface], message[Message], Information);
 
 	ret = printf("%s\n",log);
-
-	//	sprintf(cmd, "echo \"%s\" >> /root/log.txt", log);
-	//	ret = system("ls");
 
 	FILE* f = fopen("/root/log.txt", "a");
     if (f != NULL)
