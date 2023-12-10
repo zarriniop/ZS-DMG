@@ -3660,10 +3660,10 @@ void svr_postWrite(
         	{
         		GPRS_KAT_GXDATA_STR gprs_kat_values;
         		GPRS_kat_gxData_Get_Value(&gprs_kat_values, &gprskeepalivetimeinterval);
-            	printf("####################################### DLMS_OBJECT_TYPE_DATA - EN:%d, ID:%d, IT:%d \n",
-            			gprs_kat_values.switch_enable,
-						gprs_kat_values.ideal_time,
-						gprs_kat_values.delay_retry_interval_value);
+//            	printf("####################################### DLMS_OBJECT_TYPE_DATA - EN:%d, ID:%d, IT:%d \n",
+//            			gprs_kat_values.switch_enable,
+//						gprs_kat_values.ideal_time,
+//						gprs_kat_values.delay_retry_interval_value);
 
             	Set_Socket_KAT_Option(lnWrapper.socket.Socket_fd, &gprs_kat_values);
         	}
