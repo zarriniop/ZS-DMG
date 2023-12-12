@@ -185,7 +185,7 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 
 				printf("ret : %d , GW_State: %d \n", ret, GW_State);
 
-				GW_State = WAIT_FOR_GET_FRAME;
+//				GW_State = WAIT_FOR_GET_FRAME;
 
 //				if(ret > 0)
 //				{
@@ -469,6 +469,7 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 
 	memset(HES_Frame, 0, sizeof(HES_Frame));
 
+	GW_State = WAIT_FOR_GET_FRAME;
 
 	if(HDLC_STRUCT->RX[0] == 0x7E )
 	{
