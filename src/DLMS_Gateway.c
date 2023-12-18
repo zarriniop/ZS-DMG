@@ -26,6 +26,8 @@ uint8_t Segment_bit					= 1				;
 uint8_t Control_Byte_Remained_Data 	= 0x51			;
 uint8_t Buffer_Data_Meter2GW_Frame_Convertor[8152]	;
 uint16_t Last_Byte_Buffer_Meter2GW 	= 0				;
+uint8_t APDU_tmp_buffer[8152] = {0}					;
+uint32_t APDU_tmp_buffer_index 	= 0					;	//keep last data index which is wrote to the APDU_tmp_buffer
 
 void Print_GW_State (void)
 {
@@ -47,6 +49,8 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 	Buffer GW_tmp, HDLC_tmp;
 	struct timeval timeout_start;
 	GW_State = WAIT_FOR_GET_FRAME;
+
+	GW_State = RESPONSE_FOR_MDM;
 
 	while(1)
 	{
@@ -181,9 +185,21 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 				break;
 
 			case RESPONSE_FOR_MDM:
-				ret = Meter2GW_Frame_Convertor(&HDLC_tmp, GW_STRUCT, &Control_Byte_Struct);
+				if(HDLC_STRUCT->RX_Count > 0)
+				{
+					memset(HDLC_tmp.RX, 0, sizeof(HDLC_tmp.RX));
+					memcpy(HDLC_tmp.RX, HDLC_STRUCT->RX, HDLC_STRUCT->RX_Count);
+					HDLC_tmp.RX_Count = HDLC_STRUCT->RX_Count;
 
-				printf("ret : %d , GW_State: %d \n", ret, GW_State);
+					HDLC_STRUCT->RX_Count = 0;
+
+					ret = Meter2GW_Frame_Convertor(&HDLC_tmp, GW_STRUCT, &Control_Byte_Struct);
+					printf("ret : %d\n", ret);
+				}
+
+//				ret = Meter2GW_Frame_Convertor(&HDLC_tmp, GW_STRUCT, &Control_Byte_Struct);
+
+//				printf("ret : %d , GW_State: %d \n", ret, GW_State);
 
 //				GW_State = WAIT_FOR_GET_FRAME;
 
@@ -446,297 +462,462 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, CTRL_BY
  ***********************************************************************************************/
 int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_STR_TD* Control_Byte_Struct)		//Converting HDLC frame to GW Frame
 {
-//	printf("--------------------------------------------------------\n");
-//	printf("Meter2GW_Frame_Convertor:%d\n", HDLC_STRUCT->RX_Count);
-//	for(int i=0; i<HDLC_STRUCT->RX_Count; i++)
+
+	uint32_t 	HDLC_Frame_Byte_Index;
+	uint32_t 	APDU_First_Byte_Index_in_HDLC_Frame;
+	uint32_t 	APDU_Last_Byte_Index_in_HDLC_Frame;
+	uint32_t	GW_Frame_tmp_size;
+	uint16_t 	HCS_in_HDLC_Frame;
+	uint16_t 	HCS_Calculated;
+	uint16_t 	FCS_in_HDLC_Frame;
+	uint16_t 	FCS_Calculated;
+	uint16_t	Log_Add;
+	uint16_t	Phy_Add;
+	uint8_t		Src_Add_First_Byte_Index_in_HDLC_Frame;
+	uint8_t		GW_Frame_tmp[5000];
+	uint8_t		Control_Byte_Index;
+
+//	printf("*-*- Meter2GW_Frame_Convertor:%d -*-*\n", HDLC_STRUCT->RX_Count);
+//
+//	for(int i = 0; i< HDLC_STRUCT->RX_Count; i++)
 //	{
-//		printf("0x%x-", HDLC_STRUCT->RX[i]);
+//		printf("%.2X  ", HDLC_STRUCT->RX[i]);
 //	}
-//	printf("\n--------------------------------------------------------\n");
+//	printf("\n");
 
-	uint16_t	last_byte					= 0;
-	uint16_t	last_byte_for_last_segment	= 0;
-	uint16_t	Phy_Add						= 0;
-	uint16_t	Log_Add						= 0;
-	uint16_t	HDLC_rec_data_size			= 0;
-	uint16_t	APDU_Len_for_Last_Segment	= MIN_GW_APDU_LEN_SIZE;		//len (header + net id + add len)
+	if(HDLC_STRUCT->RX[START_FLAG_BYTE] != FLAG_VALUE_IN_HDLC_FRAME)
+		return -1;
 
-	uint8_t 	HES_Frame[5000];
-	uint32_t 	HES_Frame_Size=0;
-	uint32_t 	HES_Frame_Size_for_Last_Segment=0;
+	if(HDLC_STRUCT->RX[HDLC_STRUCT->RX_Count-1] != FLAG_VALUE_IN_HDLC_FRAME)
+		return -2;
 
-	HES_Frame_Size = HES_MIN_FRAME_SIZE;
+	/* FINDING AND CHECKING HCS IN HDLC FRAME - Start *******************/
 
-	memset(HES_Frame, 0, sizeof(HES_Frame));
+	HDLC_Frame_Byte_Index = DST_ADD_START_BYTE;		//Indicates destination address first byte index
 
-	GW_State = WAIT_FOR_GET_FRAME;
-
-	if(HDLC_STRUCT->RX[0] == 0x7E )
+	while(HDLC_Frame_Byte_Index < HDLC_STRUCT->RX_Count)
 	{
-		if((HDLC_STRUCT->RX[FRAME_FRMT_START_BYTE] & 0xF0) == 0xA0 )
+		if((HDLC_STRUCT->RX[HDLC_Frame_Byte_Index] & 0x01) == 0x01)			//destination address end byte index
 		{
-			if((HDLC_STRUCT->RX[FRAME_FRMT_START_BYTE] & 0x08) == 0x08)
-			{
-				Segment_bit = MIDDLE_FRAME_IN_SEGMENTATION;
-				GW_State = SEGMENT;
-			}
-			else if(Segment_bit == MIDDLE_FRAME_IN_SEGMENTATION)
-			{
-				Segment_bit = LAST_FRAME_IN_SEGMENTATION;
-				GW_State = WAIT_FOR_GET_FRAME;
-			}
-			else
-			{
-				Segment_bit = SINGLE_FRAME_IN_SEGMENTATION;
-				memset(Buffer_Data_Meter2GW_Frame_Convertor, 0, sizeof(Buffer_Data_Meter2GW_Frame_Convertor));
-				Last_Byte_Buffer_Meter2GW = 0;
-				GW_State = WAIT_FOR_GET_FRAME;
-			}
+			HDLC_Frame_Byte_Index ++;	//Indicates source address first byte index
+			Src_Add_First_Byte_Index_in_HDLC_Frame = HDLC_Frame_Byte_Index;
+			break;
+		}
+		HDLC_Frame_Byte_Index ++;
+	}
 
-			HES_Frame[VERSION_START_BYTE] 	= 0;
-			HES_Frame[VERSION_START_BYTE+1] = 1;				//Version
+	while(HDLC_Frame_Byte_Index < HDLC_STRUCT->RX_Count)
+	{
+		if((HDLC_STRUCT->RX[HDLC_Frame_Byte_Index] & 0x01) == 0x01)			//source address end byte index
+		{
+			HDLC_Frame_Byte_Index ++;	//Indicates control byte index
+			Control_Byte_Index = HDLC_Frame_Byte_Index;
+			break;
+		}
+		HDLC_Frame_Byte_Index ++;
+	}
 
-			HES_Frame[HEADER_BYTE] 			= 0xE7;				//Header
-			HES_Frame[NETWORK_ID_BYTE] 		= 0;				//Network ID
-			HES_Frame[ADD_LEN_BYTE]			= 0;
+	HCS_Calculated = countCRC(HDLC_STRUCT->RX, 1, HDLC_Frame_Byte_Index);		// second argument (1) : start index : frame format field first byte /-/ third argument : HDLC_Frame_Byte_Index : the number of bytes that we are going to calculate their CRC
+	HDLC_Frame_Byte_Index ++;	//Indicates HCS first byte index
+	HCS_in_HDLC_Frame = ((uint16_t) (HDLC_STRUCT->RX[HDLC_Frame_Byte_Index]) << 8);
+	HDLC_Frame_Byte_Index ++;															//Indicates HCS second byte index
+	HCS_in_HDLC_Frame = HCS_in_HDLC_Frame | (HDLC_STRUCT->RX[HDLC_Frame_Byte_Index]); 	//HCS in meter's frame
+	HDLC_Frame_Byte_Index ++;															//Indicates APDU first byte index
+	APDU_First_Byte_Index_in_HDLC_Frame = HDLC_Frame_Byte_Index ;
 
-			HDLC_rec_data_size = (((((uint16_t) (HDLC_STRUCT->RX[FRAME_FRMT_START_BYTE])) << 8) | ((uint16_t) (HDLC_STRUCT->RX[FRAME_FRMT_START_BYTE+1]))) & 0x07FF) + 2;
+	if(HCS_Calculated != HCS_in_HDLC_Frame)
+		return -3;
 
-			if(HDLC_STRUCT->RX[HDLC_rec_data_size-1] != 0x7E)
-			{
-				printf("Meter2GW_Frame_Convertor: Error - End flag is wrong. \n");
-				return -7;
-			}
+	/* End - FINDING AND CHECKING HCS IN HDLC FRAME *******************/
 
-			for(int i=3; i<HDLC_rec_data_size; i++)				//Finding end of destination address
-			{
-				if((HDLC_STRUCT->RX[i] & 0x1) == 0x1)
-				{
-					HES_Frame[HES_DST_ADD_START_BYTE+1] = (HDLC_STRUCT->RX[i] >> 1);		//Destination Address
-					last_byte = i;
-					break;
-				}
-			}
+	/* FINDING AND CHECKING FCS IN HDLC FRAME - Start *******************/
+	APDU_Last_Byte_Index_in_HDLC_Frame = HDLC_STRUCT->RX_Count - 4;		//4 bytes = 1 byte for End flag + 2 bytes for FCS size + 1 byte for index (index == size -1)
+	FCS_Calculated = countCRC(HDLC_STRUCT->RX, 1, APDU_Last_Byte_Index_in_HDLC_Frame);
+	FCS_in_HDLC_Frame = ((uint16_t) (HDLC_STRUCT->RX[APDU_Last_Byte_Index_in_HDLC_Frame+1]) << 8);
+	FCS_in_HDLC_Frame = FCS_in_HDLC_Frame | (HDLC_STRUCT->RX[APDU_Last_Byte_Index_in_HDLC_Frame+2]);
 
-			for(int i=last_byte+1; i<HDLC_rec_data_size; i++)	//Finding end of source address
-			{
-				if((HDLC_STRUCT->RX[i] & 0x1) == 0x1)
-				{
-					if(i-last_byte == 4)		//Detecting size of source address
-					{
-						Log_Add = (uint16_t) ((HDLC_STRUCT->RX[i-2] >> 1) | ((uint8_t) (HDLC_STRUCT->RX[i-3] << 6)));
-						Log_Add = Log_Add | ((uint16_t) ((HDLC_STRUCT->RX[i-3] & 0xFC)<<6));
+	if(FCS_Calculated != FCS_in_HDLC_Frame)
+		return -4;
 
-						HES_Frame[HES_SRC_ADD_START_BYTE] 	= (uint8_t) ((Log_Add >> 8) & 0x00FF);
-						HES_Frame[HES_SRC_ADD_START_BYTE+1] = (uint8_t) ((Log_Add) & 0x00FF);			//Source address
+	/* End - FINDING AND CHECKING FCS IN HDLC FRAME *******************/
 
-						Phy_Add = (uint16_t) ((HDLC_STRUCT->RX[i] >> 1) | ((uint8_t) (HDLC_STRUCT->RX[i-1] << 6)));
-						Phy_Add = Phy_Add | ((uint16_t) ((HDLC_STRUCT->RX[i-1] & 0xFC)<<6));
+	//increasing RRR in control byte
+	if(Control_Byte_Struct->RRR >= 7)
+		Control_Byte_Struct->RRR = 0;
+	else
+		Control_Byte_Struct->RRR ++;
 
-						uint8_t Phy_Add_len = 0;
+	/* COPYING APDU FROM HDLC FRAME TO A APDU BUFFER - Start **********************/
 
-						if(Phy_Add>=0 && Phy_Add<256)
-						{
-							HES_Frame[ADD_LEN_BYTE] 			= 1;
-							HES_Frame[HES_PHY_ADD_START_BYTE] 	= (uint8_t) (Phy_Add & 0x00FF);
-							APDU_Len_for_Last_Segment ++;
-						}
-						else if(Phy_Add>=256 && Phy_Add<=65535)
-						{
-							HES_Frame[ADD_LEN_BYTE] 			= 2;
-							HES_Frame[HES_PHY_ADD_START_BYTE] 	= (uint8_t) ((Phy_Add >> 8) & 0x00FF);
-							HES_Frame[HES_PHY_ADD_START_BYTE+1] = (uint8_t) (Phy_Add & 0x00FF);
-							APDU_Len_for_Last_Segment += 2;
-						}
-						else
-						{
-							printf("Meter2GW_Frame_Convertor: Error - Physical address must be between 0 and 65535. - %d\n", Phy_Add);
-							return -1;
-						}
+	memcpy(APDU_tmp_buffer + APDU_tmp_buffer_index, HDLC_STRUCT->RX + APDU_First_Byte_Index_in_HDLC_Frame + 3, APDU_Last_Byte_Index_in_HDLC_Frame - APDU_First_Byte_Index_in_HDLC_Frame -2);
+	//Explanation: RX + APDU_First_Byte_Index_in_HDLC_Frame + 3: because 3 bytes are LLC sub_layer
+	APDU_tmp_buffer_index += (APDU_Last_Byte_Index_in_HDLC_Frame - APDU_First_Byte_Index_in_HDLC_Frame -2);		//3 bytes are LLC sub-layer
 
-						Phy_Add_len 	= HES_Frame[ADD_LEN_BYTE];
-						HES_Frame_Size 	+= Phy_Add_len;
-					}
-					else if(i-last_byte == 2)
-					{
-						Log_Add = ((HDLC_STRUCT->RX[i-1] >> 1));
-						Phy_Add = (HDLC_STRUCT->RX[i] >> 1);
-
-						uint8_t Phy_Add_len = 0;
-
-						if(Phy_Add>=0 && Phy_Add<256)
-						{
-							HES_Frame[HES_SRC_ADD_START_BYTE+1] = (uint8_t) (Log_Add);
-							HES_Frame[ADD_LEN_BYTE] 			= 1;
-							HES_Frame[HES_PHY_ADD_START_BYTE] 	= (uint8_t) (Phy_Add & 0x00FF);
-							APDU_Len_for_Last_Segment ++;
-						}
-						else
-						{
-							printf("Meter2GW_Frame_Convertor: Error - Physical address must be between 0 and 256. - %d\n", Phy_Add);
-							return -2;
-						}
-
-						Phy_Add_len = HES_Frame[ADD_LEN_BYTE];
-						HES_Frame_Size += Phy_Add_len;
-
-					}
-					else
-					{
-						printf("Meter2GW_Frame_Convertor: Error - Source Address is wrong. \n");
-						return -3;
-					}
-					uint16_t HES_APDU_Byte = ADD_LEN_BYTE + HES_Frame[ADD_LEN_BYTE] + 1;	//determining APDU start byte in MDM's frame
-					uint16_t HES_APDU_Byte_for_Last_segment = HES_APDU_Byte;
-
-					last_byte = i;
-
-					if(Segment_bit == SINGLE_FRAME_IN_SEGMENTATION)
-					{
-						Ctrl_Byte_Last = HDLC_STRUCT->RX[last_byte+1];
-					}
-
-					uint16_t HCS_Frame 				= 0	;
-					uint16_t HCS_Cal 				= 0	;
-					HCS_Frame 						= ((uint16_t) (HDLC_STRUCT->RX[last_byte+2]) << 8) | (HDLC_STRUCT->RX[last_byte+3]); //HCS in meter's frame
-					HCS_Cal 						= countCRC(HDLC_STRUCT->RX, 1, last_byte + 1);
-					last_byte 						= last_byte +3; 						//len(CRC)+len(ControlByte)
-					last_byte_for_last_segment 		= last_byte;
-
-					uint16_t APDU_len 				= 0;
-					int32_t APDU_len_real 			= 0;
-					APDU_len 						= HDLC_rec_data_size - last_byte -4 + (3 + HES_Frame[ADD_LEN_BYTE]);		//4 = len(FCS) + len(end flag) + (index is less in value one) / last (prefix len) due to gurux application
-					APDU_len_real 					= HDLC_rec_data_size - last_byte -4;										//4 = len(FCS) + len(end flag) + (index is less in value one) / last (prefix len) due to gurux application
-					HES_Frame_Size_for_Last_Segment = HES_Frame_Size;
-					HES_Frame_Size					+= APDU_len_real;
-
-					if(APDU_len_real < 0)
-					{
-						printf("Meter2GW_Frame_Convertor: NO INFORMATION \n");
-						return -4;
-					}
-
-					APDU_len-=3; //najafi
-
-					HES_Frame[APDU_LEN_START_BYTE] 			= (uint8_t) (APDU_len >> 8);
-					HES_Frame[APDU_LEN_START_BYTE+1] 		= (uint8_t) (APDU_len & 0x00FF);
+	/* END - COPYING APDU FROM HDLC FRAME TO A APDU BUFFER **********************/
 
 
-					if(HCS_Frame == HCS_Cal)
-					{
-						for(int j = last_byte+4; j < HDLC_rec_data_size-3; j++) //najafi
-						{
-							Buffer_Data_Meter2GW_Frame_Convertor[Last_Byte_Buffer_Meter2GW] = HDLC_STRUCT->RX[j];
-							Last_Byte_Buffer_Meter2GW ++;
+	/* CHECKING SEGMENTATION BIT EXISTANCE - Start **********************/
 
-							HES_Frame[HES_APDU_Byte] = HDLC_STRUCT->RX[j];
-							HES_APDU_Byte ++;
-							last_byte ++;
-						}
+	if((HDLC_STRUCT->RX[FRAME_FRMT_START_BYTE] & SEGMENT_BIT_FRAME_FORMAT_BYTE) == SEGMENT_BIT_FRAME_FORMAT_BYTE)
+		return 1;
 
-						uint16_t FCS_Frame 	= 0;
-						uint16_t FCS_Cal 	= 0;
-						FCS_Frame 	= ((uint16_t) (HDLC_STRUCT->RX[last_byte + 1]) << 8) | (HDLC_STRUCT->RX[last_byte + 2]);
-						FCS_Cal 	= countCRC(HDLC_STRUCT->RX, 1, last_byte);
+	/* END - CHECKING SEGMENTATION BIT EXISTANCE **********************/
 
-						//if(FCS_Frame == FCS_Cal)   //najafi
-						if(1)
-						{
-							Gate_HES_size = HES_Frame_Size;
-							memcpy(GW_STRUCT->TX, HES_Frame, sizeof(HES_Frame));
+	/* FORMING GW FRAME - Start **********************/
+	memset(GW_Frame_tmp, 0, sizeof(GW_Frame_tmp));
+	GW_Frame_tmp_size = 0;
 
-							if(Control_Byte_Struct->RRR >= 7)
-							{
-								Control_Byte_Struct->RRR = 0;
-							}
-							else
-							{
-								Control_Byte_Struct->RRR ++;
-							}
-							printf("M2G - NR:%d ,NS:%d\n", Control_Byte_Struct->RRR, Control_Byte_Struct->SSS);
+	//Version bytes (0,1)
+	GW_Frame_tmp[VERSION_START_BYTE] 	= 0;
+	GW_Frame_tmp[VERSION_START_BYTE+1] 	= 1;
 
-							if(Segment_bit == LAST_FRAME_IN_SEGMENTATION)
-							{
-								HES_Frame_Size_for_Last_Segment	+= Last_Byte_Buffer_Meter2GW;
+	//Source (logical) address (2,3) and physical address
+	if(Control_Byte_Index - Src_Add_First_Byte_Index_in_HDLC_Frame == 4)
+	{
+		Log_Add = (uint16_t) ((HDLC_STRUCT->RX[Src_Add_First_Byte_Index_in_HDLC_Frame+1] >> 1) | ((uint8_t) (HDLC_STRUCT->RX[Src_Add_First_Byte_Index_in_HDLC_Frame] << 6)));
+		Log_Add = Log_Add | ((uint16_t) ((HDLC_STRUCT->RX[Src_Add_First_Byte_Index_in_HDLC_Frame] & 0xFC)<<6));
 
+		GW_Frame_tmp[HES_SRC_ADD_START_BYTE] 	= (uint8_t) ((Log_Add >> 8) & 0x00FF);
+		GW_Frame_tmp[HES_SRC_ADD_START_BYTE+1] 	= (uint8_t) ((Log_Add) & 0x00FF);			//Source address
 
-								for(int n=0; n<Last_Byte_Buffer_Meter2GW; n++)
-								{
-									HES_Frame[HES_APDU_Byte_for_Last_segment] = Buffer_Data_Meter2GW_Frame_Convertor[n];
-									HES_APDU_Byte_for_Last_segment ++;
-									last_byte_for_last_segment ++;
-								}
+		Phy_Add = (uint16_t) ((HDLC_STRUCT->RX[Src_Add_First_Byte_Index_in_HDLC_Frame+3] >> 1) | ((uint8_t) (HDLC_STRUCT->RX[Src_Add_First_Byte_Index_in_HDLC_Frame+2] << 6)));
+		Phy_Add = Phy_Add | ((uint16_t) ((HDLC_STRUCT->RX[Src_Add_First_Byte_Index_in_HDLC_Frame+2] & 0xFC)<<6));
 
-								APDU_Len_for_Last_Segment = HES_Frame_Size_for_Last_Segment - 8;
-								HES_Frame[APDU_LEN_START_BYTE] 			= (uint8_t) (APDU_Len_for_Last_Segment >> 8);
-								HES_Frame[APDU_LEN_START_BYTE+1] 		= (uint8_t) (APDU_Len_for_Last_Segment & 0x00FF);
-
-//								memcpy(GW_STRUCT->TX, HES_Frame, sizeof(HES_Frame));
-								memcpy(GW_STRUCT->TX, HES_Frame, HES_Frame_Size_for_Last_Segment-3); //najafi
-								GW_STRUCT->TX_Count = HES_Frame_Size_for_Last_Segment-3;			//najafi
-//								printf("--------------------------------------------------------\n");
-//								printf("Meter2GW_Frame_Convertor-Converted_SB:%d\n", Last_Byte_Buffer_Meter2GW);
-//								for(int i=0; i<Last_Byte_Buffer_Meter2GW+1; i++)
-//								{
-//									printf("0x%x-", GW_STRUCT->TX[i]);
-//								}
-//								printf("\n--------------------------------------------------------\n");
-
-								memset(Buffer_Data_Meter2GW_Frame_Convertor, 0, sizeof(Buffer_Data_Meter2GW_Frame_Convertor));
-								Last_Byte_Buffer_Meter2GW = 0;
-
-								return HES_Frame_Size_for_Last_Segment;
-//								return 1;
-							}
-							else if(Segment_bit == SINGLE_FRAME_IN_SEGMENTATION)
-							{
-//								printf("--------------------------------------------------------\n");
-//								printf("Meter2GW_Frame_Convertor-Converted-Single Frame:%d\n", Last_Byte_Buffer_Meter2GW);
-//								for(int i=0; i<HES_Frame_Size; i++)
-//								{
-//									printf("0x%x-", GW_STRUCT->TX[i]);
-//								}
-//								printf("\n--------------------------------------------------------\n");
-
-								GW_STRUCT->TX_Count = HES_Frame_Size-3; //najafi
-
-								memset(Buffer_Data_Meter2GW_Frame_Convertor, 0, sizeof(Buffer_Data_Meter2GW_Frame_Convertor));
-								Last_Byte_Buffer_Meter2GW = 0;
-
-								return HES_Frame_Size;
-//								return 2;
-							}
-
-							return 0;
-						}
-						else
-						{
-							printf("Meter2GW_Frame_Convertor: Error - FCS is wrong 0x%.2X. \n", FCS_Cal);
-							return -5;
-						}
-					}
-					else
-					{
-						printf("Meter2GW_Frame_Convertor: Error - HCS is wrong. \n");
-						return -6;
-					}
-
-					break;
-				}
-			}
+		if(Phy_Add>=256)
+		{
+			GW_Frame_tmp[ADD_LEN_BYTE] = 2;		//physical address length: 2 Bytes
+			GW_Frame_tmp[HES_PHY_ADD_START_BYTE] 	= (uint8_t) ((Phy_Add >> 8) & 0x00FF);
+			GW_Frame_tmp[HES_PHY_ADD_START_BYTE+1] 	= (uint8_t) (Phy_Add & 0x00FF);
 		}
 		else
 		{
-			printf("Meter2GW_Frame_Convertor: Error - Frame format field is wrong.-0x%x \n", HDLC_STRUCT->RX[1]);
-			return -8;
+			GW_Frame_tmp[ADD_LEN_BYTE] = 1;		//physical address length: 1 Bytes
+			GW_Frame_tmp[HES_PHY_ADD_START_BYTE] 	= (uint8_t) (Phy_Add & 0x00FF);
 		}
 	}
-	else
+	else if(Control_Byte_Index - Src_Add_First_Byte_Index_in_HDLC_Frame == 2)
 	{
-		printf("Start flag is wrong. \n");
-		return -9;
+		Log_Add = ((HDLC_STRUCT->RX[Src_Add_First_Byte_Index_in_HDLC_Frame] >> 1));
+		Phy_Add = (HDLC_STRUCT->RX[Src_Add_First_Byte_Index_in_HDLC_Frame+1] >> 1);
+
+		GW_Frame_tmp[HES_SRC_ADD_START_BYTE + 1]= (uint8_t) (Log_Add);
+
+		GW_Frame_tmp[ADD_LEN_BYTE] 			= 1; 	//physical address length
+		GW_Frame_tmp[HES_PHY_ADD_START_BYTE]= (uint8_t) (Phy_Add & 0x00FF);
 	}
+
+	//destination address
+	GW_Frame_tmp[HES_DST_ADD_START_BYTE] 	= 0;
+	GW_Frame_tmp[HES_DST_ADD_START_BYTE+1] 	= HDLC_STRUCT->RX[Src_Add_First_Byte_Index_in_HDLC_Frame-1] >> 1;
+
+	//Header byte
+	GW_Frame_tmp[HEADER_BYTE] = HEADER_VALUE_FOR_GW_FRAME;
+
+	//Network ID
+	GW_Frame_tmp[NETWORK_ID_BYTE]	= 0;
+
+	memcpy(GW_Frame_tmp+(ADD_LEN_BYTE+GW_Frame_tmp[ADD_LEN_BYTE]+1), APDU_tmp_buffer, APDU_tmp_buffer_index);
+	//Explanation: ADD_LEN_BYTE+GW_Frame_tmp[ADD_LEN_BYTE]+1: First byte in APDU section in GW frame
+
+
+	/* END - FORMING GW FRAME **********************/
+
+	memcpy(GW_STRUCT->TX, GW_Frame_tmp, ADD_LEN_BYTE+GW_Frame_tmp[ADD_LEN_BYTE]+1+APDU_tmp_buffer_index);
+	GW_STRUCT->TX_Count = 1+ADD_LEN_BYTE+GW_Frame_tmp[ADD_LEN_BYTE]+APDU_tmp_buffer_index;
+
+	//Reset APDU_tmp_buffer
+	memset(APDU_tmp_buffer, 0, sizeof(APDU_tmp_buffer));
+	APDU_tmp_buffer_index = 0;
+
 	return 0;
+
+
+
+//
+//
+//	uint16_t	last_byte					= 0;
+//	uint16_t	last_byte_for_last_segment	= 0;
+//	uint16_t	Phy_Add						= 0;
+//	uint16_t	Log_Add						= 0;
+//	uint16_t	HDLC_rec_data_size			= 0;
+//	uint16_t	APDU_Len_for_Last_Segment	= MIN_GW_APDU_LEN_SIZE;		//len (header + net id + add len)
+//
+//	uint8_t 	HES_Frame[5000];
+//	uint32_t 	HES_Frame_Size=0;
+//	uint32_t 	HES_Frame_Size_for_Last_Segment=0;
+//
+//	HES_Frame_Size = HES_MIN_FRAME_SIZE;
+//
+//	memset(HES_Frame, 0, sizeof(HES_Frame));
+//
+//	GW_State = WAIT_FOR_GET_FRAME;
+//
+//	if(HDLC_STRUCT->RX[0] == 0x7E )
+//	{
+//		if((HDLC_STRUCT->RX[FRAME_FRMT_START_BYTE] & 0xF0) == 0xA0 )
+//		{
+//			if((HDLC_STRUCT->RX[FRAME_FRMT_START_BYTE] & 0x08) == 0x08)
+//			{
+//				Segment_bit = MIDDLE_FRAME_IN_SEGMENTATION;
+//				GW_State = SEGMENT;
+//			}
+//			else if(Segment_bit == MIDDLE_FRAME_IN_SEGMENTATION)
+//			{
+//				Segment_bit = LAST_FRAME_IN_SEGMENTATION;
+//				GW_State = WAIT_FOR_GET_FRAME;
+//			}
+//			else
+//			{
+//				Segment_bit = SINGLE_FRAME_IN_SEGMENTATION;
+//				memset(Buffer_Data_Meter2GW_Frame_Convertor, 0, sizeof(Buffer_Data_Meter2GW_Frame_Convertor));
+//				Last_Byte_Buffer_Meter2GW = 0;
+//				GW_State = WAIT_FOR_GET_FRAME;
+//			}
+//
+//			HES_Frame[VERSION_START_BYTE] 	= 0;
+//			HES_Frame[VERSION_START_BYTE+1] = 1;				//Version
+//
+//			HES_Frame[HEADER_BYTE] 			= 0xE7;				//Header
+//			HES_Frame[NETWORK_ID_BYTE] 		= 0;				//Network ID
+//			HES_Frame[ADD_LEN_BYTE]			= 0;
+//
+//			HDLC_rec_data_size = (((((uint16_t) (HDLC_STRUCT->RX[FRAME_FRMT_START_BYTE])) << 8) | ((uint16_t) (HDLC_STRUCT->RX[FRAME_FRMT_START_BYTE+1]))) & 0x07FF) + 2;
+//
+//			if(HDLC_STRUCT->RX[HDLC_rec_data_size-1] != 0x7E)
+//			{
+//				printf("Meter2GW_Frame_Convertor: Error - End flag is wrong. \n");
+//				return -7;
+//			}
+//
+//			for(int i=3; i<HDLC_rec_data_size; i++)				//Finding end of destination address
+//			{
+//				if((HDLC_STRUCT->RX[i] & 0x1) == 0x1)
+//				{
+//					HES_Frame[HES_DST_ADD_START_BYTE+1] = (HDLC_STRUCT->RX[i] >> 1);		//Destination Address
+//					last_byte = i;
+//					break;
+//				}
+//			}
+//
+//			for(int i=last_byte+1; i<HDLC_rec_data_size; i++)	//Finding end of source address
+//			{
+//				if((HDLC_STRUCT->RX[i] & 0x1) == 0x1)
+//				{
+//					if(i-last_byte == 4)		//Detecting size of source address
+//					{
+//						Log_Add = (uint16_t) ((HDLC_STRUCT->RX[i-2] >> 1) | ((uint8_t) (HDLC_STRUCT->RX[i-3] << 6)));
+//						Log_Add = Log_Add | ((uint16_t) ((HDLC_STRUCT->RX[i-3] & 0xFC)<<6));
+//
+//						HES_Frame[HES_SRC_ADD_START_BYTE] 	= (uint8_t) ((Log_Add >> 8) & 0x00FF);
+//						HES_Frame[HES_SRC_ADD_START_BYTE+1] = (uint8_t) ((Log_Add) & 0x00FF);			//Source address
+//
+//						Phy_Add = (uint16_t) ((HDLC_STRUCT->RX[i] >> 1) | ((uint8_t) (HDLC_STRUCT->RX[i-1] << 6)));
+//						Phy_Add = Phy_Add | ((uint16_t) ((HDLC_STRUCT->RX[i-1] & 0xFC)<<6));
+//
+//						uint8_t Phy_Add_len = 0;
+//
+//						if(Phy_Add>=0 && Phy_Add<256)
+//						{
+//							HES_Frame[ADD_LEN_BYTE] 			= 1;
+//							HES_Frame[HES_PHY_ADD_START_BYTE] 	= (uint8_t) (Phy_Add & 0x00FF);
+//							APDU_Len_for_Last_Segment ++;
+//						}
+//						else if(Phy_Add>=256 && Phy_Add<=65535)
+//						{
+//							HES_Frame[ADD_LEN_BYTE] 			= 2;
+//							HES_Frame[HES_PHY_ADD_START_BYTE] 	= (uint8_t) ((Phy_Add >> 8) & 0x00FF);
+//							HES_Frame[HES_PHY_ADD_START_BYTE+1] = (uint8_t) (Phy_Add & 0x00FF);
+//							APDU_Len_for_Last_Segment += 2;
+//						}
+//						else
+//						{
+//							printf("Meter2GW_Frame_Convertor: Error - Physical address must be between 0 and 65535. - %d\n", Phy_Add);
+//							return -1;
+//						}
+//
+//						Phy_Add_len 	= HES_Frame[ADD_LEN_BYTE];
+//						HES_Frame_Size 	+= Phy_Add_len;
+//					}
+//					else if(i-last_byte == 2)
+//					{
+//						Log_Add = ((HDLC_STRUCT->RX[i-1] >> 1));
+//						Phy_Add = (HDLC_STRUCT->RX[i] >> 1);
+//
+//						uint8_t Phy_Add_len = 0;
+//
+//						if(Phy_Add>=0 && Phy_Add<256)
+//						{
+//							HES_Frame[HES_SRC_ADD_START_BYTE+1] = (uint8_t) (Log_Add);
+//							HES_Frame[ADD_LEN_BYTE] 			= 1;
+//							HES_Frame[HES_PHY_ADD_START_BYTE] 	= (uint8_t) (Phy_Add & 0x00FF);
+//							APDU_Len_for_Last_Segment ++;
+//						}
+//						else
+//						{
+//							printf("Meter2GW_Frame_Convertor: Error - Physical address must be between 0 and 256. - %d\n", Phy_Add);
+//							return -2;
+//						}
+//
+//						Phy_Add_len = HES_Frame[ADD_LEN_BYTE];
+//						HES_Frame_Size += Phy_Add_len;
+//
+//					}
+//					else
+//					{
+//						printf("Meter2GW_Frame_Convertor: Error - Source Address is wrong. \n");
+//						return -3;
+//					}
+//					uint16_t HES_APDU_Byte = ADD_LEN_BYTE + HES_Frame[ADD_LEN_BYTE] + 1;	//determining APDU start byte in MDM's frame
+//					uint16_t HES_APDU_Byte_for_Last_segment = HES_APDU_Byte;
+//
+//					last_byte = i;
+//
+//					if(Segment_bit == SINGLE_FRAME_IN_SEGMENTATION)
+//					{
+//						Ctrl_Byte_Last = HDLC_STRUCT->RX[last_byte+1];
+//					}
+//
+//					uint16_t HCS_Frame 				= 0	;
+//					uint16_t HCS_Cal 				= 0	;
+//					HCS_Frame 						= ((uint16_t) (HDLC_STRUCT->RX[last_byte+2]) << 8) | (HDLC_STRUCT->RX[last_byte+3]); //HCS in meter's frame
+//					HCS_Cal 						= countCRC(HDLC_STRUCT->RX, 1, last_byte + 1);
+//					last_byte 						= last_byte +3; 						//len(CRC)+len(ControlByte)
+//					last_byte_for_last_segment 		= last_byte;
+//
+//					uint16_t APDU_len 				= 0;
+//					int32_t APDU_len_real 			= 0;
+//					APDU_len 						= HDLC_rec_data_size - last_byte -4 + (3 + HES_Frame[ADD_LEN_BYTE]);		//4 = len(FCS) + len(end flag) + (index is less in value one) / last (prefix len) due to gurux application
+//					APDU_len_real 					= HDLC_rec_data_size - last_byte -4;										//4 = len(FCS) + len(end flag) + (index is less in value one) / last (prefix len) due to gurux application
+//					HES_Frame_Size_for_Last_Segment = HES_Frame_Size;
+//					HES_Frame_Size					+= APDU_len_real;
+//
+//					if(APDU_len_real < 0)
+//					{
+//						printf("Meter2GW_Frame_Convertor: NO INFORMATION \n");
+//						return -4;
+//					}
+//
+//					APDU_len-=3; //najafi
+//
+//					HES_Frame[APDU_LEN_START_BYTE] 			= (uint8_t) (APDU_len >> 8);
+//					HES_Frame[APDU_LEN_START_BYTE+1] 		= (uint8_t) (APDU_len & 0x00FF);
+//
+//
+//					if(HCS_Frame == HCS_Cal)
+//					{
+//						for(int j = last_byte+4; j < HDLC_rec_data_size-3; j++) //najafi
+//						{
+//							Buffer_Data_Meter2GW_Frame_Convertor[Last_Byte_Buffer_Meter2GW] = HDLC_STRUCT->RX[j];
+//							Last_Byte_Buffer_Meter2GW ++;
+//
+//							HES_Frame[HES_APDU_Byte] = HDLC_STRUCT->RX[j];
+//							HES_APDU_Byte ++;
+//							last_byte ++;
+//						}
+//
+//						uint16_t FCS_Frame 	= 0;
+//						uint16_t FCS_Cal 	= 0;
+//						FCS_Frame 	= ((uint16_t) (HDLC_STRUCT->RX[last_byte + 1]) << 8) | (HDLC_STRUCT->RX[last_byte + 2]);
+//						FCS_Cal 	= countCRC(HDLC_STRUCT->RX, 1, last_byte);
+//
+//						//if(FCS_Frame == FCS_Cal)   //najafi
+//						if(1)
+//						{
+//							Gate_HES_size = HES_Frame_Size;
+//							memcpy(GW_STRUCT->TX, HES_Frame, sizeof(HES_Frame));
+//
+//							if(Control_Byte_Struct->RRR >= 7)
+//							{
+//								Control_Byte_Struct->RRR = 0;
+//							}
+//							else
+//							{
+//								Control_Byte_Struct->RRR ++;
+//							}
+//							printf("M2G - NR:%d ,NS:%d\n", Control_Byte_Struct->RRR, Control_Byte_Struct->SSS);
+//
+//							if(Segment_bit == LAST_FRAME_IN_SEGMENTATION)
+//							{
+//								HES_Frame_Size_for_Last_Segment	+= Last_Byte_Buffer_Meter2GW;
+//
+//
+//								for(int n=0; n<Last_Byte_Buffer_Meter2GW; n++)
+//								{
+//									HES_Frame[HES_APDU_Byte_for_Last_segment] = Buffer_Data_Meter2GW_Frame_Convertor[n];
+//									HES_APDU_Byte_for_Last_segment ++;
+//									last_byte_for_last_segment ++;
+//								}
+//
+//								APDU_Len_for_Last_Segment = HES_Frame_Size_for_Last_Segment - 8;
+//								HES_Frame[APDU_LEN_START_BYTE] 			= (uint8_t) (APDU_Len_for_Last_Segment >> 8);
+//								HES_Frame[APDU_LEN_START_BYTE+1] 		= (uint8_t) (APDU_Len_for_Last_Segment & 0x00FF);
+//
+////								memcpy(GW_STRUCT->TX, HES_Frame, sizeof(HES_Frame));
+//								memcpy(GW_STRUCT->TX, HES_Frame, HES_Frame_Size_for_Last_Segment-3); //najafi
+//								GW_STRUCT->TX_Count = HES_Frame_Size_for_Last_Segment-3;			//najafi
+////								printf("--------------------------------------------------------\n");
+////								printf("Meter2GW_Frame_Convertor-Converted_SB:%d\n", Last_Byte_Buffer_Meter2GW);
+////								for(int i=0; i<Last_Byte_Buffer_Meter2GW+1; i++)
+////								{
+////									printf("0x%x-", GW_STRUCT->TX[i]);
+////								}
+////								printf("\n--------------------------------------------------------\n");
+//
+//								memset(Buffer_Data_Meter2GW_Frame_Convertor, 0, sizeof(Buffer_Data_Meter2GW_Frame_Convertor));
+//								Last_Byte_Buffer_Meter2GW = 0;
+//
+//								return HES_Frame_Size_for_Last_Segment;
+////								return 1;
+//							}
+//							else if(Segment_bit == SINGLE_FRAME_IN_SEGMENTATION)
+//							{
+////								printf("--------------------------------------------------------\n");
+////								printf("Meter2GW_Frame_Convertor-Converted-Single Frame:%d\n", Last_Byte_Buffer_Meter2GW);
+////								for(int i=0; i<HES_Frame_Size; i++)
+////								{
+////									printf("0x%x-", GW_STRUCT->TX[i]);
+////								}
+////								printf("\n--------------------------------------------------------\n");
+//
+//								GW_STRUCT->TX_Count = HES_Frame_Size-3; //najafi
+//
+//								memset(Buffer_Data_Meter2GW_Frame_Convertor, 0, sizeof(Buffer_Data_Meter2GW_Frame_Convertor));
+//								Last_Byte_Buffer_Meter2GW = 0;
+//
+//								return HES_Frame_Size;
+////								return 2;
+//							}
+//
+//							return 0;
+//						}
+//						else
+//						{
+//							printf("Meter2GW_Frame_Convertor: Error - FCS is wrong 0x%.2X. \n", FCS_Cal);
+//							return -5;
+//						}
+//					}
+//					else
+//					{
+//						printf("Meter2GW_Frame_Convertor: Error - HCS is wrong. \n");
+//						return -6;
+//					}
+//
+//					break;
+//				}
+//			}
+//		}
+//		else
+//		{
+//			printf("Meter2GW_Frame_Convertor: Error - Frame format field is wrong.-0x%x \n", HDLC_STRUCT->RX[1]);
+//			return -8;
+//		}
+//	}
+//	else
+//	{
+//		printf("Start flag is wrong. \n");
+//		return -9;
+//	}
+//	return 0;
 }
 
 /***********************************************************************************************
