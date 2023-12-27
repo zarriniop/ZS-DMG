@@ -108,6 +108,7 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 				else
 					GW_State = WAIT_FOR_GET_FRAME;
 
+				sleep(1);	//sleep for Afzar Azma meter before sending AARQ and waiting for receiving full SNRM request
 
 				break;
 
