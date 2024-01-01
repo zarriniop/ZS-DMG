@@ -119,8 +119,9 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 					printf("TIME OUT IN SNRM RESPONSE\n");
 					GW_State = WAIT_FOR_GET_FRAME;
 				}
-				if(HDLC_STRUCT->RX_Count > 0)
+				if((HDLC_STRUCT->RX_Count > 0) && (HDLC_STRUCT->RX[HDLC_STRUCT->RX_Count - 1] == FLAG_VALUE_IN_HDLC_FRAME))  //We ensure that we received whole UA frame from meter
 				{
+					printf("<---- WHOLE SNRM UA RECEIVED ---->\n");
 					HDLC_STRUCT->RX_Count = 0;
 					GW_State = INFORMATION_FRAME;
 				}
