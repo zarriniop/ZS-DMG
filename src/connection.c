@@ -861,15 +861,17 @@ void* RS485_Send_Thread(void* pVoid)
     uint32_t baudRate;
     uint32_t delay_us;
     connection* con = (connection*)pVoid;
+
     while (1)
     {
         if(con->buffer.TX_Count>0)
         {
             baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
-            delay_us = ((con->buffer.TX_Count * 10150)/baudRate);
+            delay_us = ((con->buffer.TX_Count * 10150)/baudRate);		//10150 is a determined value
 
         	//Change dir pin to high level
         	*(volatile uint32_t *)(con->BASE_ADDR + 0x19)=(1 <<GPIO_OUT_DIR);
+
 
             ret = write(con->comPort, con->buffer.TX, con->buffer.TX_Count);
 
