@@ -36,6 +36,7 @@
 #include <unistd.h> 	// UNIX standard function definitions
 #include <fcntl.h> 		// File control definitions
 #include <errno.h> 		// Error number definitions
+#include "ql_gpio.h"
 
 pthread_t 				Wan_Connection_pthread_var;
 
@@ -1003,6 +1004,8 @@ int con_close(
 
 void Initialize (void)
 {
+	Ql_GPIO_Init(PINNAME_USIM_PRESENCE, PINDIRECTION_IN, PINLEVEL_LOW, PINPULLSEL_PULLDOWN);	//Define PINNAME_USIM_PRESENCE (pin 13) as a DI to detecting presence or absence of USIM
+
 	Device_Init	()	;
 	Sim_Init	()	;
 	NW_Init		()	;

@@ -20,9 +20,6 @@
 
 DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str	;
 
-QL_SIM_CARD_STATUS_INFO   card_status;
-int ret;
-
 int main(int argc, char* argv[])
 {
 	report(START_APP, START, "**********************************");
@@ -35,11 +32,14 @@ int main(int argc, char* argv[])
     LTE_Manager_Start()					;
 //    pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
 
+    /*************************************/
+
+    /*************************************/
+
     while (1)
     {
-		ret=ql_sim_get_card_status(&card_status);
-		printf("<== sim card sts - ret:%d ,  card_status:%d-%d ==>\n", ret, card_status.card_type, card_status.card_state);
-		Sim_Init();
+		ret = Ql_GPIO_GetLevel(PINNAME_USIM_PRESENCE);
+
     	sleep(20)						;
     }
     return 0;
