@@ -872,7 +872,7 @@ int addAssociationLow()
                                                                          DLMS_CONFORMANCE_ACTION |
                                                                          DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
                                                                          DLMS_CONFORMANCE_GET);
-        bb_addString(&associationLow.secret, "Gurux");
+        bb_addString(&associationLow.secret, Settings.LLSPass);
         associationLow.securitySetup = NULL;
     }
     return ret;

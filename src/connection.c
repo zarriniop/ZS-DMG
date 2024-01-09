@@ -1004,8 +1004,8 @@ int con_close(
 
 void Initialize (void)
 {
-	Ql_GPIO_Init(PINNAME_USIM_PRESENCE, PINDIRECTION_IN, PINLEVEL_LOW, PINPULLSEL_PULLDOWN);	//Define PINNAME_USIM_PRESENCE (pin 13) as a DI to detecting presence or absence of USIM
-
+//	Ql_GPIO_Init(PINNAME_USIM_PRESENCE, PINDIRECTION_IN, PINLEVEL_LOW, PINPULLSEL_PULLDOWN);	//Define PINNAME_USIM_PRESENCE (pin 13) as a DI to detecting presence or absence of USIM
+//	ret = Ql_GPIO_GetLevel(PINNAME_USIM_PRESENCE);
 	Device_Init	()	;
 	Sim_Init	()	;
 	NW_Init		()	;

@@ -2630,6 +2630,8 @@ int ser_saveAutoAnswer(
     gxAutoAnswer* object)
 {
     int ret = 0;
+    uint16_t pos, count;
+    gxListofAllowedCallersElements* it;
     uint16_t ignored = ser_getIgnoredAttributes(serializeSettings, (gxObject*)object);
     if ((!isAttributeSet(serializeSettings, ignored, 2) && (ret = ser_saveUInt8(serializeSettings, object->mode)) != 0) ||
         (!isAttributeSet(serializeSettings, ignored, 3) && (ret = saveTimeWindow(serializeSettings, &object->listeningWindow)) != 0) ||
@@ -2641,6 +2643,31 @@ int ser_saveAutoAnswer(
     {
 
     }
+
+    if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 9))
+    {
+        if ((ret = ser_saveArrayCount(serializeSettings, &object->listofallowedcallers, &count)) == 0)
+        {   
+            for (pos = 0; pos != object->listofallowedcallers.size; ++pos)
+            {
+
+                if ((ret = arr_getByIndex3(&object->listofallowedcallers, pos, (void**)&it, 0)) != 0)
+                {
+
+                    break;
+                }
+                if (
+                    (ret = ser_saveOctetString(serializeSettings, &it->CallerId)) != 0 ||
+                    (ret = ser_saveUInt8(serializeSettings, it->CallType)) != 0 )
+                    // (ret = ser_saveOctetString(serializeSettings, &it->signature)) != 0)
+                {
+                    break;
+                }
+            }
+            printf("count in save = %d\n",count);
+        }
+    }
+    printf("ret in ser_saveAutoAnswer = %d\n",ret);
     return ret;
 }
 #endif //DLMS_IGNORE_AUTO_ANSWER
@@ -6285,6 +6312,31 @@ int ser_loadAutoAnswer(
         {
         }
     }
+    if (ret == 0 && !isAttributeSet(serializeSettings, ignored, 9))
+    {
+        uint16_t count;
+        int pos = 0;
+        gxListofAllowedCallersElements* it;
+        arr_clear(&object->listofallowedcallers);
+        if ((ret = ser_loadArray(serializeSettings, &object->listofallowedcallers, &count)) == 0)
+        {
+            for (pos = 0; pos != count; ++pos)
+            {
+                if ((ret = ser_getArrayItem(&object->listofallowedcallers, pos, (void**)&it, sizeof(gxListofAllowedCallersElements))) != 0 ||
+                    (ret = ser_loadOctetString(serializeSettings, &it->CallerId)) != 0 ||
+                    (ret = ser_loadUInt8(serializeSettings, &it->CallType)) != 0)
+                {
+                    printf("cser_loadAutoAnswer break\n");
+                    break;
+                }
+
+            }
+            printf("count in load = %d\n",count);
+        }
+    }
+
+
+    printf("ret in ser_loadAutoAnswer = %d\n",ret);
     return ret;
 }
 #endif //DLMS_IGNORE_AUTO_ANSWER

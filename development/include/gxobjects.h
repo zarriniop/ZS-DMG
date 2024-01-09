@@ -1530,6 +1530,18 @@ extern "C" {
     }gxTimePair;
 
 #ifndef DLMS_IGNORE_AUTO_ANSWER
+
+    /*
+    ---------------------------------------------------------------------------
+    Online help:
+    This is related to version 2 of Auto Answer object written by Zarrin Samane Co.
+    */
+    typedef struct
+    {
+        gxByteBuffer        CallerId;
+        DLMS_CALL_TYPE      CallType;
+    } gxListofAllowedCallersElements;
+
     /*
     ---------------------------------------------------------------------------
     Online help:

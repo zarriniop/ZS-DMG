@@ -1112,6 +1112,34 @@ int cosem_getAutoAnswer(
         {
         }
     }
+    else if(e->index == 7)
+    {
+        // ret = cosem_setStructure(data, 2);
+        // printf("ret cosem_setStructure = %d\n",ret);
+
+        gxListofAllowedCallersElements* listcallers;
+
+        if ((ret = cosem_setArray(data, object->listofallowedcallers.size)) == 0)
+        {
+            for (pos = 0; pos != object->listofallowedcallers.size; ++pos)
+            {
+                if ((ret = arr_getByIndex(&object->listofallowedcallers, pos, (void**)&listcallers)) != 0 ||
+                    (ret = bb_setUInt8(data, DLMS_DATA_TYPE_STRUCTURE)) != 0 ||
+                    (ret = bb_setUInt8(data, 2)) != 0 ||
+                    //Add call id.
+                    (ret = bb_setUInt8(data, DLMS_DATA_TYPE_OCTET_STRING)) != 0 ||
+                    (ret = hlp_setObjectCount(listcallers->CallerId.size, data)) != 0 ||
+                    (ret = bb_set2(data, &listcallers->CallerId, 0, bb_size(&listcallers->CallerId))) != 0 ||
+
+                    // (ret = bb_setUInt8(data, DLMS_DATA_TYPE_UINT8)) != 0 ||
+                    // (ret = bb_setUInt8(data, listcallers->CallType)) != 0 ||
+                    (ret = cosem_setEnum(data, listcallers->CallType)) != 0)
+                {
+                    break;
+                }
+            }
+        }
+    }
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

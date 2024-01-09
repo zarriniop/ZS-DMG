@@ -1828,6 +1828,107 @@ int cosem_setAutoAnswer(gxAutoAnswer* object, unsigned char index, dlmsVARIANT* 
         }
         object->numberOfRingsOutListeningWindow = (unsigned char)var_toInteger(tmp);
     }
+    else if(index == 7)
+    {
+        printf("in index 7\n");
+        dlmsVARIANT* tmp3;
+        gxListofAllowedCallersElements* listcallers = NULL;
+        printf("0\n");
+        arr_clear(&object->listofallowedcallers);
+        if (value->Arr != NULL)
+        {
+            printf("1\n");
+            printf("value->Arr->size = %d\n",value->Arr->size);
+
+            for (pos = 0; pos != value->Arr->size; ++pos)
+            {
+                printf("2\n");
+                listcallers = NULL;
+                ret = va_getByIndex(value->Arr, pos, &tmp);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                printf("3\n");
+
+
+                printf("tmp.vt = %d\n",tmp->vt);
+
+
+
+                ret = va_getByIndex(tmp->Arr, 0, &tmp3);
+                printf("tmp3.vt = %d\n",tmp3->vt);
+                printf("tmp3->byteArr.size = %d\n",tmp3->byteArr->size);
+                char *sss = bb_toString(&tmp3->byteArr);
+                printf("sss = %s\n",sss);
+
+                printf("3.5\n");
+                printf("ret of va_getByIndex = %d\n",ret);
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+
+
+
+                // printf("4\n");
+                listcallers = (gxListofAllowedCallersElements*)malloc(sizeof(gxListofAllowedCallersElements));
+                bb_init(&listcallers->CallerId);
+
+                bb_set2(&listcallers->CallerId,tmp3->byteArr,0,tmp3->byteArr->size);
+                // ret = bb_set2(&listcallers->CallerId, value->Arr, 0, bb_size(value->Arr));
+                // char *tin = bb_toString(&listcallers->CallerId);
+                // printf("tin = %s\n",tin);
+                // int x = (DLMS_CALL_TYPE)var_toInteger(tmp3);
+                // printf("x = %d\n",x);
+
+
+
+                printf("5\n");
+                if (listcallers == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                    break;
+                }
+                // char const te123[10];
+                // var_setString(&tmp3,&te123,5);
+                // printf("te123 = %s\n",te123);
+
+
+                printf("6\n");
+                // bb_init(&listcallers->CallerId);
+                // bb_addString(&listcallers->CallerId, &tmp3);
+                // ret = bb_set2(&listcallers->CallerId, &tmp3, 0, bb_size(&tmp3));
+
+
+                ret = va_getByIndex(tmp->Arr, 1, &tmp3);
+                printf("tmp4.vt = %d\n",tmp3->vt);
+
+                if (ret != DLMS_ERROR_CODE_OK)
+                {
+                    break;
+                }
+                printf("7\n");
+
+                listcallers->CallType = (DLMS_CALL_TYPE)var_toInteger(tmp3);
+                printf("8\n");
+
+
+                // ret = va_getByIndex(tmp->Arr, 2, &tmp3);
+                // bb_init(&listcallers->CallerId);
+                // bb_addString(&listcallers->CallerId, &tmp3);
+                // char *testing = bb_toString(&listcallers->CallerId);
+
+
+                arr_push(&object->listofallowedcallers, listcallers);
+                printf("9\n");
+            }
+            if (ret != 0 && listcallers != NULL)
+            {
+                free(listcallers);
+            }
+        }
+    }
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;

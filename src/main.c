@@ -32,14 +32,8 @@ int main(int argc, char* argv[])
     LTE_Manager_Start()					;
 //    pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
 
-    /*************************************/
-
-    /*************************************/
-
     while (1)
     {
-		ret = Ql_GPIO_GetLevel(PINNAME_USIM_PRESENCE);
-
     	sleep(20)						;
     }
     return 0;

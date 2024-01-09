@@ -3407,6 +3407,18 @@ extern "C" {
         /// </summary>
         DLMS_ZIG_BEE_STATUS_SEP_TRANSMITTING = 0x10
     }DLMS_ZIG_BEE_STATUS;
+
+    /*
+    ---------------------------------------------------------------------------
+    Online help:
+    This is related to version 2 of Auto Answer object written by Zarrin Samane Co.
+    */
+    typedef enum
+    {
+        NORMAL_CSD  = 0 , 
+        WAKE_UP     = 1 
+    }DLMS_CALL_TYPE;
+
 #ifdef  __cplusplus
 }
 #endif
