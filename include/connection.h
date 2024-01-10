@@ -82,6 +82,12 @@ typedef enum {
 }SocketType;
 
 
+typedef enum {
+	SIM_CARD_REMOVED =0,
+	SIM_CARD_INSERTED=1
+}SIM_Card_State;
+
+
 typedef struct {
 	char		Connected;
 	char		Opened;
@@ -250,6 +256,9 @@ void Device_Init (void);
 
 
 void NW_Init (void);
+
+
+void SIM_Card_Detection (void);
 
 
 void WAN_Init (void);

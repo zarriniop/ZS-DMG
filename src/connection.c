@@ -39,6 +39,7 @@
 #include "ql_gpio.h"
 
 pthread_t 				Wan_Connection_pthread_var;
+pthread_t 				SIM_det;
 
 struct timeval 			Inctivity_start_timeout;
 
@@ -1005,13 +1006,54 @@ int con_close(
 void Initialize (void)
 {
 //	Ql_GPIO_Init(PINNAME_USIM_PRESENCE, PINDIRECTION_IN, PINLEVEL_LOW, PINPULLSEL_PULLDOWN);	//Define PINNAME_USIM_PRESENCE (pin 13) as a DI to detecting presence or absence of USIM
-//	ret = Ql_GPIO_GetLevel(PINNAME_USIM_PRESENCE);
+//	pthread_create(&SIM_det, NULL, SIM_Card_Detection, NULL);
 	Device_Init	()	;
 	Sim_Init	()	;
 	NW_Init		()	;
 	WAN_Init	()	;
 
 }
+
+void SIM_Card_Detection (void)
+{
+	int SIM_Level = 0;
+	uint8_t check_state = SIM_CARD_INSERTED;
+	while(1)
+	{
+		SIM_Level = Ql_GPIO_GetLevel(PINNAME_USIM_PRESENCE);
+		printf("-------->State of USIM_PRESENCE is %d\n", SIM_Level);
+
+		switch (check_state)
+		{
+			case SIM_CARD_INSERTED:
+
+				if(!SIM_Level)
+					check_state = SIM_CARD_REMOVED;
+
+				break;
+
+			case SIM_CARD_REMOVED:
+
+				if(SIM_Level == 1)
+				{
+					check_state = SIM_CARD_INSERTED;
+					system("serial_atcmd AT+CFUN=0");
+					system("serial_atcmd AT+CFUN=1");
+					pthread_cancel(SIM_det);
+					Initialize();
+				}
+
+				break;
+
+			default:
+
+				break;
+		}
+
+		sleep(2);
+	}
+}
+
 
 
 void LTE_Manager_Start (void)
