@@ -1076,7 +1076,7 @@ void SIM_Card_Detection (void)
 
 void LTE_Manager_Start (void)
 {
-	pthread_create(&SIM_det, NULL, SIM_Card_Detection, NULL);
+//	pthread_create(&SIM_det, NULL, SIM_Card_Detection, NULL);
 	Initialize();
 	int thread_ret = pthread_create(&Wan_Connection_pthread_var	, NULL, WAN_Connection	, NULL);
 	IMEI_Get();
@@ -1142,11 +1142,9 @@ void NW_Init (void)
 /************************************/
 void WAN_Init (void)
 {
-	printf("/*/*/*//** 1\n");
 	int ret = ql_wan_release()	;
 	if(ret!=0) printf("!Error! ql_wan_release - ret:%d\n", ret);
 
-	printf("/*/*/*//** 2\n");
 	ret = ql_wan_init()		;
 	if(ret!=0) printf("!Error! ql_wan_init - ret:%d\n", ret);
 }
@@ -1191,7 +1189,6 @@ void WAN_Connection (void)
 
 	while(1)
 	{
-		printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 		ret = ql_get_data_call_info(APN_Param_Struct.profile_idx, &payload);
 
 		if (ret == 0)
@@ -1236,12 +1233,12 @@ void WAN_Connection (void)
 				else if(NW_Cell_Info.gsm_info_valid == 1)
 					system(PAT_1T_LED_NET);
 			}
-//			else
-//			{
-//				WAN_Init();
-//
-//				ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
-//			}
+			else
+			{
+				WAN_Init();
+
+				ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
+			}
 		}
 
 		sleep(1);
