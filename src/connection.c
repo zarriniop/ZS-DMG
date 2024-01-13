@@ -42,6 +42,7 @@ pthread_t 				Wan_Connection_pthread_var;
 pthread_t 				SIM_det;
 
 struct timeval 			Inctivity_start_timeout;
+uint8_t SIM_state = SIM_CARD_INSERTED;
 
 extern gxGPRSSetup 		gprsSetup	;
 extern gxData 			imei		;
@@ -486,7 +487,7 @@ int Socket_Manage_Thread (connection* con)
 
 	while(1)
 	{
-		if(con->socket.Status.Connected == false)
+		if((con->socket.Status.Connected == false))
 			Socket_get_open(con);
 
 		else if((diff_time_s(&Inctivity_start_timeout) > udpSetup.inactivityTimeout) && (udpSetup.inactivityTimeout > 0))
@@ -589,7 +590,7 @@ void Socket_Listen_Thread(void* pVoid)
             {
     			//If client is left wait for next client.
 
-    			if ((ret = recv(con->serversocket.Accept_fd, tmp, 2048, 0)) <= 0)
+    			if (((ret = recv(con->serversocket.Accept_fd, tmp, 2048, 0)) <= 0))
     			{
     				//Notify error.
     				if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
@@ -1005,42 +1006,59 @@ int con_close(
 
 void Initialize (void)
 {
-//	Ql_GPIO_Init(PINNAME_USIM_PRESENCE, PINDIRECTION_IN, PINLEVEL_LOW, PINPULLSEL_PULLDOWN);	//Define PINNAME_USIM_PRESENCE (pin 13) as a DI to detecting presence or absence of USIM
-//	pthread_create(&SIM_det, NULL, SIM_Card_Detection, NULL);
 	Device_Init	()	;
 	Sim_Init	()	;
 	NW_Init		()	;
 	WAN_Init	()	;
-
 }
+
 
 void SIM_Card_Detection (void)
 {
 	int SIM_Level = 0;
-	uint8_t check_state = SIM_CARD_INSERTED;
+	uint8_t ret;
+	QL_SIM_CARD_STATUS_INFO		SIM_sts;
+
+	system("serial_atcmd AT+QSIMDET=1,1");
+	Ql_GPIO_Init(PINNAME_USIM_PRESENCE, PINDIRECTION_IN, PINLEVEL_LOW, PINPULLSEL_PULLDOWN);	//Define PINNAME_USIM_PRESENCE (pin 13) as a DI to detecting presence or absence of USIM
+
 	while(1)
 	{
-		SIM_Level = Ql_GPIO_GetLevel(PINNAME_USIM_PRESENCE);
-		printf("-------->State of USIM_PRESENCE is %d\n", SIM_Level);
+		ret 		= ql_sim_get_card_status(&SIM_sts);
+		SIM_Level 	= Ql_GPIO_GetLevel(PINNAME_USIM_PRESENCE);
+//		system("serial_atcmd AT+CPIN?");
 
-		switch (check_state)
+		switch (SIM_state)
 		{
 			case SIM_CARD_INSERTED:
 
-				if(!SIM_Level)
-					check_state = SIM_CARD_REMOVED;
+				if(SIM_sts.card_state == 0)
+				{
+					SIM_state = SIM_CARD_REMOVED;
+					pthread_cancel(Wan_Connection_pthread_var);
+				}
 
 				break;
 
 			case SIM_CARD_REMOVED:
 
+//				pthread_cancel(WAN_Connection);
+
 				if(SIM_Level == 1)
 				{
-					check_state = SIM_CARD_INSERTED;
+					SIM_state = SIM_CARD_INSERTED;
 					system("serial_atcmd AT+CFUN=0");
+					sleep(1);
 					system("serial_atcmd AT+CFUN=1");
-					pthread_cancel(SIM_det);
-					Initialize();
+					sleep(4);
+					printf(">>>>>>>>>>>1\n");
+					Sim_Init();
+					printf(">>>>>>>>>>>2\n");
+					NW_Init	();
+					printf(">>>>>>>>>>>3\n");
+					WAN_Init();
+					printf(">>>>>>>>>>>4\n");
+					pthread_create(&Wan_Connection_pthread_var	, NULL, WAN_Connection	, NULL);
 				}
 
 				break;
@@ -1058,6 +1076,7 @@ void SIM_Card_Detection (void)
 
 void LTE_Manager_Start (void)
 {
+	pthread_create(&SIM_det, NULL, SIM_Card_Detection, NULL);
 	Initialize();
 	int thread_ret = pthread_create(&Wan_Connection_pthread_var	, NULL, WAN_Connection	, NULL);
 	IMEI_Get();
@@ -1114,7 +1133,6 @@ void NW_Init (void)
 {
 	int ret = ql_nw_release();
 	if(ret!=0) printf("!ERROR! ql_nw_release - ret:%d", ret);
-
 	ret = ql_nw_init();
 	if(ret!=0) printf("!ERROR! ql_nw_init - ret:%d", ret);
 }
@@ -1124,9 +1142,11 @@ void NW_Init (void)
 /************************************/
 void WAN_Init (void)
 {
+	printf("/*/*/*//** 1\n");
 	int ret = ql_wan_release()	;
 	if(ret!=0) printf("!Error! ql_wan_release - ret:%d\n", ret);
 
+	printf("/*/*/*//** 2\n");
 	ret = ql_wan_init()		;
 	if(ret!=0) printf("!Error! ql_wan_init - ret:%d\n", ret);
 }
@@ -1171,6 +1191,7 @@ void WAN_Connection (void)
 
 	while(1)
 	{
+		printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 		ret = ql_get_data_call_info(APN_Param_Struct.profile_idx, &payload);
 
 		if (ret == 0)
@@ -1215,12 +1236,12 @@ void WAN_Connection (void)
 				else if(NW_Cell_Info.gsm_info_valid == 1)
 					system(PAT_1T_LED_NET);
 			}
-			else
-			{
-				WAN_Init();
-
-				ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
-			}
+//			else
+//			{
+//				WAN_Init();
+//
+//				ret = ql_wan_start(APN_Param_Struct.profile_idx, APN_Param_Struct.op, nw_cb);
+//			}
 		}
 
 		sleep(1);
