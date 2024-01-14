@@ -1635,7 +1635,7 @@ int addOpticalPortSetup(dlmsServerSettings *settings)
 {
     const unsigned char ln[6] = {0, 0, 20, 0, 0, 255};
     INIT_OBJECT(localPortSetup, DLMS_OBJECT_TYPE_IEC_LOCAL_PORT_SETUP, ln);
-    localPortSetup.defaultMode = DLMS_OPTICAL_PROTOCOL_MODE_NET;
+    localPortSetup.defaultMode = DLMS_OPTICAL_PROTOCOL_MODE_DEFAULT;		//at first it was == 1
     localPortSetup.proposedBaudrate = DLMS_BAUD_RATE_9600;
     localPortSetup.defaultBaudrate = DLMS_BAUD_RATE_300;
     localPortSetup.responseTime = DLMS_LOCAL_PORT_RESPONSE_TIME_200_MS;
