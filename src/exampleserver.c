@@ -89,7 +89,7 @@ time_t imageActionStartTime = 0;
 gxImageActivateInfo IMAGE_ACTIVATE_INFO[1];
 static gxByteBuffer reply;
 
-extern connection lnWrapper;
+extern connection lnWrapper, lniec;
 
 uint32_t time_current(void)
 {
@@ -3615,14 +3615,6 @@ void svr_postWrite(
             struct timeval tv;
             extern DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str;
 
-            printf("clock1.time.value.tm_year = %d\n",clock1.time.value.tm_year);
-            printf("clock1.time.value.tm_mon = %d\n",clock1.time.value.tm_mon);
-            printf("clock1.time.value.tm_mday = %d\n",clock1.time.value.tm_mday);
-            printf("clock1.time.value.tm_hour = %d\n",clock1.time.value.tm_hour);
-            printf("clock1.time.value.tm_min = %d\n",clock1.time.value.tm_min);
-            printf("clock1.time.value.tm_sec = %d\n",clock1.time.value.tm_sec);
-//            printf("=========================================== clock1.TZ = %d\n",clock1.timeZone);
-
             tptr.tm_year = clock1.time.value.tm_year;
             tptr.tm_mon = clock1.time.value.tm_mon;
             tptr.tm_mday = clock1.time.value.tm_mday;
@@ -3630,14 +3622,6 @@ void svr_postWrite(
             tptr.tm_min = clock1.time.value.tm_min;
             tptr.tm_sec = clock1.time.value.tm_sec;
             tptr.tm_isdst = -1;
-
-//            printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Y.M.D - HH.MM.SS: %d.%d.%d - %d:%d:%d\n",
-//            		tptr.tm_year,
-//					tptr.tm_mon,
-//					tptr.tm_mday,
-//					tptr.tm_hour,
-//					tptr.tm_min,
-//					tptr.tm_sec);
 
             uint16_t 	My;
             uint8_t		Mm, Md;
@@ -3660,10 +3644,6 @@ void svr_postWrite(
         	{
         		GPRS_KAT_GXDATA_STR gprs_kat_values;
         		GPRS_kat_gxData_Get_Value(&gprs_kat_values, &gprskeepalivetimeinterval);
-//            	printf("####################################### DLMS_OBJECT_TYPE_DATA - EN:%d, ID:%d, IT:%d \n",
-//            			gprs_kat_values.switch_enable,
-//						gprs_kat_values.ideal_time,
-//						gprs_kat_values.delay_retry_interval_value);
 
             	Set_Socket_KAT_Option(lnWrapper.socket.Socket_fd, &gprs_kat_values);
         	}
@@ -3671,6 +3651,7 @@ void svr_postWrite(
         if (e->error == 0)
         {
             // Save settings to EEPROM.
+
             saveSettings();
         }
         else

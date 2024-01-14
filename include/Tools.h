@@ -33,9 +33,6 @@
 #define PDU_BUFFER_SIZE 		1024
 #define WRAPPER_BUFFER_SIZE 	8 + PDU_BUFFER_SIZE
 
-#define OPTIC_SERIAL_FD 		"/dev/ttyS1"
-#define RS485_SERIAL_FD 		"/dev/ttyS2"
-
 #define MAX_FILE_SIZE			2097152	//Bytes == 2MByets (2*1024^2)
 
 #define GPRS_KAT_IDEAL_CND		(gprs_kat_option->ideal_time >= 30) && (gprs_kat_option->ideal_time <= 1800)

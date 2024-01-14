@@ -52,8 +52,8 @@
  * DEFINES *
  ***********/
 
-/*HAJIAN*/
-
+#define OPTIC_SERIAL_FD 		"/dev/ttyS1"
+#define RS485_SERIAL_FD 		"/dev/ttyS2"
 
 /*************************
  * TYPEDEFS & STRUCTURES *

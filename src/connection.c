@@ -47,7 +47,7 @@ uint8_t SIM_state = SIM_CARD_INSERTED;
 extern gxGPRSSetup 		gprsSetup	;
 extern gxData 			imei		;
 extern gxData 			deviceid6	;
-extern connection 		lnWrapper , rs485;
+extern connection 		lnWrapper , lniec , rs485;
 extern gxTcpUdpSetup 	udpSetup;
 extern gxAutoConnect 	autoConnect	;
 extern gxPushSetup	 	pushSetup	;
@@ -800,7 +800,7 @@ void* IEC_Serial_Thread(void* pVoid)
                     if (con->settings.base.connected == DLMS_CONNECTION_STATE_IEC)
                     {
                         /*Change baud rate settings if optical probe is used.*/
-                    	report(OPTICAL, CONNECTION, "CONNECTED WITH OPTICAL PROBE");
+                    	report(OPTICAL, CONNECTION, "CONNECTED WITH OPTICAL PROBE - HDLC MODE E");
 
 //                        com_updateSerialportSettings(con,0, sr.newBaudRate);
                         Quectel_Update_Serial_Port_Settings(con,0, sr.newBaudRate);
@@ -812,11 +812,36 @@ void* IEC_Serial_Thread(void* pVoid)
 
                         usleep(100000);
                         uint16_t baudRate = 300 << (int)con->settings.localPortSetup->defaultBaudrate;
-                        report(OPTICAL, CONNECTION, "DISCONNECTED WITH OPTICAL PROBE");
+                        report(OPTICAL, CONNECTION, "DISCONNECTED WITH OPTICAL PROBE - HDLC MODE E");
 
-//                        com_updateSerialportSettings(con,1, 300);
-                        Quectel_Update_Serial_Port_Settings(con,1, baudRate);
+                        DLMS_INTERFACE_TYPE interfaceType;
+						if(lniec.settings.localPortSetup->defaultMode == 0) interfaceType = DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E;
+						else interfaceType = DLMS_INTERFACE_TYPE_HDLC;
+						lniec.settings.base.interfaceType = interfaceType;
+						com_initializeSerialPort(&lniec, OPTIC_SERIAL_FD, interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E);
+
+//                        Quectel_Update_Serial_Port_Settings(con,1, baudRate);
                     }
+                }
+                else if (con->settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
+                {
+                	if (con->settings.base.connected == DLMS_CONNECTION_STATE_NONE)
+					{
+						//Wait until reply message is send before baud rate is updated.
+						//Without this delay, disconnect message might be cleared before send.
+
+						usleep(100000);
+						uint16_t baudRate = 300 << (int)con->settings.localPortSetup->defaultBaudrate;
+						report(OPTICAL, CONNECTION, "DISCONNECTED WITH OPTICAL PROBE - HDLC");
+
+						DLMS_INTERFACE_TYPE interfaceType;
+						if(lniec.settings.localPortSetup->defaultMode == 0) interfaceType = DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E;
+						else interfaceType = DLMS_INTERFACE_TYPE_HDLC;
+						lniec.settings.base.interfaceType = interfaceType;
+						com_initializeSerialPort(&lniec, OPTIC_SERIAL_FD, interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E);
+
+//                        Quectel_Update_Serial_Port_Settings(con,1, baudRate);
+					}
                 }
                 bb_clear(&reply);
             }
