@@ -250,6 +250,8 @@ int com_initializeSerialPort(connection* con, char* serialPort, unsigned char ie
     }
     uint32_t baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
 
+    printf("--------------------------> baudRate:%u\n", baudRate);
+
 //    return com_updateSerialportSettings(con,iec, baudRate);
     return Quectel_Update_Serial_Port_Settings(con, iec, baudRate);
 }
@@ -741,6 +743,8 @@ void* IEC_Serial_Thread(void* pVoid)
     connection* con = (connection*)pVoid;
     sr_initialize(&sr, &data, 1, &reply);
 
+    bool Sence_Change_Mode = false;
+
     while (1)
     {
         bytesRead = read(con->comPort, &data, 1024);
@@ -807,6 +811,7 @@ void* IEC_Serial_Thread(void* pVoid)
                     }
                     else if (con->settings.base.connected == DLMS_CONNECTION_STATE_NONE)
                     {
+
                         //Wait until reply message is send before baud rate is updated.
                         //Without this delay, disconnect message might be cleared before send.
 
@@ -816,7 +821,14 @@ void* IEC_Serial_Thread(void* pVoid)
 
                         DLMS_INTERFACE_TYPE interfaceType;
 						if(lniec.settings.localPortSetup->defaultMode == 0) interfaceType = DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E;
-						else interfaceType = DLMS_INTERFACE_TYPE_HDLC;
+						else
+						{
+							interfaceType = DLMS_INTERFACE_TYPE_HDLC;
+							Sence_Change_Mode = true;
+						}
+
+						printf("1-------------------------->LAST INTERFACE FOR PROBE:%d\n", interfaceType);
+
 						lniec.settings.base.interfaceType = interfaceType;
 						com_initializeSerialPort(&lniec, OPTIC_SERIAL_FD, interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E);
 
@@ -825,8 +837,11 @@ void* IEC_Serial_Thread(void* pVoid)
                 }
                 else if (con->settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
                 {
-                	if (con->settings.base.connected == DLMS_CONNECTION_STATE_NONE)
+                	if ((con->settings.base.connected == DLMS_CONNECTION_STATE_NONE) && (Sence_Change_Mode == true))
 					{
+
+                		Sence_Change_Mode = false;
+
 						//Wait until reply message is send before baud rate is updated.
 						//Without this delay, disconnect message might be cleared before send.
 
@@ -837,6 +852,9 @@ void* IEC_Serial_Thread(void* pVoid)
 						DLMS_INTERFACE_TYPE interfaceType;
 						if(lniec.settings.localPortSetup->defaultMode == 0) interfaceType = DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E;
 						else interfaceType = DLMS_INTERFACE_TYPE_HDLC;
+
+						printf("2-------------------------->LAST INTERFACE FOR PROBE:%d\n", interfaceType);
+
 						lniec.settings.base.interfaceType = interfaceType;
 						com_initializeSerialPort(&lniec, OPTIC_SERIAL_FD, interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E);
 
