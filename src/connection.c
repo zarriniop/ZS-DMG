@@ -216,6 +216,7 @@ int Quectel_Update_Serial_Port_Settings(connection* con, unsigned char iec, uint
     	dcb.databit = DB_CS8;
     	dcb.baudrate = baudRate;
     }
+    printf("=========================>>>>>>>> dcb.baudrate:%d\n", dcb.baudrate);
 
     //hardware flow control is used as default.
     //options.c_cflag |= CRTSCTS;
@@ -249,8 +250,6 @@ int com_initializeSerialPort(connection* con, char* serialPort, unsigned char ie
         return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
     }
     uint32_t baudRate = Boudrate[con->settings.hdlc->communicationSpeed];
-
-    printf("--------------------------> baudRate:%u\n", baudRate);
 
 //    return com_updateSerialportSettings(con,iec, baudRate);
     return Quectel_Update_Serial_Port_Settings(con, iec, baudRate);
@@ -761,13 +760,13 @@ void* IEC_Serial_Thread(void* pVoid)
         	sr.dataSize = bytesRead;
 
         	/************************************************/
-        	unsigned char optical_rx_tmp_info[4096] = {0};
-        	for (int m=0; m<bytesRead; m++)
-        	{
-        		sprintf(optical_rx_tmp_info + strlen(optical_rx_tmp_info) ,"%.2X ",data[m]);
-        	}
-        	printf("\n");
-        	report(OPTICAL, RX, optical_rx_tmp_info);
+//        	unsigned char optical_rx_tmp_info[4096] = {0};
+//        	for (int m=0; m<bytesRead; m++)
+//        	{
+//        		sprintf(optical_rx_tmp_info + strlen(optical_rx_tmp_info) ,"%.2X ",data[m]);
+//        	}
+//        	printf("\n");
+//        	report(OPTICAL, RX, optical_rx_tmp_info);
         	/************************************************/
 
             if (con->trace > GX_TRACE_LEVEL_WARNING)
@@ -787,13 +786,13 @@ void* IEC_Serial_Thread(void* pVoid)
             }
 
 
-            printf("=====================>> interfaceType:%d - newBaudRate:%d - connected:%d\n"
-            		, con->settings.base.interfaceType
-					, sr.newBaudRate
-					, con->settings.base.connected);
+//            printf("=====================>> interfaceType:%d - newBaudRate:%d - connected:%d\n"
+//            		, con->settings.base.interfaceType
+//					, sr.newBaudRate
+//					, con->settings.base.connected);
             if (svr_handleRequest4(&con->settings, &sr) != 0)
             {
-                break;
+                continue;		//Before it was break
             }
             if (reply.size != 0)
             {
@@ -835,8 +834,6 @@ void* IEC_Serial_Thread(void* pVoid)
                         uint16_t baudRate = 300 << (int)con->settings.localPortSetup->defaultBaudrate;
                         report(OPTICAL, CONNECTION, "DISCONNECTED WITH OPTICAL PROBE - HDLC MODE E");
 
-                        printf("=============================>>>>> MODE E - localPortSetup->defaultMode:%d\n", lniec.settings.localPortSetup->defaultMode);
-
                         DLMS_INTERFACE_TYPE interfaceType;
 						if(lniec.settings.localPortSetup->defaultMode == 0) interfaceType = DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E;
 						else
@@ -853,34 +850,20 @@ void* IEC_Serial_Thread(void* pVoid)
                 }
                 else if (con->settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC)
                 {
-                	if ((con->settings.base.connected == DLMS_CONNECTION_STATE_NONE) && (Sence_Change_Mode == true))
+                	if ((con->settings.base.connected == DLMS_CONNECTION_STATE_NONE) /*&& (Sence_Change_Mode == true)*/)
 					{
-
-                		Sence_Change_Mode = false;
-
-						//Wait until reply message is send before baud rate is updated.
-						//Without this delay, disconnect message might be cleared before send.
-
-						usleep(100000);
-						uint16_t baudRate = 300 << (int)con->settings.localPortSetup->defaultBaudrate;
-						report(OPTICAL, CONNECTION, "DISCONNECTED WITH OPTICAL PROBE - HDLC");
-
-						printf("=============================>>>>> HDLC - localPortSetup->defaultMode:%d\n", lniec.settings.localPortSetup->defaultMode);
+                		report(OPTICAL, CONNECTION, "DISCONNECTED WITH OPTICAL PROBE - HDLC");
 
 						DLMS_INTERFACE_TYPE interfaceType;
 						if(lniec.settings.localPortSetup->defaultMode == 0) interfaceType = DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E;
 						else interfaceType = DLMS_INTERFACE_TYPE_HDLC;
 
-						lniec.settings.base.interfaceType = interfaceType;
-
 						if(interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
+						{
+							usleep(100000);
+							lniec.settings.base.interfaceType = interfaceType;
 							com_initializeSerialPort(&lniec, OPTIC_SERIAL_FD, 1);
-
-						else
-							com_initializeSerialPort(&lniec, OPTIC_SERIAL_FD, 0);
-
-						//svr_init(&lniec.settings, 1, interfaceType, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, lnframeBuff, HDLC_HEADER_SIZE + HDLC_BUFFER_SIZE, lnpduBuff, PDU_BUFFER_SIZE);
-//                        Quectel_Update_Serial_Port_Settings(con,1, baudRate);
+						}
 					}
                 }
                 bb_clear(&reply);
@@ -1255,7 +1238,7 @@ void WAN_Connection (void)
 
 	while(1)
 	{
-		printf("---------------> WAN_Connection\n");
+//		printf("---------------> WAN_Connection\n");
 		ret = ql_get_data_call_info(APN_Param_Struct.profile_idx, &payload);
 
 		if (ret == 0)
