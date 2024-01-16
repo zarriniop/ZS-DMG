@@ -220,7 +220,7 @@ int Quectel_Update_Serial_Port_Settings(connection* con, unsigned char iec, uint
     //hardware flow control is used as default.
     //options.c_cflag |= CRTSCTS;
 
-    if (Ql_UART_SetDCB(con->comPort, &dcb) != 0)
+    if (Ql_UART_SetDCB(con->comPort, &dcb) != 0)	//This function sets UART baud rate, data bit, flow control, parity bit and stop bit.
     {
         ret = errno;
         printf("Failed to Open port. tcsetattr failed.\r");
@@ -759,6 +759,17 @@ void* IEC_Serial_Thread(void* pVoid)
         else
         {
         	sr.dataSize = bytesRead;
+
+        	/************************************************/
+        	unsigned char optical_rx_tmp_info[4096] = {0};
+        	for (int m=0; m<bytesRead; m++)
+        	{
+        		sprintf(optical_rx_tmp_info + strlen(optical_rx_tmp_info) ,"%.2X ",data[m]);
+        	}
+        	printf("\n");
+        	report(OPTICAL, RX, optical_rx_tmp_info);
+        	/************************************************/
+
             if (con->trace > GX_TRACE_LEVEL_WARNING)
             {
                 if (first)
@@ -776,6 +787,10 @@ void* IEC_Serial_Thread(void* pVoid)
             }
 
 
+            printf("=====================>> interfaceType:%d - newBaudRate:%d - connected:%d\n"
+            		, con->settings.base.interfaceType
+					, sr.newBaudRate
+					, con->settings.base.connected);
             if (svr_handleRequest4(&con->settings, &sr) != 0)
             {
                 break;
@@ -783,7 +798,14 @@ void* IEC_Serial_Thread(void* pVoid)
             if (reply.size != 0)
             {
                 first = 1;
-                if (con->trace > GX_TRACE_LEVEL_WARNING)
+
+                ret = write(con->comPort, reply.data, reply.size);
+
+                if (ret != reply.size)
+                {
+                    printf("Write failed\n");
+                }
+                else if (con->trace > GX_TRACE_LEVEL_WARNING)
                 {
                 	unsigned char optical_tx_tmp_info[4096] = {0};
                     for (pos = 0; pos != reply.size; ++pos)
@@ -791,12 +813,6 @@ void* IEC_Serial_Thread(void* pVoid)
                         sprintf(optical_tx_tmp_info + strlen(optical_tx_tmp_info), "%.2X ", reply.data[pos]);
                     }
                     report(OPTICAL, TX, optical_tx_tmp_info);
-                }
-                ret = write(con->comPort, reply.data, reply.size);
-
-                if (ret != reply.size)
-                {
-                    printf("Write failed\n");
                 }
 
                 if (con->settings.base.interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E && sr.newBaudRate != 0)
@@ -819,6 +835,8 @@ void* IEC_Serial_Thread(void* pVoid)
                         uint16_t baudRate = 300 << (int)con->settings.localPortSetup->defaultBaudrate;
                         report(OPTICAL, CONNECTION, "DISCONNECTED WITH OPTICAL PROBE - HDLC MODE E");
 
+                        printf("=============================>>>>> MODE E - localPortSetup->defaultMode:%d\n", lniec.settings.localPortSetup->defaultMode);
+
                         DLMS_INTERFACE_TYPE interfaceType;
 						if(lniec.settings.localPortSetup->defaultMode == 0) interfaceType = DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E;
 						else
@@ -826,8 +844,6 @@ void* IEC_Serial_Thread(void* pVoid)
 							interfaceType = DLMS_INTERFACE_TYPE_HDLC;
 							Sence_Change_Mode = true;
 						}
-
-						printf("1-------------------------->LAST INTERFACE FOR PROBE:%d\n", interfaceType);
 
 						lniec.settings.base.interfaceType = interfaceType;
 						com_initializeSerialPort(&lniec, OPTIC_SERIAL_FD, interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E);
@@ -849,15 +865,21 @@ void* IEC_Serial_Thread(void* pVoid)
 						uint16_t baudRate = 300 << (int)con->settings.localPortSetup->defaultBaudrate;
 						report(OPTICAL, CONNECTION, "DISCONNECTED WITH OPTICAL PROBE - HDLC");
 
+						printf("=============================>>>>> HDLC - localPortSetup->defaultMode:%d\n", lniec.settings.localPortSetup->defaultMode);
+
 						DLMS_INTERFACE_TYPE interfaceType;
 						if(lniec.settings.localPortSetup->defaultMode == 0) interfaceType = DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E;
 						else interfaceType = DLMS_INTERFACE_TYPE_HDLC;
 
-						printf("2-------------------------->LAST INTERFACE FOR PROBE:%d\n", interfaceType);
-
 						lniec.settings.base.interfaceType = interfaceType;
-						com_initializeSerialPort(&lniec, OPTIC_SERIAL_FD, interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E);
 
+						if(interfaceType == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E)
+							com_initializeSerialPort(&lniec, OPTIC_SERIAL_FD, 1);
+
+						else
+							com_initializeSerialPort(&lniec, OPTIC_SERIAL_FD, 0);
+
+						//svr_init(&lniec.settings, 1, interfaceType, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, lnframeBuff, HDLC_HEADER_SIZE + HDLC_BUFFER_SIZE, lnpduBuff, PDU_BUFFER_SIZE);
 //                        Quectel_Update_Serial_Port_Settings(con,1, baudRate);
 					}
                 }
@@ -1085,8 +1107,6 @@ void SIM_Card_Detection (void)
 
 			case SIM_CARD_REMOVED:
 
-//				pthread_cancel(WAN_Connection);
-
 				if(SIM_Level == 1)
 				{
 					SIM_state = SIM_CARD_INSERTED;
@@ -1094,6 +1114,8 @@ void SIM_Card_Detection (void)
 					sleep(1);
 					system("serial_atcmd AT+CFUN=1");
 					sleep(4);
+					printf(">>>>>>>>>>>0\n");
+					Device_Init ();
 					printf(">>>>>>>>>>>1\n");
 					Sim_Init();
 					printf(">>>>>>>>>>>2\n");
@@ -1161,12 +1183,13 @@ void ICCID_Get (void)
 
 void Device_Init (void)
 {
-	int ret = ql_dev_init();
-
+	int ret = ql_dev_release ();
 	if(ret)
-	{
+		printf("!ERROR! RELEASE DEVICE - RET:%d\n", ret);
+
+	ret = ql_dev_init();
+	if(ret)
 		printf("!ERROR! INITIALIZE DEVICE - RET:%d\n", ret);
-	}
 }
 
 /************************************/
@@ -1232,6 +1255,7 @@ void WAN_Connection (void)
 
 	while(1)
 	{
+		printf("---------------> WAN_Connection\n");
 		ret = ql_get_data_call_info(APN_Param_Struct.profile_idx, &payload);
 
 		if (ret == 0)
