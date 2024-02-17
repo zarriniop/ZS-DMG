@@ -3419,6 +3419,34 @@ extern "C" {
         WAKE_UP     = 1 
     }DLMS_CALL_TYPE;
 
+
+
+
+
+    typedef enum
+    {
+    	OK_profile	= 0 ,
+		CONNECT     = 1 ,
+		RING        = 2 ,
+		NO_CARRIER  = 3 ,
+		ERROR_profile=4 ,
+		CONNECT_1200= 5 ,
+		NO_DIAL_TONE= 6 ,
+		BUSY		= 7 ,
+		NO_ANSWER   = 8 ,
+		CONNECT_600 = 9 ,
+		CONNECT_2400= 10,
+		CONNECT_4800= 11,
+		CONNECT_9600= 12,
+		CONNECT_14400=13,
+		CONNECT_28800=14,
+		CONNECT_33600=15,
+		CONNECT_56000=16
+    }Profile_Modem;
+
+
+
+
 #ifdef  __cplusplus
 }
 #endif

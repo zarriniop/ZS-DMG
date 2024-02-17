@@ -845,7 +845,7 @@ int addAssociationNone()
         associationNone.clientSAP = 0x10;
         // Max PDU is half of PDU size. This is for demonstration purposes only.
         associationNone.xDLMSContextInfo.maxSendPduSize = associationNone.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE / 2;
-        associationNone.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_GET | DLMS_CONFORMANCE_SET);
+        associationNone.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_GET | DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ);
     }
     return ret;
 }
@@ -864,14 +864,15 @@ int addAssociationLow()
         associationLow.authenticationMechanismName.mechanismId = DLMS_AUTHENTICATION_LOW;
         associationLow.clientSAP = 0x11;
         associationLow.xDLMSContextInfo.maxSendPduSize = associationLow.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
-        associationLow.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
-                                                                         DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
-                                                                         DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
-                                                                         DLMS_CONFORMANCE_SET |
-                                                                         DLMS_CONFORMANCE_SELECTIVE_ACCESS |
-                                                                         DLMS_CONFORMANCE_ACTION |
-                                                                         DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
-                                                                         DLMS_CONFORMANCE_GET);
+        associationLow.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_GENERAL_PROTECTION |
+                                                                              DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
+                                                                              DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
+                                                                              DLMS_CONFORMANCE_SET |
+                                                                              DLMS_CONFORMANCE_SELECTIVE_ACCESS |
+                                                                              DLMS_CONFORMANCE_ACTION |
+                                                                              DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
+																			  DLMS_CONFORMANCE_DATA_NOTIFICATION |
+                                                                              DLMS_CONFORMANCE_GET);
         bb_addString(&associationLow.secret, Settings.LLSPass);
         associationLow.securitySetup = NULL;
     }
@@ -895,14 +896,15 @@ int addAssociationHigh()
         BB_ATTACH(associationHigh.xDLMSContextInfo.cypheringInfo, CYPHERING_INFO, 0);
         associationHigh.clientSAP = 0x12;
         associationHigh.xDLMSContextInfo.maxSendPduSize = associationHigh.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
-        associationHigh.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
-                                                                          DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
-                                                                          DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
-                                                                          DLMS_CONFORMANCE_SET |
-                                                                          DLMS_CONFORMANCE_SELECTIVE_ACCESS |
-                                                                          DLMS_CONFORMANCE_ACTION |
-                                                                          DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
-                                                                          DLMS_CONFORMANCE_GET);
+        associationHigh.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_GENERAL_PROTECTION |
+                                                                              DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
+                                                                              DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
+                                                                              DLMS_CONFORMANCE_SET |
+                                                                              DLMS_CONFORMANCE_SELECTIVE_ACCESS |
+                                                                              DLMS_CONFORMANCE_ACTION |
+                                                                              DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
+																			  DLMS_CONFORMANCE_DATA_NOTIFICATION |
+                                                                              DLMS_CONFORMANCE_GET);
         bb_addString(&associationHigh.secret, "Gurux");
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
         associationHigh.securitySetup = &securitySetupHigh;
@@ -928,13 +930,14 @@ int addAssociationHighGMac()
 
         associationHighGMac.clientSAP = 0x1;
         associationHighGMac.xDLMSContextInfo.maxSendPduSize = associationHighGMac.xDLMSContextInfo.maxReceivePduSize = PDU_BUFFER_SIZE;
-        associationHighGMac.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
+        associationHighGMac.xDLMSContextInfo.conformance = (DLMS_CONFORMANCE)(DLMS_CONFORMANCE_GENERAL_PROTECTION |
                                                                               DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE |
                                                                               DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ |
                                                                               DLMS_CONFORMANCE_SET |
                                                                               DLMS_CONFORMANCE_SELECTIVE_ACCESS |
                                                                               DLMS_CONFORMANCE_ACTION |
                                                                               DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
+																			  DLMS_CONFORMANCE_DATA_NOTIFICATION |
                                                                               DLMS_CONFORMANCE_GET);
         // GMAC authentication don't need password.
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
@@ -1888,8 +1891,8 @@ int addSapAssignment()
         bb_init(&it->name);
         ret = sprintf(tmp, "%s%.13lu", FLAG_ID, SERIAL_NUMBER);
         bb_addString(&it->name, tmp);
-//        it->id = SERIAL_NUMBER % 10000 + 1000;
-        it->id = 1;
+        it->id = SERIAL_NUMBER % 10000 + 1000;
+//        it->id = 1;
         ret = arr_push(&sapAssignment.sapAssignmentList, it);
     }
     return ret;
@@ -1976,6 +1979,10 @@ int addModemConfiguration()
     const unsigned char ln[6] = {0, 0, 2, 0, 0, 255};
     INIT_OBJECT(modemConfiguration, DLMS_OBJECT_TYPE_MODEM_CONFIGURATION, ln);
 
+    Profile_Modem *profile  ;
+    profile = (Profile_Modem *)malloc(sizeof(Profile_Modem));
+
+
     // modemConfiguration.communicationSpeed = DLMS_BAUD_RATE_38400;
     // init = (gxModemInitialisation *)malloc(sizeof(gxModemInitialisation));
     // bb_init(&init->request);
@@ -1984,6 +1991,9 @@ int addModemConfiguration()
     // bb_addString(&init->response, "OK");
     // init->delay = 0;
     // arr_push(&modemConfiguration.initialisationStrings, init);
+
+    arr_push(&modemConfiguration.modemProfile, profile);
+
 
     return 0;
 }
