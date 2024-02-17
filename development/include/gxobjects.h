@@ -1559,6 +1559,7 @@ extern "C" {
         gxArray listeningWindow;
         DLMS_AUTO_ANSWER_STATUS status;
         unsigned char numberOfCalls;
+        gxArray listofallowedcallers;
     } gxAutoAnswer;
 
 #endif //DLMS_IGNORE_AUTO_ANSWER

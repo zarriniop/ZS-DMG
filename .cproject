@@ -85,7 +85,20 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<folderInfo id="cdt.managedbuild.config.gnu.cross.exe.debug.193031106.1959733297" name="/" resourcePath="development">
+						<toolChain id="cdt.managedbuild.toolchain.gnu.cross.exe.debug.1550417745" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.exe.debug" unusedChildren="">
+							<option id="cdt.managedbuild.option.gnu.cross.prefix.2092400787.830702068" name="Prefix" superClass="cdt.managedbuild.option.gnu.cross.prefix.2092400787"/>
+							<option id="cdt.managedbuild.option.gnu.cross.path.698287597.1693649840" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path.698287597"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.1695706117" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler.372290210"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.120628324" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler.784748686"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.11887721" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker.972559518"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.linker.845132040" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker.156138099"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.393927380" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver.76811868"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.373100065" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler.1020574248"/>
+						</toolChain>
+					</folderInfo>
 					<sourceEntries>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="development"/>
 						<entry excluding="mainHajian.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
