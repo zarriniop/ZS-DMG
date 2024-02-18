@@ -448,6 +448,7 @@ int svr_HandleAarqRequest(
         ret == DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR ||
         ret == DLMS_ERROR_CODE_INVALID_SECURITY_SUITE)
     {
+    	printf("\n\n\n\n\n\n\ntest 111 %d\n\n\n\n\n\n\n",ret);
         return svr_generateExceptionResponse(
             &settings->base,
             DLMS_EXCEPTION_STATE_ERROR_SERVICE_UNKNOWN,
@@ -3409,6 +3410,8 @@ int svr_handleCommand(
                 DLMS_EXCEPTION_STATE_ERROR_SERVICE_NOT_ALLOWED,
                 DLMS_ERROR_CODE_INVALID_COMMAND,
                 data);
+        	printf("\n\n\n\n\n\n\ntest 112 %d\n\n\n\n\n\n\n",ret);
+
         }
         else
         {

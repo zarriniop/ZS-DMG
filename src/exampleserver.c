@@ -2055,13 +2055,13 @@ int addPppSetup()
     {
         pppSetup.phy = BASE(gprsSetup);
 
-        pppSetup.authentication = DLMS_PPP_AUTHENTICATION_TYPE_CHAP;
+        pppSetup.authentication = DLMS_PPP_AUTHENTICATION_TYPE_PAP;
 
         arr_init(&pppSetup.lcpOptions);
         for(int i = 0 ; i < 9; i++ )
         {
             lcp[i].type = DLMS_PPP_SETUP_LCP_OPTION_TYPE_AUTH_PROTOCOL;
-            lcp[i].length = 4;
+            lcp[i].length = 2;
             lcp[i].data.vt = DLMS_DATA_TYPE_UINT16;
             lcp[i].data.uiVal = 0xC023;
             arr_push(&pppSetup.lcpOptions, &lcp[i]);
@@ -2071,7 +2071,7 @@ int addPppSetup()
         for(int i = 0 ; i < 6; i++ )
         {
             ipcp[i].type = DLMS_PPP_SETUP_IPCP_OPTION_TYPE_IPCOMPRESSIONPROTOCOL;
-            ipcp[i].length = 4;
+            ipcp[i].length = 2;
             ipcp[i].data.vt = DLMS_DATA_TYPE_UINT16;
             ipcp[i].data.uiVal = 0x0000;
             arr_push(&pppSetup.ipcpOptions, &ipcp[i]);
@@ -2134,10 +2134,10 @@ int addPushSetup()
      co->dataIndex = 0;
      arr_push(&pushSetup.pushObjectList, key_init(&deviceid7, co));
      // Add 0.0.25.1.0.255 Ch. 0 IPv4 setup IP address.
-     co = (gxTarget *)malloc(sizeof(gxTarget));
-     co->attributeIndex = 2;
-     co->dataIndex = 0;
-     arr_push(&pushSetup.pushObjectList, key_init(&deviceid7, co));
+//     co = (gxTarget *)malloc(sizeof(gxTarget));
+//     co->attributeIndex = 2;
+//     co->dataIndex = 0;
+//     arr_push(&pushSetup.pushObjectList, key_init(&deviceid7, co));
 
      if(strcmp(Settings.MDM , SHAHAB_NEW_VERSION) == 0)
      {
@@ -2146,10 +2146,10 @@ int addPushSetup()
          co->dataIndex = 0;
          arr_push(&pushSetup.pushObjectList, key_init(&deviceid6, co));
 
-         co = (gxTarget *)malloc(sizeof(gxTarget));
-         co->attributeIndex = 2;
-         co->dataIndex = 0;
-         arr_push(&pushSetup.pushObjectList, key_init(&deviceid6, co));
+//         co = (gxTarget *)malloc(sizeof(gxTarget));
+//         co->attributeIndex = 2;
+//         co->dataIndex = 0;
+//         arr_push(&pushSetup.pushObjectList, key_init(&deviceid6, co));
      }
 
     pushSetup.randomisationStartInterval = 0;
