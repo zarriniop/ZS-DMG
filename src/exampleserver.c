@@ -984,7 +984,7 @@ int addSecuritySetupHighGMac()
         BB_ATTACH(securitySetupHighGMac.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
         BB_ATTACH(securitySetupHighGMac.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
         // Only Authenticated encrypted connections are allowed.
-        securitySetupHighGMac.securityPolicy = DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED;
+        securitySetupHighGMac.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
         securitySetupHighGMac.securitySuite = DLMS_SECURITY_SUITE_V0;
     }
     return ret;
@@ -2060,20 +2060,20 @@ int addPppSetup()
         arr_init(&pppSetup.lcpOptions);
         for(int i = 0 ; i < 9; i++ )
         {
-            lcp[i].type = DLMS_PPP_SETUP_LCP_OPTION_TYPE_AUTH_PROTOCOL;
-            lcp[i].length = 2;
-            lcp[i].data.vt = DLMS_DATA_TYPE_UINT16;
-            lcp[i].data.uiVal = 0xC023;
+//            lcp[i].type = DLMS_PPP_SETUP_LCP_OPTION_TYPE_AUTH_PROTOCOL;
+//            lcp[i].length = 2;
+//            lcp[i].data.vt = DLMS_DATA_TYPE_UINT16;
+//            lcp[i].data.uiVal = 0xC023;
             arr_push(&pppSetup.lcpOptions, &lcp[i]);
 
         }
         arr_init(&pppSetup.ipcpOptions);
         for(int i = 0 ; i < 6; i++ )
         {
-            ipcp[i].type = DLMS_PPP_SETUP_IPCP_OPTION_TYPE_IPCOMPRESSIONPROTOCOL;
-            ipcp[i].length = 2;
-            ipcp[i].data.vt = DLMS_DATA_TYPE_UINT16;
-            ipcp[i].data.uiVal = 0x0000;
+//            ipcp[i].type = DLMS_PPP_SETUP_IPCP_OPTION_TYPE_IPCOMPRESSIONPROTOCOL;
+//            ipcp[i].length = 2;
+//            ipcp[i].data.vt = DLMS_DATA_TYPE_UINT16;
+//            ipcp[i].data.uiVal = 0x0000;
             arr_push(&pppSetup.ipcpOptions, &ipcp[i]);
         }
     }

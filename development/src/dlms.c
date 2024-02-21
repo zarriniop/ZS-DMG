@@ -3484,6 +3484,7 @@ int dlms_getPlcData(
             if (ch != DLMS_PLC_DATA_LINK_DATA_REQUEST)
             {
                 //Parsing MAC LLC data failed. Invalid DataLink data request.
+            	printf("\n\n\n\n\n\n\n amir 11 \n\n\n\n\n\n\n");
                 return DLMS_ERROR_CODE_INVALID_COMMAND;
             }
             unsigned char da, sa;
@@ -4431,20 +4432,25 @@ int dlms_handleMethodResponse(
     //Action-Response-With-Pblock
     else if (type == 2)
     {
+    	printf("\n\n\n\n\n\n\n amir 12 \n\n\n\n\n\n\n");
+
         return DLMS_ERROR_CODE_INVALID_COMMAND;
     }
     // Action-Response-With-List.
     else if (type == 3)
     {
+    	printf("\n\n\n\n\n\n\n amir 13 \n\n\n\n\n\n\n");
         return DLMS_ERROR_CODE_INVALID_COMMAND;
     }
     //Action-Response-Next-Pblock
     else if (type == 4)
     {
+    	printf("\n\n\n\n\n\n\n amir 14 \n\n\n\n\n\n\n");
         return DLMS_ERROR_CODE_INVALID_COMMAND;
     }
     else
     {
+    	printf("\n\n\n\n\n\n\n amir 15 \n\n\n\n\n\n\n");
         return DLMS_ERROR_CODE_INVALID_COMMAND;
     }
     return DLMS_ERROR_CODE_OK;
@@ -5594,6 +5600,7 @@ int dlms_getSNPdu(
                 else
                 {
                     //Invalid command.
+                	printf("\n\n\n\n\n\n\n amir 16 \n\n\n\n\n\n\n");
                     return DLMS_ERROR_CODE_INVALID_COMMAND;
                 }
                 bb_setUInt8(reply, (unsigned char)p->command);
@@ -5623,6 +5630,7 @@ int dlms_getSNPdu(
             else
             {
                 //Invalid command.
+            	printf("\n\n\n\n\n\n\n amir 17 \n\n\n\n\n\n\n");
                 return DLMS_ERROR_CODE_INVALID_COMMAND;
             }
             if (p->requestType != 0xFF)

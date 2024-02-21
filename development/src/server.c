@@ -1454,6 +1454,8 @@ int svr_getRequestNormal(
     if (index < 1)
     {
         //Attribute0 Supported With Get is not supported.
+    	printf("\n\n\n\n\n\n\n amir 18 \n\n\n\n\n\n\n");
+
         return DLMS_ERROR_CODE_INVALID_COMMAND;
     }
 
@@ -1936,6 +1938,7 @@ int svr_handleGetRequest(
     }
     type = (DLMS_GET_COMMAND_TYPE)ch;
     // Get invoke ID and priority.
+    printf("\n\n\ntype in svr_handleGetRequest = %d\n\n\n",type);
     if ((ret = bb_getUInt8(data, &invokeId)) != 0)
     {
         return ret;
@@ -1957,8 +1960,13 @@ int svr_handleGetRequest(
     }
     else if (type == DLMS_GET_COMMAND_TYPE_WITH_LIST)
     {
+    	printf("\n\n\n\n\n\n\n test 115\n\n\n\n\n\n\n\n\n");
+
         if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_MULTIPLE_REFERENCES) == 0)
         {
+        	printf("\n\n\n\n\n\n\n test 114\n\n\n\n\n\n\n\n\n");
+        	printf("\n\n\n\n\n\n\n amir 19 \n\n\n\n\n\n\n");
+
             return DLMS_ERROR_CODE_INVALID_COMMAND;
         }
         // Get request with a list.
@@ -3226,8 +3234,10 @@ int svr_handleCommand(
     if (dlms_useHdlc(settings->base.interfaceType) && bb_size(&settings->transaction.data) != 0)
     {
         //Get next frame.
+        printf("\n\n\n\n\n\n\n\nNext Frame\n\n\n\n\n\n\n\n");
         frame = getNextSend(&settings->base, 0);
     }
+    printf("\n\n\n\n\n\n\n\nCOMMAND TYPE = %d\n\n\n\n\n\n\n\n",cmd);
 #else
     if (dlms_useHdlc(settings->base.interfaceType) && bb_size(reply) != 0)
     {
@@ -3245,6 +3255,8 @@ int svr_handleCommand(
             (settings->base.negotiatedConformance & DLMS_CONFORMANCE_SET) == 0)
         {
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
+        	printf("\n\n\n\n\n\n\n amir 20 \n\n\n\n\n\n\n");
+
         }
         else
         {
@@ -3257,6 +3269,7 @@ int svr_handleCommand(
         //Connection establised is checked inside of the function because of HLS.
         if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_WRITE) == 0)
         {
+        	printf("\n\n\n\n\n\n\n amir 21 \n\n\n\n\n\n\n");
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
         }
         else
@@ -3267,15 +3280,15 @@ int svr_handleCommand(
 #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_GET_REQUEST:
         //If connection is not established.
-        if ((!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0) ||
-            //If service is not negotiated.
-            (settings->base.negotiatedConformance & DLMS_CONFORMANCE_GET) == 0)
-        {
-            ret = DLMS_ERROR_CODE_INVALID_COMMAND;
-        }
-        else
-        {
-            //Check is client reading frames.
+//        if ((!settings->info.preEstablished && (settings->base.connected & DLMS_CONNECTION_STATE_DLMS) == 0) ||
+//            //If service is not negotiated.
+//            (settings->base.negotiatedConformance & DLMS_CONFORMANCE_GET) == 0)
+//        {
+//            ret = DLMS_ERROR_CODE_INVALID_COMMAND;
+//        }
+//        else
+//        {
+            //Check is client reading frames. // Multiple Refrencing Test Change. amirhossein hajian
             if (settings->transaction.command != DLMS_COMMAND_NONE &&
                 data->position == data->size)
             {
@@ -3285,7 +3298,7 @@ int svr_handleCommand(
             {
                 ret = svr_handleGetRequest(settings, data);
             }
-        }
+//        }
         break;
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
     case DLMS_COMMAND_READ_REQUEST:
@@ -3295,6 +3308,8 @@ int svr_handleCommand(
             (settings->base.negotiatedConformance & DLMS_CONFORMANCE_READ) == 0)
         {
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
+        	printf("\n\n\n\n\n\n\n amir 22 \n\n\n\n\n\n\n");
+
         }
         else
         {
@@ -3317,6 +3332,8 @@ int svr_handleCommand(
         if ((settings->base.negotiatedConformance & DLMS_CONFORMANCE_ACTION) == 0)
         {
             ret = DLMS_ERROR_CODE_INVALID_COMMAND;
+        	printf("\n\n\n\n\n\n\n amir 23 \n\n\n\n\n\n\n");
+
         }
         else
         {
@@ -3400,6 +3417,8 @@ int svr_handleCommand(
         svr_notifyTrace("Unknown command. ", cmd);
 #endif //DLMS_DEBUG
         ret = DLMS_ERROR_CODE_INVALID_COMMAND;
+    	printf("\n\n\n\n\n\n\n amir 24 \n\n\n\n\n\n\n");
+
     }
     if (ret == DLMS_ERROR_CODE_INVALID_COMMAND)
     {
