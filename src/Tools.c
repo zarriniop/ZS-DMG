@@ -117,19 +117,24 @@ const char * get_time(void)
 }
 
 
-int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Information)
+int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Information, ...)
 {
+	va_list args;
+	va_start(args, Information);
+
 	int 		ret;
 	char		log[4096] = {0};
-	const char	*interface 	[] = {"RS485", "Server", "Client", "Optical", "Start App"}	;
+	char		info[4096] = {0};
+	const char	*interface 	[] = {"RS485", "Server", "Client", "Optical", "Start App", "General"}	;
 	const char	*message 	[] = {"RX", "TX", "Connection", "Start"}		;
 	char		*Time_Tag;
 	struct 		stat st;
 	long int 	size;
 
 	Time_Tag = get_time();
-
-	sprintf(log, "[%s] (%s): %s = %s", Time_Tag, interface[Interface], message[Message], Information);
+	vsprintf(info, Information, args);
+	sprintf(log, "[%s] (%s): %s = %s", Time_Tag, interface[Interface], message[Message], info);
+	va_end(args);
 
 	ret = printf("%s\n",log);
 

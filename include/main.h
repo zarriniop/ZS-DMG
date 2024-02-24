@@ -39,6 +39,7 @@
 #include "sys/stat.h"
 #include <sys/mman.h>
 #include <netinet/tcp.h>
+#include <stdarg.h>
 
 /* HAJIAN */
 #define closesocket close
@@ -51,7 +52,7 @@
 /***********
  * DEFINES *
  ***********/
-
+#define VERSION_APP				101
 #define OPTIC_SERIAL_FD 		"/dev/ttyS1"
 #define RS485_SERIAL_FD 		"/dev/ttyS2"
 
@@ -73,7 +74,8 @@ typedef enum
 	SERVER		= 1,
 	CLIENT		= 2,
 	OPTICAL		= 3,
-	START_APP	= 4
+	START_APP	= 4,
+	GENERAL		= 5
 }REPORT_INTERFACE;
 
 typedef struct

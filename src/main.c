@@ -22,7 +22,7 @@ DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str	;
 
 int main(int argc, char* argv[])
 {
-	report(START_APP, START, "**********************************");
+	report(START_APP, START, "**************ZS-DMG %d**************", VERSION_APP);
 
 	File_Init (argv)					;
     LED_Init()							;

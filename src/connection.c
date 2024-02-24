@@ -175,7 +175,6 @@ int com_updateSerialportSettings(connection* con, unsigned char iec, uint32_t ba
         //Set Baud Rates
         ret = GetLinuxBaudRate(baudRate) ;
 
-        printf("ret = %d\n",ret);
         cfsetospeed(&options, GetLinuxBaudRate(baudRate));
         cfsetispeed(&options, GetLinuxBaudRate(baudRate));
     }
@@ -216,7 +215,7 @@ int Quectel_Update_Serial_Port_Settings(connection* con, unsigned char iec, uint
     	dcb.databit = DB_CS8;
     	dcb.baudrate = baudRate;
     }
-    printf("=========================>>>>>>>> dcb.baudrate:%d\n", dcb.baudrate);
+    report(GENERAL, CONNECTION, "BAUDRATE IS UPDATED TO %d", dcb.baudrate);
 
     //hardware flow control is used as default.
     //options.c_cflag |= CRTSCTS;
@@ -493,7 +492,8 @@ int Socket_Manage_Thread (connection* con)
 
 		else if((diff_time_s(&Inctivity_start_timeout) > udpSetup.inactivityTimeout) && (udpSetup.inactivityTimeout > 0))
 		{
-			printf("++++++++++++++++++++++++ TCP Timeout:%d\n", diff_time_s(&Inctivity_start_timeout));
+			report(CLIENT, CONNECTION, "TCP TIMEOUT: %d", diff_time_s(&Inctivity_start_timeout));
+//			printf("++++++++++++++++++++++++ TCP Timeout:%d\n", diff_time_s(&Inctivity_start_timeout));
 			con->socket.Status.Connected = false;
 		}
 
@@ -759,16 +759,6 @@ void* IEC_Serial_Thread(void* pVoid)
         {
         	sr.dataSize = bytesRead;
 
-        	/************************************************/
-//        	unsigned char optical_rx_tmp_info[4096] = {0};
-//        	for (int m=0; m<bytesRead; m++)
-//        	{
-//        		sprintf(optical_rx_tmp_info + strlen(optical_rx_tmp_info) ,"%.2X ",data[m]);
-//        	}
-//        	printf("\n");
-//        	report(OPTICAL, RX, optical_rx_tmp_info);
-        	/************************************************/
-
             if (con->trace > GX_TRACE_LEVEL_WARNING)
             {
                 if (first)
@@ -785,11 +775,6 @@ void* IEC_Serial_Thread(void* pVoid)
             	report(OPTICAL, RX, optical_rx_tmp_info);
             }
 
-
-//            printf("=====================>> interfaceType:%d - newBaudRate:%d - connected:%d\n"
-//            		, con->settings.base.interfaceType
-//					, sr.newBaudRate
-//					, con->settings.base.connected);
             if (svr_handleRequest4(&con->settings, &sr) != 0)
             {
                 continue;		//Before it was break
@@ -1238,7 +1223,6 @@ void WAN_Connection (void)
 
 	while(1)
 	{
-//		printf("---------------> WAN_Connection\n");
 		ret = ql_get_data_call_info(APN_Param_Struct.profile_idx, &payload);
 
 		if (ret == 0)
@@ -1349,9 +1333,9 @@ int PushSetup_OnConnectivity()
     char *str1= bb_toString(&pushSetup.destination);
     char *IP, *Port;
     IP = strtok(str1,":");
-    printf("IP= %s\n",IP);
+//    printf("IP= %s\n",IP);
     Port = strtok(NULL,":");
-    printf("Port= %s\n",Port);
+//    printf("Port= %s\n",Port);
     int Socket;
     ret = connectServer_pushon(IP, Port, &Socket) ;
 
