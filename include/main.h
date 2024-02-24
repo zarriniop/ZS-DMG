@@ -75,7 +75,8 @@ typedef enum
 	CLIENT		= 2,
 	OPTICAL		= 3,
 	START_APP	= 4,
-	GENERAL		= 5
+	GENERAL		= 5,
+	GATEWAY		= 6
 }REPORT_INTERFACE;
 
 typedef struct

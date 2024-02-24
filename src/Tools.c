@@ -125,7 +125,7 @@ int report (REPORT_INTERFACE Interface, REPORT_MESSAGE Message, char *Informatio
 	int 		ret;
 	char		log[4096] = {0};
 	char		info[4096] = {0};
-	const char	*interface 	[] = {"RS485", "Server", "Client", "Optical", "Start App", "General"}	;
+	const char	*interface 	[] = {"RS485", "Server", "Client", "Optical", "Start App", "General", "Gateway"}	;
 	const char	*message 	[] = {"RX", "TX", "Connection", "Start"}		;
 	char		*Time_Tag;
 	struct 		stat st;

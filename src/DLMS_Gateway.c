@@ -116,7 +116,7 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 
 				if(diff_time_ms(&timeout_start) > HDLC_tmp.Timeout_ms)
 				{
-					printf("TIME OUT IN SNRM RESPONSE\n");
+					report(GATEWAY, RX, "TIME OUT IN SNRM RESPONSE");
 					GW_State = WAIT_FOR_GET_FRAME;
 				}
 				if((HDLC_STRUCT->RX_Count > 0) && (HDLC_STRUCT->RX[HDLC_STRUCT->RX_Count - 1] == FLAG_VALUE_IN_HDLC_FRAME))  //We ensure that we received whole UA frame from meter
@@ -141,7 +141,7 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 				}
 				else
 				{
-					printf("ERROR in INFORMATION FRAME\n");
+					report(GATEWAY, RX, "ERROR in INFORMATION FRAME");
 					GW_State = WAIT_FOR_GET_FRAME;
 				}
 
@@ -151,7 +151,7 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
 
 				if(diff_time_ms(&timeout_start) > HDLC_tmp.Timeout_ms)
 				{
-					printf("TIME OUT IN RESPONSE\n");
+					report(GATEWAY, RX, "TIME OUT IN RESPONSE");
 					GW_State = WAIT_FOR_GET_FRAME;
 				}
 
@@ -241,7 +241,7 @@ void GW_Run (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT)
  ***********************************************************************************************/
 void GW_Run_Init(Buffer* GW_STRUCT,Buffer* HDLC_STRUCT)							//Initializing some variables
 {
-	printf("GW_Run_Init\n");
+	report(GATEWAY, CONNECTION, "RUN INIT");
 	GW_State = WAIT_FOR_GET_FRAME;
 }
 
@@ -296,23 +296,14 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, CTRL_BY
 	}
 	else
 	{
-		printf("GW2HDLC_Frame_Convertor: Error - Physical Address size must be 1 or 2 - it is %d\n", Add_Len);
+		report(GATEWAY, CONNECTION, "W2HDLC_Frame_Convertor: ERROR - PHYSICAL ADDRESS SIZE MUST BE 1 OR 2 - IT IS %d", Add_Len);
 		return -1;
 	}
-
-//	MAC_frame_Size = MAC_frame_Size + APDU_size + LLC_SUB_LAYER_SIZE;
-//
-//	uint8_t MAC_frame[MAC_frame_Size];
 
 	uint8_t MAC_frame[2048];
 	memset(MAC_frame, 0, sizeof(MAC_frame));
 
 	MAC_frame[0] 				= 0x7E;		//Start flag
-//	MAC_frame[MAC_frame_Size-1] = 0x7E;		//End flag
-
-//	Frame_Format 						= ((MAC_frame_Size - 2) & 0x07FF) | (0xA000);
-//	MAC_frame[FRAME_FRMT_START_BYTE] 	= (uint8_t) (Frame_Format >> 8)				;
-//	MAC_frame[FRAME_FRMT_START_BYTE+1] 	= (uint8_t) (Frame_Format & 0xFF)			;
 
 	if(0 <= Logical_Address && Logical_Address <= 16383)
 	{
@@ -320,7 +311,7 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, CTRL_BY
 	}
 	else
 	{
-		printf("GW2HDLC_Frame_Convertor: Error - Logical Address must be between 0 and 16383.\n");
+		report(GATEWAY, CONNECTION, "GW2HDLC_Frame_Convertor: ERROR - LOGICAL ADDRESS MUST BE BETWEEN 0 AND 16383.");
 		return -2;
 	}
 
@@ -351,27 +342,18 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, CTRL_BY
 	}
 	else
 	{
-		printf("GW2HDLC_Frame_Convertor: Error - Physical Address must be between 0 and 255.\n");
+		report(GATEWAY, CONNECTION, "GW2HDLC_Frame_Convertor: ERROR - PHYSICAL ADDRESS MUST BE BETWEEN 0 AND 255.");
 		return -3;
 	}
 
 
 	HCS_Count = last_byte+2;
-//	HCS = countCRC(MAC_frame, 1, last_byte+2);
-//	MAC_frame[last_byte + 3] = (uint8_t) (HCS >> 8);
-//	MAC_frame[last_byte + 4] = (uint8_t) (HCS & 0x00FF);
 
 	MAC_frame[last_byte + 5] = 0xE6;	//LLC sub-layer
 	MAC_frame[last_byte + 6] = 0xE6;
 	MAC_frame[last_byte + 7] = 0x00;
 
 	APDU_start_byte = last_byte + MAC_MIN_APDU_START_BYTE;
-
-//	for(int k=0; k<APDU_size; k++)
-//	{
-//		APDU_size ++;
-//		MAC_frame[APDU_start_byte + k] = APDU[k];
-//	}
 
 	APDU_size = 0;
 	for(int k=APDU_start_add; k<GW_STRUCT->RX_Count; k++)
@@ -382,9 +364,6 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, CTRL_BY
 	last_byte = APDU_start_byte + APDU_size - 1;
 
 	FCS_Count = last_byte;
-//	FCS = countCRC(&MAC_frame, 1, last_byte);
-//	MAC_frame[last_byte + 1] = (uint8_t) (FCS >> 8);
-//	MAC_frame[last_byte + 2] = (uint8_t) (FCS & 0x00FF);
 
 	MAC_frame_Size 						= MAC_frame_Size + APDU_size + LLC_SUB_LAYER_SIZE;
 	MAC_frame[MAC_frame_Size-1] 		= 0x7E										;		//End flag
@@ -414,7 +393,6 @@ int16_t GW2HDLC_Frame_Convertor (Buffer* GW_STRUCT, Buffer* HDLC_STRUCT, CTRL_BY
 	{
 		Control_Byte_Struct->SSS ++;
 	}
-//	printf("G2M - NR:%d ,NS:%d\n", Control_Byte_Struct->RRR, Control_Byte_Struct->SSS);
 
 	return 1;
 }
@@ -487,7 +465,7 @@ int Meter2GW_Frame_Convertor (Buffer* HDLC_STRUCT, Buffer* GW_STRUCT, CTRL_BYTE_
 
 	if((HDLC_STRUCT->RX_Count - HDLC_Frame_Byte_Index - 1) <= 3)				//Indicates that the received frame has no APDU - 3:2byte for FCS + 1 byte for end flag
 	{
-		printf("ERROR FRAME IN RECEIVED FRAME FROM METER\n");
+		report(GATEWAY, CONNECTION, "Meter2GW_Frame_Convertor: ERROR - ERROR FRAME IN RECEIVED FRAME FROM METER");
 		return -4;
 	}
 	/* End - FINDING AND CHECKING HCS IN HDLC FRAME *******************/
