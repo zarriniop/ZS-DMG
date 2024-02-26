@@ -49,6 +49,9 @@
 #include "../include/snparameters.h"
 #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
+
+extern gxSecuritySetup securitySetupManagementClient;
+
 //cosem_getObjectSize returns zero if object is not supported.
 uint16_t cosem_getObjectSize(DLMS_OBJECT_TYPE type)
 {
@@ -591,6 +594,8 @@ int cosem_init4(
         it->authenticationMechanismName.dlmsUA = 8;
         it->authenticationMechanismName.authenticationMechanismName = 2;
         it->serverSAP = 1;
+        it->securitySetup = &securitySetupManagementClient;
+
     }
     break;
 #endif //DLMS_IGNORE_ASSOCIATION_LOGICAL_NAME

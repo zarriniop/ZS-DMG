@@ -938,6 +938,17 @@ int addAssociationHighGMac()
                                                                               DLMS_CONFORMANCE_ACTION |
                                                                               DLMS_CONFORMANCE_MULTIPLE_REFERENCES |
 																			  DLMS_CONFORMANCE_DATA_NOTIFICATION |
+
+//																			  DLMS_CONFORMANCE_GENERAL_BLOCK_TRANSFER |
+//																			  DLMS_CONFORMANCE_ATTRIBUTE_0_SUPPORTED_WITH_SET |
+//																			  DLMS_CONFORMANCE_PRIORITY_MGMT_SUPPORTED |
+//																			  DLMS_CONFORMANCE_ATTRIBUTE_0_SUPPORTED_WITH_GET |
+//																			  DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION |
+//																			  DLMS_CONFORMANCE_EVENT_NOTIFICATION |
+
+
+
+
                                                                               DLMS_CONFORMANCE_GET);
         // GMAC authentication don't need password.
 #ifndef DLMS_IGNORE_OBJECT_POINTERS
@@ -978,9 +989,33 @@ int addSecuritySetupHighGMac()
     int ret;
     // Define client system title.
     static unsigned char CLIENT_SYSTEM_TITLE[8] = {0};
+    static unsigned char SERVER_SYSTEM_TITLE[8] = {'Z','S','S',0x31, 0,0,0,0};
     const unsigned char ln[6] = {0, 0, 43, 0, 2, 255};
     if ((ret = INIT_OBJECT(securitySetupHighGMac, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
     {
+
+        unsigned char hexBytes[4];
+        for (int i = 0; i < 4; i++)
+        {
+            hexBytes[i] = (SERIAL_NUMBER >> (i * 8)) & 0xFF;
+        }
+        hexBytes[3] |= 0x40;
+
+        SERVER_SYSTEM_TITLE[4] = hexBytes[3] ;
+        SERVER_SYSTEM_TITLE[4] |= 0x0;
+        SERVER_SYSTEM_TITLE[5] = hexBytes[2] ;
+        SERVER_SYSTEM_TITLE[5] |= 0x0;
+
+        SERVER_SYSTEM_TITLE[6] = hexBytes[1] ;
+        SERVER_SYSTEM_TITLE[6] |= 0x0;
+
+        SERVER_SYSTEM_TITLE[7] = hexBytes[0] ;
+        SERVER_SYSTEM_TITLE[7] |= 0x0;
+
+
+
+
+
         BB_ATTACH(securitySetupHighGMac.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
         BB_ATTACH(securitySetupHighGMac.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
         // Only Authenticated encrypted connections are allowed.
@@ -1003,7 +1038,7 @@ int addSecuritySetupManagementClient()
     const unsigned char ln[6] = {0, 0, 43, 0, 0, 255};
     if ((ret = INIT_OBJECT(securitySetupManagementClient, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
     {
-    	printf("SERIAL_NUMBER in addSecuritySetupManagementClient = %d\n",SERIAL_NUMBER);
+//    	printf("SERIAL_NUMBER in addSecuritySetupManagementClient = %d\n",SERIAL_NUMBER);
         unsigned char hexBytes[4];
         for (int i = 0; i < 4; i++)
         {
@@ -1328,7 +1363,7 @@ int addTcpUdpSetup()
     const unsigned char ln[6] = {0, 0, 25, 0, 0, 255};
     INIT_OBJECT(udpSetup, DLMS_OBJECT_TYPE_TCP_UDP_SETUP, ln);
     udpSetup.port = atoi(Settings.ListenPORT);
-    printf("ListenPORT = %d\n",atoi(Settings.ListenPORT));
+//    printf("ListenPORT = %d\n",atoi(Settings.ListenPORT));
     udpSetup.ipSetup = &ip4Setup;
     udpSetup.maximumSimultaneousConnections = 5;
     udpSetup.maximumSegmentSize = 1280;
@@ -2597,7 +2632,7 @@ int IEC_start(connection *con, char *file)
     {
         return ret;
     }
-    bb_addString(&con->settings.base.kek, "1111111111111111");
+    bb_addString(&con->settings.base.kek, "1111");
 
 
     return DLMS_ERROR_CODE_OK;
@@ -2650,7 +2685,7 @@ int TCP_start(connection *con)
     {
         return ret;
     }
-    bb_addString(&con->settings.base.kek, "1111111111111111");
+    bb_addString(&con->settings.base.kek, "1111");
     return DLMS_ERROR_CODE_OK;
 }
 
@@ -4240,6 +4275,11 @@ DLMS_ACCESS_MODE getSecuritySetupAttributeAccess(
     else if(settings->clientAddress == MANAGEMENT_CLIENT)
     {
         if(obj == BASE(securitySetupManagementClient))  
+        {
+            if(index == 2 || index == 3)        return DLMS_ACCESS_MODE_READ_WRITE;
+            return DLMS_ACCESS_MODE_READ;
+        }
+        else if(obj == BASE(securitySetupHighGMac))
         {
             if(index == 2 || index == 3)        return DLMS_ACCESS_MODE_READ_WRITE;
             return DLMS_ACCESS_MODE_READ;

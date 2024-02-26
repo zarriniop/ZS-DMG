@@ -38,6 +38,7 @@
 #include "../include/errorcodes.h"
 #include "../include/ciphering.h"
 #include "../include/serverevents.h"
+#include <stdio.h>
 
 #ifndef DLMS_IGNORE_CLIENT
 /**
@@ -527,16 +528,24 @@ int apdu_parseUserInformation(
         }
         if (settings->expectedInvocationCounter != NULL)
         {
-            if (invocationCounter < 1 + *settings->expectedInvocationCounter)
+        	printf("!----------------> INVOC COUN:%llu , EXPE INVO COUN:%u\n", invocationCounter, *settings->expectedInvocationCounter);
+            if (invocationCounter < /*1 +*/ *settings->expectedInvocationCounter)
             {
+            	printf("!----------------> Error1 - INVOC COUN:%llu , EXPE INVO COUN:%u\n", invocationCounter, *settings->expectedInvocationCounter);
                 return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
             }
-#ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
-            *settings->expectedInvocationCounter = 1 + invocationCounter;
-#else
-            *settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
-#endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
-
+        	if (invocationCounter == *settings->expectedInvocationCounter)
+        	{
+        		*settings->expectedInvocationCounter = invocationCounter;
+        	}
+        	else
+        	{
+				#ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+							*settings->expectedInvocationCounter = 1 + invocationCounter;
+				#else
+							*settings->expectedInvocationCounter = (uint32_t)(1 + invocationCounter);
+				#endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+        	}
         }
         //If client system title doesn't match.
         if (settings->expectedClientSystemTitle != NULL &&
