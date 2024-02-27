@@ -18,6 +18,9 @@
 #include "Tools.h"
 #include <ql_oe.h>
 
+extern gxSecuritySetup securitySetupHighGMac;
+extern gxSecuritySetup securitySetupManagementClient;
+
 DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str	;
 
 int main(int argc, char* argv[])
@@ -35,6 +38,7 @@ int main(int argc, char* argv[])
     while (1)
     {
     	sleep(20)						;
+//    	securitySetupHighGMac.securityPolicy = securitySetupManagementClient.securityPolicy;
     }
     return 0;
 }

@@ -23,13 +23,17 @@ pthread_t SVR_Monitor;
 int Servers_Start(int trace)
 {
     int ret;
-    unsigned char KEK[33] = {0};
+    unsigned char KEK[16] = {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE,0xFF};
 
    //Initialize DLMS settings.
     svr_init(&lnWrapper.settings, 1, DLMS_INTERFACE_TYPE_WRAPPER, WRAPPER_BUFFER_SIZE, PDU_BUFFER_SIZE, ln47frameBuff, WRAPPER_BUFFER_SIZE, ln47pduBuff, PDU_BUFFER_SIZE);
 
     //We have several server that are using same objects. Just copy them.
 
+    //memcpy(KEK, "00112233445566778899AABBCCDDEEFF\0", 33);
+    BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK));
+    BB_ATTACH(lniec.settings.base.kek, KEK, sizeof(KEK));
+    printf("\n --->>> KEK=%s\0",KEK);
 
 
     svr_InitObjects(&lnWrapper.settings);
@@ -43,9 +47,8 @@ int Servers_Start(int trace)
     svr_init(&lniec.settings, 1, interfaceType, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, lnframeBuff, HDLC_HEADER_SIZE + HDLC_BUFFER_SIZE, lnpduBuff, PDU_BUFFER_SIZE);
     svr_InitObjects(&lniec.settings);
 
-    memcpy(KEK, "00112233445566778899AABBCCDDEEFF\0", 33);
-    BB_ATTACH(lnWrapper.settings.base.kek, KEK, 33);
-    BB_ATTACH(lniec.settings.base.kek, KEK, 33);
+    BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK));
+    BB_ATTACH(lniec.settings.base.kek, KEK, sizeof(KEK));
     printf("\n --->>> KEK=%s\0",KEK);
 
 
