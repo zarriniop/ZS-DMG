@@ -33,7 +33,12 @@ int Servers_Start(int trace)
     //memcpy(KEK, "00112233445566778899AABBCCDDEEFF\0", 33);
     BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK));
     BB_ATTACH(lniec.settings.base.kek, KEK, sizeof(KEK));
-    printf("\n --->>> KEK=%s\0",KEK);
+    printf("\n --->>> KEK:");
+    for(int i=0; i<16; i++)
+    {
+    	printf("%.2X  ", KEK[i]);
+    }
+    printf("\n");
 
 
     svr_InitObjects(&lnWrapper.settings);
@@ -49,8 +54,6 @@ int Servers_Start(int trace)
 
     BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK));
     BB_ATTACH(lniec.settings.base.kek, KEK, sizeof(KEK));
-    printf("\n --->>> KEK=%s\0",KEK);
-
 
     //Start server
     if ((ret = TCP_start(&lnWrapper)) != 0)

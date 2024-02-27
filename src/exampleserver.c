@@ -988,7 +988,7 @@ int addSecuritySetupHighGMac()
 {
     int ret;
     // Define client system title.
-    static unsigned char CLIENT_SYSTEM_TITLE[8] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
+    static unsigned char CLIENT_SYSTEM_TITLE[8] = {0};
     static unsigned char SERVER_SYSTEM_TITLE[8] = {'Z','S','S',0x31, 0,0,0,0};
     const unsigned char ln[6] = {0, 0, 43, 0, 2, 255};
     if ((ret = INIT_OBJECT(securitySetupHighGMac, DLMS_OBJECT_TYPE_SECURITY_SETUP, ln)) == 0)
@@ -1019,7 +1019,7 @@ int addSecuritySetupHighGMac()
         BB_ATTACH(securitySetupHighGMac.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
         BB_ATTACH(securitySetupHighGMac.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
         // Only Authenticated encrypted connections are allowed.
-        securitySetupHighGMac.securityPolicy = DLMS_SECURITY_POLICY_AUTHENTICATED_ENCRYPTED; /*DLMS_SECURITY_POLICY_NOTHING;*/
+        securitySetupHighGMac.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
         securitySetupHighGMac.securitySuite = DLMS_SECURITY_SUITE_V0;
     }
     return ret;
@@ -1032,7 +1032,7 @@ int addSecuritySetupManagementClient()
 {
     int ret;
     // Define client system title.
-    static unsigned char CLIENT_SYSTEM_TITLE[8] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
+    static unsigned char CLIENT_SYSTEM_TITLE[8] = {0};
     static unsigned char SERVER_SYSTEM_TITLE[8] = {'Z','S','S',0x31, 0,0,0,0};
 
     const unsigned char ln[6] = {0, 0, 43, 0, 0, 255};
@@ -1060,7 +1060,7 @@ int addSecuritySetupManagementClient()
 
          BB_ATTACH(securitySetupManagementClient.serverSystemTitle, SERVER_SYSTEM_TITLE, 8);
 //         BB_ATTACH(securitySetupManagementClient.clientSystemTitle, CLIENT_SYSTEM_TITLE, 8);
-//         securitySetupManagementClient.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
+         securitySetupManagementClient.securityPolicy = DLMS_SECURITY_POLICY_NOTHING;
          securitySetupManagementClient.securitySuite = DLMS_SECURITY_SUITE_V0;
     }
     return ret;
@@ -3909,7 +3909,10 @@ unsigned char svr_isTarget(
                         // Set expected client system title. If this is set only client that is using expected client system title can connect to the meter.
                         if (a->securitySetup->clientSystemTitle.size == 8)
                         {
-                            settings->expectedClientSystemTitle = a->securitySetup->clientSystemTitle.data;
+                        	GXTRACE(("Set the ClientSystem Title."), NULL);
+                        	settings->expectedClientSystemTitle = a->securitySetup->clientSystemTitle.data;
+                        	printf("-------->>>>>>. systemTitle = %s",a->securitySetup->clientSystemTitle.data);
+
                         }
                         // GMac authentication uses innocation counter.
                         if (a->securitySetup == &securitySetupHighGMac)
@@ -4160,7 +4163,7 @@ DLMS_ACCESS_MODE getDataAttributeAccess(
     if(settings->clientAddress == PUBLIC_CLIENT)
     {
         if (obj == BASE(securityreceiveframecounterbroadcastkey))      return DLMS_ACCESS_MODE_READ;
-        if (obj == BASE(invocationCounter))                            return DLMS_ACCESS_MODE_READ;
+        if (obj == BASE(invocationCounter))                            return DLMS_ACCESS_MODE_READ_WRITE;
         if (obj == BASE(ldn))                                          return DLMS_ACCESS_MODE_READ;
         if (obj == BASE(deviceid7))                                    return DLMS_ACCESS_MODE_READ;
         return DLMS_ACCESS_MODE_NONE;
@@ -4181,6 +4184,7 @@ DLMS_ACCESS_MODE getDataAttributeAccess(
             if(obj == BASE(alarmfilter2))                   return DLMS_ACCESS_MODE_READ_WRITE;
             if(obj == BASE(gprskeepalivetimeinterval))      return DLMS_ACCESS_MODE_READ_WRITE;
             if(obj == BASE(localauthenticationprotection))  return DLMS_ACCESS_MODE_READ_WRITE;
+            if(obj == BASE(invocationCounter))              return DLMS_ACCESS_MODE_READ_WRITE;
         }
         return DLMS_ACCESS_MODE_READ;
     }

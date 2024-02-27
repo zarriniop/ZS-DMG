@@ -868,6 +868,7 @@ int cip_decrypt(
     {
     case DLMS_COMMAND_GENERAL_GLO_CIPHERING:
     case DLMS_COMMAND_GENERAL_DED_CIPHERING:
+    	printf("\n------------------- [file:apdu.c] [command:DLMS_COMMAND_GENERAL_GLO_CIPHERING_3] -------------------\n");
         if ((ret = hlp_getObjectCount2(data, &length)) != 0)
         {
             return ret;

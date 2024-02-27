@@ -392,6 +392,7 @@ int apdu_generateUserInformation(
         {
             if (!useDedicatedKey(settings))
             {
+            	printf("\n------------------- [file:apdu.c] [command:DLMS_COMMAND_GENERAL_GLO_CIPHERING_1] -------------------\n");
                 cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
             }
             else
@@ -528,17 +529,18 @@ int apdu_parseUserInformation(
         }
         if (settings->expectedInvocationCounter != NULL)
         {
-        	printf("!----------------> INVOC COUN:%llu , EXPE INVO COUN:%u\n", invocationCounter, *settings->expectedInvocationCounter);
+        	printf("\n[INFO] - [File: apdu.c] - [Func: apdu_parseUserInformation] - [uint64_t invocationCounter : %llu] [uint32_t* expectedInvocationCounter : %u]\n", invocationCounter, *settings->expectedInvocationCounter);
             if (invocationCounter < /*1 +*/ *settings->expectedInvocationCounter)
             {
+//            	printf("\n[ERROR] - [File: apdu.c] - [Func: apdu_parseUserInformation] - [uint64_t invocationCounter : %llu] [uint32_t* expectedInvocationCounter : %u]\n", invocationCounter, *settings->expectedInvocationCounter);
             	printf("!----------------> Error1 - INVOC COUN:%llu , EXPE INVO COUN:%u\n", invocationCounter, *settings->expectedInvocationCounter);
                 return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
             }
-        	if (invocationCounter == *settings->expectedInvocationCounter)
-        	{
-        		*settings->expectedInvocationCounter = invocationCounter;
-        	}
-        	else
+//        	if (invocationCounter == *settings->expectedInvocationCounter)
+//        	{
+//        		*settings->expectedInvocationCounter = invocationCounter;
+//        	}
+//        	else
         	{
 				#ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
 							*settings->expectedInvocationCounter = 1 + invocationCounter;
@@ -1130,6 +1132,7 @@ int apdu_getUserInformation(
         }
         else if (command == DLMS_COMMAND_GENERAL_GLO_CIPHERING)
         {
+        	printf("\n------------------- [file:apdu.c] [command:DLMS_COMMAND_GENERAL_GLO_CIPHERING_2] -------------------\n");
             cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
         }
         else

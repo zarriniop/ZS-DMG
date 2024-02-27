@@ -132,6 +132,7 @@ unsigned char dlms_getGloMessage(dlmsSettings* settings, DLMS_COMMAND command, D
     if (encryptedCommand == DLMS_COMMAND_GENERAL_GLO_CIPHERING ||
         encryptedCommand == DLMS_COMMAND_GENERAL_DED_CIPHERING)
     {
+    	printf("\n------------------- [file:apdu.c] [command:DLMS_COMMAND_GENERAL_GLO_CIPHERING_7][MEBADI] -------------------\n");
         cmd = encryptedCommand;
     }
     else if (glo && encryptedCommand == DLMS_COMMAND_NONE)
@@ -142,6 +143,7 @@ unsigned char dlms_getGloMessage(dlmsSettings* settings, DLMS_COMMAND command, D
         }
         else
         {
+        	printf("\n------------------- [file:apdu.c] [command:DLMS_COMMAND_GENERAL_GLO_CIPHERING_3][MEBADI] -------------------\n");
             cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
         }
     }
@@ -264,6 +266,7 @@ unsigned char dlms_getGloMessage(dlmsSettings* settings, DLMS_COMMAND command, D
             }
             else
             {
+            	printf("\n------------------- [file:apdu.c] [command:DLMS_COMMAND_GENERAL_GLO_CIPHERING_4][MEBADI] -------------------\n");
                 cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
             }
             break;
@@ -277,6 +280,7 @@ unsigned char dlms_getGloMessage(dlmsSettings* settings, DLMS_COMMAND command, D
             cmd = DLMS_COMMAND_GENERAL_DED_CIPHERING;
             break;
         case DLMS_COMMAND_GENERAL_GLO_CIPHERING:
+        	printf("\n------------------- [file:apdu.c] [command:DLMS_COMMAND_GENERAL_GLO_CIPHERING_5][MEBADI] -------------------\n");
             cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
             break;
         default:
@@ -5259,6 +5263,7 @@ int dlms_getPdu(
 //                {
 //                    return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
 //                }
+            	printf("\n------------------- [file:apdu.c] [command:DLMS_COMMAND_GENERAL_GLO_CIPHERING_6][MEBADI] -------------------\n");
                 ret = dlms_handleGloDedRequest(settings, data);
             }
 #endif// !defined(DLMS_IGNORE_CLIENT)
