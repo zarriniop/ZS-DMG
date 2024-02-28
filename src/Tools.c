@@ -23,7 +23,7 @@ pthread_t SVR_Monitor;
 int Servers_Start(int trace)
 {
     int ret;
-    unsigned char KEK[16] = {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE,0xFF};
+    unsigned char KEK[16] = { 0x31,0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31 }; /*{0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE,0xFF};*/
 
    //Initialize DLMS settings.
     svr_init(&lnWrapper.settings, 1, DLMS_INTERFACE_TYPE_WRAPPER, WRAPPER_BUFFER_SIZE, PDU_BUFFER_SIZE, ln47frameBuff, WRAPPER_BUFFER_SIZE, ln47pduBuff, PDU_BUFFER_SIZE);
@@ -52,8 +52,8 @@ int Servers_Start(int trace)
     svr_init(&lniec.settings, 1, interfaceType, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, lnframeBuff, HDLC_HEADER_SIZE + HDLC_BUFFER_SIZE, lnpduBuff, PDU_BUFFER_SIZE);
     svr_InitObjects(&lniec.settings);
 
-    BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK));
-    BB_ATTACH(lniec.settings.base.kek, KEK, sizeof(KEK));
+//    BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK));
+//    BB_ATTACH(lniec.settings.base.kek, KEK, sizeof(KEK));
 
     //Start server
     if ((ret = TCP_start(&lnWrapper)) != 0)

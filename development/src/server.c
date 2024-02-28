@@ -2666,6 +2666,7 @@ int svr_handleWriteRequest(
                     {
                         svr_preAction(&settings->base, &actions);
                     }
+                    printf("[INFO]-[server.c]-[Func. svr_handleWriteRequest]-[after svr_preAction]\n");
                     ret = cosem_invoke(settings, e);
                     // If High level authentication fails.
                     if (e->target != NULL && e->target->objectType == DLMS_OBJECT_TYPE_ASSOCIATION_SHORT_NAME && e->index == 1)
@@ -2862,13 +2863,16 @@ int svr_handleMethodRequest(
         else
         {
             svr_preAction(&settings->base, list);
+            printf("[INFO]-[server.c]-[Func. svr_handleMethodRequest]-[after svr_preAction]\n");
             if (!e->handled)
             {
                 if ((ret = cosem_invoke(settings, e)) != 0)
                 {
+                	printf("[ERROR]-[server.c]-[Func. svr_handleMethodRequest]-[cosem_invoke- error - ret:%d]\n", ret);
                     e->error = (DLMS_ERROR_CODE)ret;
                     ret = 0;
                 }
+                printf("[INFO]-[server.c]-[Func. svr_handleMethodRequest]-[cosem_invoke - ret:%d]\n", ret);
                 svr_postAction(&settings->base, list);
             }
         }
@@ -3235,8 +3239,10 @@ int svr_handleCommand(
         frame = getNextSend(&settings->base, 0);
     }
 #endif //DLMS_IGNORE_MALLOC
+
     printf("\n[INFO] - [File: server.c] - [Func: svr_handleCommand] - [DLMS_COMMAND cmd : %d]\n", cmd);
-    if(cmd==219)
+    //IOP - we added this if to pass get request after changing invocation counter
+    if(cmd==219)	//cmd==DLMS_COMMAND_GENERAL_GLO_CIPHERING
     	cmd = DLMS_COMMAND_GET_REQUEST;
 
     switch (cmd)
@@ -4081,6 +4087,7 @@ int svr_invoke(
         if (isAction)
         {
             svr_preAction(&settings->base, &args);
+            printf("[INFO]-[server.c]-[Func. svr_invoke]-[after svr_preAction]\n");
             if (!e->handled)
             {
                 ret = cosem_invoke(settings, e);

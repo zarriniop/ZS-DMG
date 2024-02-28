@@ -755,6 +755,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
 #ifndef DLMS_IGNORE_HIGH_GMAC
     int pos;
 #endif //DLMS_IGNORE_HIGH_GMAC
+    printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[e->index:%d]\n", e->index);
     if (e->index == 1)
     {
         //The security policy can only be strengthened.
@@ -830,6 +831,7 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
         dlmsVARIANT* it, * type, * data;
         if (e->parameters.vt != DLMS_DATA_TYPE_ARRAY)
         {
+        	printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT]\n");
             ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
         }
         else
@@ -844,15 +846,18 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                     (ret = va_getByIndex(it->Arr, 1, &data)) != 0 ||
                     (ret = cip_decryptKey(settings->base.kek.data, (unsigned char)settings->base.kek.size, data->byteArr, &bb)) != 0)
                 {
+                	printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[ret:%d]\n", ret);
                     break;
                 }
                 if (bb.size != 16)
                 {
+                	printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT2]\n");
                     e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                     break;
                 }
                 switch (type->cVal)
                 {
+                printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[type->cVal:%d]\n",type->cVal);
                 case DLMS_GLOBAL_KEY_TYPE_UNICAST_ENCRYPTION:
                     bb_clear(&settings->base.cipher.blockCipherKey);
                     bb_set(&settings->base.cipher.blockCipherKey, bb.data, bb.size);
@@ -1058,12 +1063,14 @@ int invoke_ScriptTable(
                     else if (sa->type == DLMS_SCRIPT_ACTION_TYPE_EXECUTE)
                     {
                         svr_preAction(&settings->base, &args);
+                        printf("[INFO]-[gxinvoke.c]-[svr_preAction - e->handled:%d]\n", e->handled);
                         if (!e->handled)
                         {
                             if ((ret = cosem_invoke(settings, e1)) != 0)
                             {
                                 break;
                             }
+                            printf("[INFO]-[gxinvoke.c]-[cosem_invoke - ret:%d]\n", ret);
                             svr_postAction(&settings->base, &args);
                         }
                     }
@@ -2881,6 +2888,7 @@ int cosem_invoke(
     dlmsServerSettings* settings,
     gxValueEventArg* e)
 {
+	printf("[INFO]-[gxinvoke.c]-[Func. cosem_invoke]-[objectType:%d]\n", e->target->objectType);
     int ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     //If invoke index is invalid.
     if (e->index < 1 || e->index > obj_methodCount(e->target))

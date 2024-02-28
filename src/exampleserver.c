@@ -165,7 +165,7 @@ static gxSecuritySetup securitySetupHigh;
 gxSecuritySetup securitySetupManagementClient;
 
 // Security Setup HighGMac is for GMac authentication.
-/*static*/ gxSecuritySetup securitySetupHighGMac;
+static gxSecuritySetup securitySetupHighGMac;
 
 gxImageTransfer imageTransfer;
 gxAutoConnect autoConnect;
@@ -3294,7 +3294,7 @@ void allocateImageTransfer(const char *fileName, uint32_t size)
 /////////////////////////////////////////////////////////////////////////////
 //
 /////////////////////////////////////////////////////////////////////////////
-void svr_preAction(
+void svr_preAction(				//This function is used to do something when receive an action command before doing the same action
     dlmsSettings *settings,
     gxValueEventCollection *args)
 {
@@ -3602,7 +3602,7 @@ void svr_postRead(
 /////////////////////////////////////////////////////////////////////////////
 //
 /////////////////////////////////////////////////////////////////////////////
-void svr_postWrite(
+void svr_postWrite(					//This function is used to when an object get value by MDM (TCP or IEC port) - TCP set in object then we get the value from the object
     dlmsSettings *settings,
     gxValueEventCollection *args)
 {
@@ -5187,15 +5187,15 @@ void Read_Settings(SETTINGS *settings)
 				}
 				case 11 :
 				{
-					int i;
-					memset(temp, 0, sizeof(temp));
-					memset(settings->KEK,0,sizeof(settings->KEK));
-					strcpy(temp, data[10]+4);
-
-					for (int i=0; i < 16; i++)
-					{
-				        sscanf((temp) + (2*i), "%2hhx", &settings->KEK[i]);
-				    }
+//					int i;
+//					memset(temp, 0, sizeof(temp));
+//					memset(settings->KEK,0,sizeof(settings->KEK));
+//					strcpy(temp, data[10]+4);
+//
+//					for (int i=0; i < 16; i++)
+//					{
+//				        sscanf((temp) + (2*i), "%2hhx", &settings->KEK[i]);
+//				    }
 
 //				    printf("KEK - Original string: %s\n", temp);
 //				    printf("KEK - Hexadecimal value: ");
