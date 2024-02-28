@@ -392,7 +392,6 @@ int apdu_generateUserInformation(
         {
             if (!useDedicatedKey(settings))
             {
-            	printf("\n------------------- [file:apdu.c] [command:DLMS_COMMAND_GENERAL_GLO_CIPHERING_1] -------------------\n");
                 cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
             }
             else
@@ -1132,7 +1131,6 @@ int apdu_getUserInformation(
         }
         else if (command == DLMS_COMMAND_GENERAL_GLO_CIPHERING)
         {
-        	printf("\n------------------- [file:apdu.c] [command:DLMS_COMMAND_GENERAL_GLO_CIPHERING_2] -------------------\n");
             cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
         }
         else

@@ -3236,6 +3236,9 @@ int svr_handleCommand(
     }
 #endif //DLMS_IGNORE_MALLOC
     printf("\n[INFO] - [File: server.c] - [Func: svr_handleCommand] - [DLMS_COMMAND cmd : %d]\n", cmd);
+    if(cmd==219)
+    	cmd = DLMS_COMMAND_GET_REQUEST;
+
     switch (cmd)
     {
 #ifndef DLMS_IGNORE_SET
