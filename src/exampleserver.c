@@ -2632,7 +2632,7 @@ int IEC_start(connection *con, char *file)
     {
         return ret;
     }
-    bb_addString(&con->settings.base.kek, "1111");
+//    bb_addString(&con->settings.base.kek, "1111111111111111");
 
 
     return DLMS_ERROR_CODE_OK;
@@ -2685,7 +2685,7 @@ int TCP_start(connection *con)
     {
         return ret;
     }
-    bb_addString(&con->settings.base.kek, "1111");
+//    bb_addString(&con->settings.base.kek, "1111111111111111");
     return DLMS_ERROR_CODE_OK;
 }
 

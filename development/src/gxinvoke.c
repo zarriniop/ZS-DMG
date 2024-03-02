@@ -841,6 +841,16 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
             for (pos = 0; pos != e->parameters.Arr->size; ++pos)
             {
                 bb_clear(&bb);
+
+                ret = va_getByIndex(e->parameters.Arr, pos, &it);
+                printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[ret1:%d]\n", ret);
+                ret = va_getByIndex(it->Arr, 0, &type);
+                printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[ret2:%d]\n", ret);
+                ret = va_getByIndex(it->Arr, 1, &data);
+                printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[ret3:%d]\n", ret);
+                ret = cip_decryptKey(settings->base.kek.data, (unsigned char)settings->base.kek.size, data->byteArr, &bb);
+                printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[ret4:%d]\n", ret);
+
                 if ((ret = va_getByIndex(e->parameters.Arr, pos, &it)) != 0 ||
                     (ret = va_getByIndex(it->Arr, 0, &type)) != 0 ||
                     (ret = va_getByIndex(it->Arr, 1, &data)) != 0 ||

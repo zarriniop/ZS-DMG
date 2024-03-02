@@ -33,6 +33,9 @@ int Servers_Start(int trace)
     //memcpy(KEK, "00112233445566778899AABBCCDDEEFF\0", 33);
     BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK));
     BB_ATTACH(lniec.settings.base.kek, KEK, sizeof(KEK));
+//    lniec.settings.base.kek.size = 16;
+
+    printf("|========>>>>>> lniec.kek=%s \n", lniec.settings.base.kek.data);
     printf("\n --->>> KEK:");
     for(int i=0; i<16; i++)
     {

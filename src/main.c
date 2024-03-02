@@ -20,6 +20,8 @@
 
 DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str	;
 
+extern connection lnWrapper , lniec , rs485;
+
 int main(int argc, char* argv[])
 {
 	report(START_APP, START, "**************ZS-DMG %d**************", VERSION_APP);
