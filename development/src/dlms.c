@@ -5255,10 +5255,10 @@ int dlms_getPdu(
 #if !defined(DLMS_IGNORE_SERVER)
             if (settings->server)
             {
-//                if ((settings->connected & DLMS_CONNECTION_STATE_DLMS) == 0)
-//                {
-//                    return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
-//                }
+                if ((settings->connected /*& DLMS_CONNECTION_STATE_DLMS*/) == 0)
+                {
+                    return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+                }
                 ret = dlms_handleGloDedRequest(settings, data);
             }
 #endif// !defined(DLMS_IGNORE_CLIENT)

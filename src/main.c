@@ -36,8 +36,21 @@ int main(int argc, char* argv[])
 
     while (1)
     {
-    	sleep(20)						;
-//    	securitySetupHighGMac.securityPolicy = securitySetupManagementClient.securityPolicy;
+    	sleep(5)						;
+    	//securitySetupHighGMac.securityPolicy = securitySetupManagementClient.securityPolicy;
+    	printf("cipherKey:");
+    	for (int i=0; i<lniec.settings.base.cipher.blockCipherKey.size; i++)
+    	{
+    		printf("%.2X  ", lniec.settings.base.cipher.blockCipherKey.data[i]);
+    	}
+    	printf("\n");
+
+//    	printf("autheticationKey:");
+//    	for (int i=0; i<lniec.settings.base.cipher.authenticationKey.size; i++)
+//    	{
+//    		printf("%.2X  ", lniec.settings.base.cipher.authenticationKey.data[i]);
+//    	}
+//    	printf("\n");
     }
     return 0;
 }

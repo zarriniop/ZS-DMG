@@ -2872,6 +2872,7 @@ int svr_handleMethodRequest(
                     e->error = (DLMS_ERROR_CODE)ret;
                     ret = 0;
                 }
+               // e->handled = 1; // Mebadi
                 printf("[INFO]-[server.c]-[Func. svr_handleMethodRequest]-[cosem_invoke - ret:%d]\n", ret);
                 svr_postAction(&settings->base, list);
             }

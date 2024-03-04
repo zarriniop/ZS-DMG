@@ -440,6 +440,7 @@ int saveSettings()
         serializerSettings.ignoredAttributes = NON_SERIALIZED_OBJECTS;
         serializerSettings.count = sizeof(NON_SERIALIZED_OBJECTS) / sizeof(NON_SERIALIZED_OBJECTS[0]);
         ret = ser_saveObjects(&serializerSettings, ALL_OBJECTS, sizeof(ALL_OBJECTS) / sizeof(ALL_OBJECTS[0]));
+        printf("[INFO]-[exampleserver.c]-[saveSettings]-[ser_saveObjects - ret:%d]\n", ret);
         fclose(f);
     }
     else
@@ -3578,6 +3579,11 @@ void svr_preAction(				//This function is used to do something when receive an a
 				}
 			#endif //defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         }
+
+        if ( e->target == BASE(securitySetupManagementClient) )
+        {
+        	//e->handled = 1;
+        }
     }
 }
 
@@ -3725,11 +3731,15 @@ void svr_postAction(
             return;
         }
         GXTRACE_LN(("svr_postAction: "), e->target->objectType, e->target->logicalName);
+
         if (e->target == BASE(securitySetupHigh) ||
-            e->target == BASE(securitySetupHighGMac))
+            e->target == BASE(securitySetupHighGMac)
+			|| e->target == BASE(securitySetupManagementClient) )
         {
             // Update block cipher key authentication key or broadcast key.
             // Save settings to EEPROM.
+        	printf("[INFO] - [exampleserver.c] - [svr_postAction] - [Update block cipher key authentication key or broadcast key - objectType:%d - index:%d - e->error:%d]\n", e->target->objectType, e->index, e->error);
+
             if (e->error == 0)
             {
                 saveSecurity(settings);
@@ -3743,6 +3753,7 @@ void svr_postAction(
         // Check is client changing the settings with action.
         else if (svr_isChangedWithAction(e->target->objectType, e->index))
         {
+        	printf("[INFO] - [exampleserver.c] - [svr_postAction] - [svr_isChangedWithAction - objectType:%d - index:%d - e->error:%d]\n", e->target->objectType, e->index, e->error);
             // Save settings to EEPROM.
             if (e->error == 0)
             {

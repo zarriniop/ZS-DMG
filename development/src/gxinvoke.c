@@ -865,9 +865,9 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                     e->error = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                     break;
                 }
+                printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[type->cVal:%d]\n",type->cVal);
                 switch (type->cVal)
                 {
-                printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[type->cVal:%d]\n",type->cVal);
                 case DLMS_GLOBAL_KEY_TYPE_UNICAST_ENCRYPTION:
                     bb_clear(&settings->base.cipher.blockCipherKey);
                     bb_set(&settings->base.cipher.blockCipherKey, bb.data, bb.size);
