@@ -25,38 +25,22 @@ int Servers_Start(int trace)
     int ret;
     unsigned char KEK[16] = { 0x31,0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31 }; /*{0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE,0xFF};*/
 
-   //Initialize DLMS settings.
-    svr_init(&lnWrapper.settings, 1, DLMS_INTERFACE_TYPE_WRAPPER, WRAPPER_BUFFER_SIZE, PDU_BUFFER_SIZE, ln47frameBuff, WRAPPER_BUFFER_SIZE, ln47pduBuff, PDU_BUFFER_SIZE);
-
-    //We have several server that are using same objects. Just copy them.
-
     //memcpy(KEK, "00112233445566778899AABBCCDDEEFF\0", 33);
+
+   //Initialize DLMS settings.
     BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK));
-    BB_ATTACH(lniec.settings.base.kek, KEK, sizeof(KEK));
-//    lniec.settings.base.kek.size = 16;
-
-    printf("|========>>>>>> lniec.kek=%s \n", lniec.settings.base.kek.data);
-    printf("\n --->>> KEK:");
-    for(int i=0; i<16; i++)
-    {
-    	printf("%.2X  ", KEK[i]);
-    }
-    printf("\n");
-
-
+    svr_init(&lnWrapper.settings, 1, DLMS_INTERFACE_TYPE_WRAPPER, WRAPPER_BUFFER_SIZE, PDU_BUFFER_SIZE, ln47frameBuff, WRAPPER_BUFFER_SIZE, ln47pduBuff, PDU_BUFFER_SIZE);
     svr_InitObjects(&lnWrapper.settings);
+    printf("lnWrapper.kek=%s - size=%d \n", lnWrapper.settings.base.kek.data, lnWrapper.settings.base.kek.size);
 
+    //Initialize DLMS settings.
     DLMS_INTERFACE_TYPE interfaceType;
     if(lnWrapper.settings.localPortSetup->defaultMode==0) interfaceType=DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E;
     else interfaceType = DLMS_INTERFACE_TYPE_HDLC;
-//    interfaceType = DLMS_INTERFACE_TYPE_HDLC;
 
-    //Initialize DLMS settings.
+    BB_ATTACH(lniec.settings.base.kek, KEK, sizeof(KEK));
     svr_init(&lniec.settings, 1, interfaceType, HDLC_BUFFER_SIZE, PDU_BUFFER_SIZE, lnframeBuff, HDLC_HEADER_SIZE + HDLC_BUFFER_SIZE, lnpduBuff, PDU_BUFFER_SIZE);
     svr_InitObjects(&lniec.settings);
-
-//    BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK));
-//    BB_ATTACH(lniec.settings.base.kek, KEK, sizeof(KEK));
 
     //Start server
     if ((ret = TCP_start(&lnWrapper)) != 0)
