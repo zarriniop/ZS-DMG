@@ -21,6 +21,7 @@
 DS1307_I2C_STRUCT_TYPEDEF	DS1307_Str	;
 
 extern connection lnWrapper , lniec , rs485;
+extern unsigned char KEK[16];
 
 int main(int argc, char* argv[])
 {
@@ -34,30 +35,31 @@ int main(int argc, char* argv[])
     LTE_Manager_Start()					;
 //    pthread_create(&SVR_Monitor, NULL, Servers_Monitor, NULL);
 
+    BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK));
     while (1)
     {
     	sleep(20)						;
-    	printf("main|========>>>>>> lniec.kek=%s - size=%d \n", lniec.settings.base.kek.data, lniec.settings.base.kek.size);
-    	printf("main|========>>>>>> lnWrapper.kek=%s - size=%d \n", lnWrapper.settings.base.kek.data, lnWrapper.settings.base.kek.size);
-        for(int i=0; i<lnWrapper.settings.base.kek.size; i++)
-        {
-        	printf("%.2X  ", lnWrapper.settings.base.kek.data[i]);
-        }
-        printf("\n");
-//    	//securitySetupHighGMac.securityPolicy = securitySetupManagementClient.securityPolicy;
-    	printf("cipherKey:");
-    	for (int i=0; i<lnWrapper.settings.base.cipher.blockCipherKey.size; i++)
-    	{
-    		printf("%.2X  ", lnWrapper.settings.base.cipher.blockCipherKey.data[i]);
-    	}
-    	printf("\n");
-
-    	printf("autheticationKey:");
-    	for (int i=0; i<lnWrapper.settings.base.cipher.authenticationKey.size; i++)
-    	{
-    		printf("%.2X  ", lnWrapper.settings.base.cipher.authenticationKey.data[i]);
-    	}
-    	printf("\n");
+//    	printf("main|========>>>>>> lniec.kek=%s - size=%d \n", lniec.settings.base.kek.data, lniec.settings.base.kek.size);
+//    	printf("main|========>>>>>> lnWrapper.kek=%s - size=%d \n", lnWrapper.settings.base.kek.data, lnWrapper.settings.base.kek.size);
+//        for(int i=0; i<lnWrapper.settings.base.kek.size; i++)
+//        {
+//        	printf("%.2X  ", lnWrapper.settings.base.kek.data[i]);
+//        }
+//        printf("\n");
+////    	//securitySetupHighGMac.securityPolicy = securitySetupManagementClient.securityPolicy;
+//    	printf("cipherKey:");
+//    	for (int i=0; i<lniec.settings.base.cipher.blockCipherKey.size; i++)
+//    	{
+//    		printf("%.2X  ", lniec.settings.base.cipher.blockCipherKey.data[i]);
+//    	}
+//    	printf("\n");
+//
+//    	printf("autheticationKey:");
+//    	for (int i=0; i<lniec.settings.base.cipher.authenticationKey.size; i++)
+//    	{
+//    		printf("%.2X  ", lniec.settings.base.cipher.authenticationKey.data[i]);
+//    	}
+//    	printf("\n");
     }
     return 0;
 }

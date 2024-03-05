@@ -13,22 +13,26 @@
 const unsigned int  g_days_in_month[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 const unsigned int  j_days_in_month[12] = {31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29};
 
+unsigned char KEK[16] = { 0x31,0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31 }; /*{0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE,0xFF};*/
+
 unsigned char lnframeBuff	[HDLC_BUFFER_SIZE + HDLC_HEADER_SIZE]	;
 unsigned char lnpduBuff		[PDU_BUFFER_SIZE]						;
 unsigned char ln47frameBuff	[WRAPPER_BUFFER_SIZE]					;
 unsigned char ln47pduBuff	[PDU_BUFFER_SIZE]						;
-connection lnWrapper , lniec , rs485;
+connection lnWrapper, lniec, rs485;
 pthread_t SVR_Monitor;
 
 int Servers_Start(int trace)
 {
     int ret;
-    unsigned char KEK[16] = { 0x31,0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31 }; /*{0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE,0xFF};*/
 
     //memcpy(KEK, "00112233445566778899AABBCCDDEEFF\0", 33);
 
+    BYTE_BUFFER_INIT(&lniec.settings.base.kek);
+    bb_clear(&lnWrapper.settings.base.kek);
+
    //Initialize DLMS settings.
-    BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK));	//It must be here to heve value for lnWrapper KEK
+//    BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK));	//It must be here to heve value for lnWrapper KEK
     svr_init(&lnWrapper.settings, 1, DLMS_INTERFACE_TYPE_WRAPPER, WRAPPER_BUFFER_SIZE, PDU_BUFFER_SIZE, ln47frameBuff, WRAPPER_BUFFER_SIZE, ln47pduBuff, PDU_BUFFER_SIZE);
 
     BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK)); //It must be here to reset the lnWrapper KEK, after svr_init, the value of this variable is set by NULL

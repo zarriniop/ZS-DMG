@@ -56,6 +56,11 @@
 
 #ifndef DLMS_IGNORE_CHARGE
 
+gxByteBuffer 	BlockCipherKey_bb_cp;
+gxByteBuffer 	AuthenticationKey_bb_cp;
+int				Flag_NewCipherKey = 174;
+int				Flag_NewAuthenticationKey = 162;
+
 int invoke_Charge(
     gxCharge* object,
     unsigned char index,
@@ -838,18 +843,21 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
         {
             gxByteBuffer bb;
             BYTE_BUFFER_INIT(&bb);
+            BYTE_BUFFER_INIT(&BlockCipherKey_bb_cp);
+            BYTE_BUFFER_INIT(&AuthenticationKey_bb_cp);
+
             for (pos = 0; pos != e->parameters.Arr->size; ++pos)
             {
                 bb_clear(&bb);
 
-                ret = va_getByIndex(e->parameters.Arr, pos, &it);
-                printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[ret1:%d]\n", ret);
-                ret = va_getByIndex(it->Arr, 0, &type);
-                printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[ret2:%d]\n", ret);
-                ret = va_getByIndex(it->Arr, 1, &data);
-                printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[ret3:%d]\n", ret);
-                ret = cip_decryptKey(settings->base.kek.data, (unsigned char)settings->base.kek.size, data->byteArr, &bb);
-                printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[ret4:%d - data:%s - size:%d]\n", ret, settings->base.kek.data, settings->base.kek.size);
+//                ret = va_getByIndex(e->parameters.Arr, pos, &it);
+//                printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[ret1:%d]\n", ret);
+//                ret = va_getByIndex(it->Arr, 0, &type);
+//                printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[ret2:%d]\n", ret);
+//                ret = va_getByIndex(it->Arr, 1, &data);
+//                printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[ret3:%d]\n", ret);
+//                ret = cip_decryptKey(settings->base.kek.data, (unsigned char)settings->base.kek.size, data->byteArr, &bb);
+//                printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[ret4:%d - data:%s - size:%d - bb:%s]\n", ret, settings->base.kek.data, settings->base.kek.size, bb.data);
 
                 if ((ret = va_getByIndex(e->parameters.Arr, pos, &it)) != 0 ||
                     (ret = va_getByIndex(it->Arr, 0, &type)) != 0 ||
@@ -869,16 +877,50 @@ int invoke_SecuritySetup(dlmsServerSettings* settings, gxSecuritySetup* target, 
                 switch (type->cVal)
                 {
                 case DLMS_GLOBAL_KEY_TYPE_UNICAST_ENCRYPTION:
-                    bb_clear(&settings->base.cipher.blockCipherKey);
-                    bb_set(&settings->base.cipher.blockCipherKey, bb.data, bb.size);
+                	//IOP - Iman
+                	Flag_NewCipherKey = 253;
+                	bb_clear(&BlockCipherKey_bb_cp);
+                	bb_set(&BlockCipherKey_bb_cp, bb.data, bb.size);
+                	printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[DLMS_GLOBAL_KEY_TYPE_UNICAST_ENCRYPTION BlockCipherKey_bb_cp]\n");
+                	printf("bb:\n");
+                	for (int i=0 ;i<bb.size; i++)
+                	{
+                		printf("%.2X  ", bb.data[i]);
+                	}
+                	printf("\n");
+                	printf("BlockCipherKey_bb_cp:\n");
+                	for (int i=0 ;i<BlockCipherKey_bb_cp.size; i++)
+                	{
+                		printf("%.2X  ", BlockCipherKey_bb_cp.data[i]);
+                	}
+                	printf("\n");
+//                    bb_clear(&settings->base.cipher.blockCipherKey);
+//                    bb_set(&settings->base.cipher.blockCipherKey, bb.data, bb.size);
                     break;
                 case DLMS_GLOBAL_KEY_TYPE_BROADCAST_ENCRYPTION:
                     //Invalid type
                     ret = DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
                     break;
                 case DLMS_GLOBAL_KEY_TYPE_AUTHENTICATION:
-                    bb_clear(&settings->base.cipher.authenticationKey);
-                    bb_set(&settings->base.cipher.authenticationKey, bb.data, bb.size);
+                	//IOP - Iman
+                	Flag_NewAuthenticationKey = 192;
+                	bb_clear(&AuthenticationKey_bb_cp);
+                	bb_set(&AuthenticationKey_bb_cp, bb.data, bb.size);
+                	printf("[INFO]-[gxinvoke.c]-[Func. invoke_SecuritySetup]-[DLMS_GLOBAL_KEY_TYPE_AUTHENTICATION AuthenticationKey_bb_cp]\n");
+                	printf("bb:\n");
+                	for (int i=0 ;i<bb.size; i++)
+                	{
+                		printf("%.2X  ", bb.data[i]);
+                	}
+                	printf("\n");
+                	printf("AuthenticationKey_bb_cp:\n");
+                	for (int i=0 ;i<AuthenticationKey_bb_cp.size; i++)
+                	{
+                		printf("%.2X  ", AuthenticationKey_bb_cp.data[i]);
+                	}
+                	printf("\n");
+//                    bb_clear(&settings->base.cipher.authenticationKey);
+//                    bb_set(&settings->base.cipher.authenticationKey, bb.data, bb.size);
                     break;
                 case DLMS_GLOBAL_KEY_TYPE_KEK:
                     bb_clear(&settings->base.kek);

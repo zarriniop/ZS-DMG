@@ -2885,6 +2885,7 @@ int svr_handleMethodRequest(
 #endif //DLMS_IGNORE_MALLOC
 
         // Set default action reply if not given.
+        printf("[ERROR]-[server.c]-[svr_handleMethodRequest]-[e->error:%d]\n", e->error);
         if (e->error == DLMS_ERROR_CODE_OK)
         {
             if (// Add return parameters
@@ -2932,6 +2933,7 @@ int svr_handleMethodRequest(
             bb_setUInt8(data, 0);
         }
     }
+    printf("[ERROR]-[server.c]-[svr_handleMethodRequest]-[before creating response - ret:%d]\n", ret);
     if (ret == 0)
     {
         gxLNParameters p;
@@ -4729,6 +4731,7 @@ uint32_t svr_isChangedWithAction(DLMS_OBJECT_TYPE objectType, unsigned char meth
             break;
         case 2:
             //Key transfer. TODO: Check this when SS 1 is released.
+        	//amir hajian
             ret = GET_ATTRIBUTE(7);
             break;
         case 4:

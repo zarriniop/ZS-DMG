@@ -54,6 +54,10 @@ extern gxPushSetup	 	pushSetup	;
 extern gxIp4Setup 		ip4Setup	;
 extern gxTcpUdpSetup 	udpSetup	;
 extern SETTINGS 		Settings	;
+extern gxByteBuffer BlockCipherKey_bb_cp;
+extern gxByteBuffer AuthenticationKey_bb_cp;
+extern int			Flag_NewCipherKey;
+extern int			Flag_NewAuthenticationKey;
 
 //Initialize connection buffers.
 void con_initializeBuffers(connection * connection, int size)
@@ -784,6 +788,58 @@ void* IEC_Serial_Thread(void* pVoid)
                 first = 1;
 
                 ret = write(con->comPort, reply.data, reply.size);
+
+                /****************************************/
+                //IOP - Mehraban
+                //this added for key transfer
+                //new block cipher key is set here
+                if(Flag_NewCipherKey == 253)
+                {
+                	Flag_NewCipherKey = 174;
+					bb_clear(&lniec.settings.base.cipher.blockCipherKey);
+					bb_set(&lniec.settings.base.cipher.blockCipherKey, BlockCipherKey_bb_cp.data, BlockCipherKey_bb_cp.size);
+
+					printf("[INFO]-[connection.c]-[IEC_Serial_Thread]-[BlockCipherKey]\n");
+					printf("BlockCipherKey_bb_cp:\n");
+					for (int i=0 ;i<BlockCipherKey_bb_cp.size; i++)
+					{
+						printf("%.2X  ", BlockCipherKey_bb_cp.data[i]);
+					}
+					printf("\n");
+					printf("lniec.settings.base.cipher.blockCipherKey:\n");
+					for (int i=0 ;i<lniec.settings.base.cipher.blockCipherKey.size; i++)
+					{
+						printf("%.2X  ", lniec.settings.base.cipher.blockCipherKey.data[i]);
+					}
+					printf("\n");
+                }
+            	/****************************************/
+
+                /****************************************/
+                //IOP - Mehraban
+                //this added for key transfer
+                //new authentication key is set here
+                if (Flag_NewAuthenticationKey == 192)
+                {
+                	Flag_NewAuthenticationKey = 162;
+					bb_clear(&lniec.settings.base.cipher.authenticationKey);
+					bb_set(&lniec.settings.base.cipher.authenticationKey, AuthenticationKey_bb_cp.data, AuthenticationKey_bb_cp.size);
+
+					printf("[INFO]-[connection.c]-[IEC_Serial_Thread]-[AuthenticationKey]\n");
+					printf("AuthenticationKey_bb_cp:\n");
+					for (int i=0 ;i<AuthenticationKey_bb_cp.size; i++)
+					{
+						printf("%.2X  ", AuthenticationKey_bb_cp.data[i]);
+					}
+					printf("\n");
+					printf("lniec.settings.base.cipher.authenticationKey:\n");
+					for (int i=0 ;i<lniec.settings.base.cipher.authenticationKey.size; i++)
+					{
+						printf("%.2X  ", lniec.settings.base.cipher.authenticationKey.data[i]);
+					}
+					printf("\n");
+                }
+
 
                 if (ret != reply.size)
                 {
