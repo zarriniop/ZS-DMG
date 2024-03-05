@@ -3733,8 +3733,7 @@ void svr_postAction(
         GXTRACE_LN(("svr_postAction: "), e->target->objectType, e->target->logicalName);
 
         if (e->target == BASE(securitySetupHigh) ||
-            e->target == BASE(securitySetupHighGMac)
-			|| e->target == BASE(securitySetupManagementClient) )
+            e->target == BASE(securitySetupHighGMac))
         {
             // Update block cipher key authentication key or broadcast key.
             // Save settings to EEPROM.

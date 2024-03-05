@@ -28,8 +28,10 @@ int Servers_Start(int trace)
     //memcpy(KEK, "00112233445566778899AABBCCDDEEFF\0", 33);
 
    //Initialize DLMS settings.
-    BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK));
+    BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK));	//It must be here to heve value for lnWrapper KEK
     svr_init(&lnWrapper.settings, 1, DLMS_INTERFACE_TYPE_WRAPPER, WRAPPER_BUFFER_SIZE, PDU_BUFFER_SIZE, ln47frameBuff, WRAPPER_BUFFER_SIZE, ln47pduBuff, PDU_BUFFER_SIZE);
+
+    BB_ATTACH(lnWrapper.settings.base.kek, KEK, sizeof(KEK)); //It must be here to reset the lnWrapper KEK, after svr_init, the value of this variable is set by NULL
     svr_InitObjects(&lnWrapper.settings);
     printf("lnWrapper.kek=%s - size=%d \n", lnWrapper.settings.base.kek.data, lnWrapper.settings.base.kek.size);
 

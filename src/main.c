@@ -37,13 +37,13 @@ int main(int argc, char* argv[])
     while (1)
     {
     	sleep(20)						;
-//    	printf("main|========>>>>>> lniec.kek=%s - size=%d \n", lniec.settings.base.kek.data, lniec.settings.base.kek.size);
-//    	printf("main|========>>>>>> lnWrapper.kek=%s - size=%d \n", lnWrapper.settings.base.kek.data, lnWrapper.settings.base.kek.size);
-//        for(int i=0; i<lnWrapper.settings.base.kek.size; i++)
-//        {
-//        	printf("%.2X  ", lnWrapper.settings.base.kek.data[i]);
-//        }
-//        printf("\n");
+    	printf("main|========>>>>>> lniec.kek=%s - size=%d \n", lniec.settings.base.kek.data, lniec.settings.base.kek.size);
+    	printf("main|========>>>>>> lnWrapper.kek=%s - size=%d \n", lnWrapper.settings.base.kek.data, lnWrapper.settings.base.kek.size);
+        for(int i=0; i<lnWrapper.settings.base.kek.size; i++)
+        {
+        	printf("%.2X  ", lnWrapper.settings.base.kek.data[i]);
+        }
+        printf("\n");
 //    	//securitySetupHighGMac.securityPolicy = securitySetupManagementClient.securityPolicy;
     	printf("cipherKey:");
     	for (int i=0; i<lnWrapper.settings.base.cipher.blockCipherKey.size; i++)
